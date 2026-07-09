@@ -26,7 +26,8 @@ const CheckboxCard = React.forwardRef(
         <input
           ref={ref}
           id={id}
-          type="checkbox"
+          name="division"
+          type="radio"
           checked={checked}
           onChange={onChange}
           className="sr-only"

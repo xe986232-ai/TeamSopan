@@ -55,17 +55,15 @@ export default function JoinForm() {
     email: "",
     password: "",
   });
-  const [divisions, setDivisions] = React.useState([]);
+  const [division, setDivision] = React.useState(null);
   const [errors, setErrors] = React.useState({});
   const [loading, setLoading] = React.useState(false);
 
   const updateField = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const toggleDivision = (id) => {
-    setDivisions((prev) =>
-      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
-    );
+  const selectDivision = (id) => {
+    setDivision((prev) => (prev === id ? null : id));
   };
 
   const validate = () => {
@@ -80,8 +78,8 @@ export default function JoinForm() {
     if (!form.password || form.password.length < 8) {
       next.password = "Password minimal 8 karakter";
     }
-    if (divisions.length === 0) {
-      next.divisions = "Pilih minimal satu divisi";
+    if (!division) {
+      next.divisions = "Pilih satu divisi";
     }
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -111,7 +109,7 @@ export default function JoinForm() {
       });
 
       setForm({ firstName: "", lastName: "", email: "", password: "" });
-      setDivisions([]);
+      setDivision(null);
       setErrors({});
     } catch (err) {
       toast({
@@ -135,15 +133,15 @@ export default function JoinForm() {
       <div className="space-y-2.5">
         <span className="text-sm font-medium text-ink">Pilih divisi</span>
         <div className="space-y-2">
-          {DIVISIONS.map((division) => (
+          {DIVISIONS.map((item) => (
             <CheckboxCard
-              key={division.id}
-              id={`division-${division.id}`}
-              label={division.name}
-              image={division.image}
-              accentTo={division.accentTo}
-              checked={divisions.includes(division.id)}
-              onChange={() => toggleDivision(division.id)}
+              key={item.id}
+              id={`division-${item.id}`}
+              label={item.name}
+              image={item.image}
+              accentTo={item.accentTo}
+              checked={division === item.id}
+              onChange={() => selectDivision(item.id)}
             />
           ))}
         </div>
