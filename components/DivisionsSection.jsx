@@ -3,6 +3,15 @@
 import { motion } from "framer-motion";
 import { Lens } from "./ui/lens";
 import { AnimatedTooltip } from "./ui/animated-tooltip";
+import { Button } from "./ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "./ui/card";
 
 const DIVISIONS = [
   {
@@ -121,49 +130,57 @@ export default function DivisionsSection() {
               viewport={{ once: true, margin: "-80px" }}
               variants={fadeUp}
               transition={{ delay: i * 0.1 }}
-              className="bg-base-elevated border border-black/10 w-auto sm:w-[22rem] rounded-xl p-4 group"
             >
-              <Lens zoomFactor={1.8} lensSize={150}>
-                <DivisionVisual division={division} />
-              </Lens>
+              <Card className="w-auto sm:w-[22rem] overflow-hidden group">
+                <CardHeader className="p-4 pb-0">
+                  <Lens isStatic position={{ x: 150, y: 90 }} zoomFactor={1.8} lensSize={150}>
+                    <DivisionVisual division={division} />
+                  </Lens>
+                </CardHeader>
 
-              <div className="px-2 pt-5 pb-1">
-                <span
-                  className={`text-xs tracking-[0.3em] uppercase font-medium bg-gradient-to-r ${division.accent} bg-clip-text text-transparent`}
-                >
-                  {division.eyebrow}
-                </span>
-                <h3 className="font-display text-4xl mt-3 text-ink">
-                  {division.name}
-                </h3>
-                <p
-                  className={`mt-1 text-sm font-medium bg-gradient-to-r ${division.accent} bg-clip-text text-transparent`}
-                >
-                  {division.tagline}
-                </p>
-                <p className="mt-4 text-ink-muted text-sm max-w-sm">
-                  {division.description}
-                </p>
-                <div className="flex flex-wrap gap-2 mt-5 w-full">
-                  {division.tags.map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-3 py-1.5 rounded-full border border-black/10 text-ink-muted bg-black/5"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="flex items-center mt-6 pt-5 border-t border-black/10">
-                  <div className="flex items-center mr-4">
-                    <AnimatedTooltip items={division.members} />
-                  </div>
-                  <span className="text-xs text-ink-dim">
-                    {division.members.length} member aktif
+                <CardContent className="pt-5">
+                  <span
+                    className={`text-xs tracking-[0.3em] uppercase font-medium bg-gradient-to-r ${division.accent} bg-clip-text text-transparent`}
+                  >
+                    {division.eyebrow}
                   </span>
-                </div>
-              </div>
+                  <CardTitle className="text-4xl mt-3 text-ink">
+                    {division.name}
+                  </CardTitle>
+                  <p
+                    className={`mt-1 text-sm font-medium bg-gradient-to-r ${division.accent} bg-clip-text text-transparent`}
+                  >
+                    {division.tagline}
+                  </p>
+                  <CardDescription className="mt-4 max-w-sm">
+                    {division.description}
+                  </CardDescription>
+                  <div className="flex flex-wrap gap-2 mt-5 w-full">
+                    {division.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs px-3 py-1.5 rounded-full border border-black/10 text-ink-muted bg-black/5"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </CardContent>
+
+                <CardFooter className="justify-between border-t border-black/10 mt-2">
+                  <div className="flex items-center">
+                    <div className="flex items-center mr-4">
+                      <AnimatedTooltip items={division.members} />
+                    </div>
+                    <span className="text-xs text-ink-dim">
+                      {division.members.length} member aktif
+                    </span>
+                  </div>
+                  <Button size="sm" variant="secondary">
+                    Gabung
+                  </Button>
+                </CardFooter>
+              </Card>
             </motion.div>
           ))}
         </div>
