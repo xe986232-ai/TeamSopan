@@ -48,7 +48,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           <button
             onClick={() => setOpen((v) => !v)}
             aria-label="Buka menu"
-            className="sm:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-black/5 transition-colors text-ink"
+            className="sm:hidden flex items-center justify-center h-9 w-9 rounded-full hover:bg-black/5 dark:hover:bg-white/5 transition-colors text-ink"
           >
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -126,7 +126,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           )}
           <a
             href="#gabung"
-            className="flex items-center gap-1 text-xs font-medium border border-black/10 text-white bg-ink-solid px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1 text-xs font-medium border border-black/10 dark:border-white/10 text-white bg-ink-solid dark:bg-white dark:text-ink-solid px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
           >
             <Sparkles size={12} />
             Gabung
@@ -188,7 +188,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
               <a
                 href="#gabung"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-ink-solid px-4 py-3 rounded-full hover:opacity-90 transition-opacity mt-6"
+                className="flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-ink-solid dark:bg-white dark:text-ink-solid px-4 py-3 rounded-full hover:opacity-90 transition-opacity mt-6"
               >
                 <Sparkles size={14} />
                 Gabung

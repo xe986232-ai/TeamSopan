@@ -106,7 +106,7 @@ export default function RemixDivisionPage() {
             {["Mashup", "Bootleg Remix", "Sound Design"].map((tag) => (
               <span
                 key={tag}
-                className="text-xs px-3 py-1.5 rounded-full border border-black/10 text-ink-muted"
+                className="text-xs px-3 py-1.5 rounded-full border border-black/10 dark:border-white/10 text-ink-muted"
               >
                 {tag}
               </span>
@@ -117,7 +117,7 @@ export default function RemixDivisionPage() {
             <Button className="rounded-full px-7 py-3">Gabung Divisi Remix</Button>
             <a
               href="#karya"
-              className="border border-black/10 rounded-full text-ink px-7 py-3 text-sm font-medium hover:bg-black/5 transition-colors"
+              className="border border-black/10 dark:border-white/10 rounded-full text-ink px-7 py-3 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
             >
               Lihat Karya
             </a>

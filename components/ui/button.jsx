@@ -2,10 +2,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 const VARIANTS = {
-  default: "bg-ink-solid text-white hover:bg-ink-solid/90",
-  secondary: "bg-black/5 text-ink hover:bg-black/10",
-  outline: "border border-black/15 text-ink hover:bg-black/5",
-  ghost: "text-ink hover:bg-black/5",
+  default:
+    "bg-ink-solid text-white hover:bg-ink-solid/90 dark:bg-white dark:text-ink-solid dark:hover:bg-white/90",
+  secondary:
+    "bg-black/5 text-ink hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15",
+  outline:
+    "border border-black/15 text-ink hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5",
+  ghost: "text-ink hover:bg-black/5 dark:hover:bg-white/5",
 };
 
 const SIZES = {

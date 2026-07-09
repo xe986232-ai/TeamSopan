@@ -135,7 +135,7 @@ export default function DivisionsSection() {
                   </CardDescription>
                 </CardContent>
                 <CardFooter className="p-3 pt-0 flex-col items-stretch gap-3">
-                  <div className="flex items-center justify-between border-t border-black/10 pt-3">
+                  <div className="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-3">
                     <div className="flex items-center">
                       <AnimatedTooltip items={division.members} />
                     </div>

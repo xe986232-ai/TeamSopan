@@ -2,7 +2,7 @@ export default function Footer() {
   return (
     <footer
       id="gabung"
-      className="relative px-6 sm:px-10 py-20 border-t border-black/10"
+      className="relative px-6 sm:px-10 py-20 border-t border-black/10 dark:border-white/10"
     >
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-10">
         <div>
