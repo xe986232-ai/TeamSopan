@@ -125,7 +125,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             />
           )}
           <a
-            href="#gabung"
+            href="/gabung"
             className="flex items-center gap-1 text-xs font-medium border border-black/10 dark:border-white/10 text-white bg-ink-solid dark:bg-white dark:text-ink-solid px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
           >
             <Sparkles size={12} />
@@ -186,7 +186,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
               </div>
 
               <a
-                href="#gabung"
+                href="/gabung"
                 onClick={() => setOpen(false)}
                 className="flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-ink-solid dark:bg-white dark:text-ink-solid px-4 py-3 rounded-full hover:opacity-90 transition-opacity mt-6"
               >

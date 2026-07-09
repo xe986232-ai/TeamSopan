@@ -9,13 +9,13 @@ export default function Footer() {
           <h3 className="font-display text-3xl text-ink">Mau gabung?</h3>
           <p className="text-ink-muted mt-3 max-w-sm">
             Kami selalu buka ruang buat orang yang serius mau berkarya di
-            Remix, Creator, atau Leadis. DM tim kami, ceritain karya kamu.
+            Remix, Creator, atau Leadis. Daftar sekarang dan ceritain karya kamu.
           </p>
           <a
-            href="#top"
-            className="inline-block mt-6 px-6 py-3 rounded-full bg-ink-solid text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            href="/gabung"
+            className="inline-block mt-6 px-6 py-3 rounded-full bg-ink-solid text-white dark:bg-white dark:text-ink-solid text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Hubungi Kami
+            Daftar Sekarang
           </a>
         </div>
 
