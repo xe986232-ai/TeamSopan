@@ -5,7 +5,7 @@ import { SoftGlowBackground } from "./ui/soft-glow-background";
 
 export default function Hero() {
   return (
-    <SoftGlowBackground className="min-h-screen flex items-center justify-center">
+    <SoftGlowBackground className="min-h-[70vh] sm:min-h-screen flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0.0, y: 40 }}
         whileInView={{ opacity: 1, y: 0 }}
