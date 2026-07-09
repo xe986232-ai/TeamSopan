@@ -34,7 +34,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           className
         )}
       >
-      <div className="border-b border-black/10 bg-white/50 backdrop-blur-2xl">
+      <div className="border-b border-black/5 bg-white/30 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
         <div className="flex items-center gap-3">
           <button
@@ -45,14 +45,48 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             {open ? <X size={18} /> : <Menu size={18} />}
           </button>
 
-          <a href="#top" className="flex items-center gap-2.5">
-            <span className="h-8 w-8 rounded-full bg-gradient-to-br from-remix-from via-creator-to to-leadis-to flex items-center justify-center text-white font-display font-black text-sm">
-              S
-            </span>
-            <span className="font-display font-bold text-ink text-xs hidden sm:block">
-              SOPAN TEAM
-            </span>
-          </a>
+        <a href="#top" className="flex items-center gap-2.5">
+  <span className="relative h-8 w-8 shrink-0 flex items-center justify-center">
+    <motion.span
+      animate={{
+        borderRadius: [
+          "60% 40% 55% 45% / 50% 60% 40% 50%",
+          "45% 55% 40% 60% / 55% 45% 60% 40%",
+          "55% 45% 60% 40% / 45% 55% 45% 55%",
+          "60% 40% 55% 45% / 50% 60% 40% 50%",
+        ],
+        scale: [1, 1.08, 0.95, 1],
+      }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      className="absolute inset-0 blur-md opacity-80"
+      style={{
+        background:
+          "radial-gradient(circle at 30% 30%, #7C3AED, #EC4899 45%, #22D3EE 100%)",
+      }}
+    />
+    <motion.span
+      animate={{
+        borderRadius: [
+          "60% 40% 55% 45% / 50% 60% 40% 50%",
+          "45% 55% 40% 60% / 55% 45% 60% 40%",
+          "55% 45% 60% 40% / 45% 55% 45% 55%",
+          "60% 40% 55% 45% / 50% 60% 40% 50%",
+        ],
+      }}
+      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      className="relative h-full w-full flex items-center justify-center text-white font-black text-sm overflow-hidden"
+      style={{
+        background:
+          "radial-gradient(circle at 30% 30%, #A855F7, #F472B6 50%, #38BDF8 100%)",
+      }}
+    >
+      S
+    </motion.span>
+  </span>
+  <span className="text-ink text-xs whitespace-nowrap">
+    Sopan Team
+  </span>
+</a>
         </div>
 
         <div className="hidden sm:flex items-center gap-6">

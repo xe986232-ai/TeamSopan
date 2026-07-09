@@ -2,15 +2,9 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { useOutsideClick } from "@/hooks/use-outside-click";
 
-/**
- * ExpandableCards — grid kartu yang bisa diklik untuk buka detail
- * dengan animasi shared-layout (mirip Aceternity Expandable Card),
- * diadaptasi manual (tanpa CLI shadcn) supaya konsisten style project ini.
- *
- * items: [{ title, subtitle, description, accent, ctaLabel, ctaHref }]
- */
 export function ExpandableCards({ items }) {
   const [active, setActive] = useState(null);
   const id = useId();
@@ -18,17 +12,9 @@ export function ExpandableCards({ items }) {
 
   useEffect(() => {
     function onKeyDown(event) {
-      if (event.key === "Escape") {
-        setActive(null);
-      }
+      if (event.key === "Escape") setActive(null);
     }
-
-    if (active) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
+    document.body.style.overflow = active ? "hidden" : "auto";
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [active]);
@@ -43,118 +29,111 @@ export function ExpandableCards({ items }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-40"
+            onClick={() => setActive(null)}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
         {active && (
-          <div className="fixed inset-0 z-50 grid place-items-center p-4">
-            <motion.button
-              key="close-button"
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, transition: { duration: 0.05 } }}
-              className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white text-ink lg:hidden"
-              onClick={() => setActive(null)}
-              aria-label="Tutup"
-            >
-              ✕
-            </motion.button>
-
+          <div className="fixed inset-0 z-50 grid place-items-center px-4 pointer-events-none">
             <motion.div
               layoutId={`card-${active.title}-${id}`}
               ref={ref}
-              className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-base"
+              className="w-full max-w-md bg-base-elevated rounded-2xl overflow-hidden border border-black/10 shadow-2xl pointer-events-auto"
             >
               <motion.div
-                layoutId={`visual-${active.title}-${id}`}
-                className={`relative h-64 w-full bg-gradient-to-br ${active.accent}`}
-              >
-                <div
-                  className="absolute inset-0 opacity-30"
-                  style={{
-                    backgroundImage:
-                      "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.4) 1px, transparent 0)",
-                    backgroundSize: "18px 18px",
-                  }}
-                />
-              </motion.div>
-
-              <div className="p-6">
+                layoutId={`thumb-${active.title}-${id}`}
+                className={cn(
+                  "h-40 w-full bg-gradient-to-br",
+                  active.accent
+                )}
+              />
+              <div className="p-6 relative">
                 <div className="flex items-start justify-between">
                   <div>
                     <motion.h3
                       layoutId={`title-${active.title}-${id}`}
-                      className="font-display text-2xl text-ink"
+                      className="font-display text-xl text-ink"
                     >
                       {active.title}
                     </motion.h3>
                     <motion.p
-                      layoutId={`subtitle-${active.subtitle}-${id}`}
-                      className="text-ink-muted text-sm mt-1"
+                      layoutId={`subtitle-${active.title}-${id}`}
+                      className="text-sm text-ink-muted mt-1"
                     >
                       {active.subtitle}
                     </motion.p>
                   </div>
-                  {active.ctaHref && (
-                    <motion.a
-                      layout
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      href={active.ctaHref}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="shrink-0 rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90 transition-colors"
-                    >
-                      {active.ctaLabel ?? "Dengar"}
-                    </motion.a>
-                  )}
+                  <span className="shrink-0 text-sm font-medium px-4 py-1.5 rounded-full bg-green-500 text-white">
+                    Playing
+                  </span>
                 </div>
-
-                <motion.div
+                <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.15 }}
-                  className="mt-4 text-sm text-ink-muted leading-relaxed"
+                  className="text-sm text-ink-dim mt-4 leading-relaxed"
                 >
                   {active.description}
-                </motion.div>
+                </motion.p>
               </div>
+              <button
+                onClick={() => setActive(null)}
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/40 text-white grid place-items-center hover:bg-black/60 transition-colors"
+                aria-label="Tutup"
+              >
+                ✕
+              </button>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <ul className="max-w-2xl mx-auto flex flex-col gap-2">
         {items.map((item) => (
-          <motion.div
+          <motion.li
             layoutId={`card-${item.title}-${id}`}
             key={item.title}
             onClick={() => setActive(item)}
-            className="cursor-pointer rounded-xl border border-black/10 bg-base p-5 hover:shadow-md transition-shadow"
+            className="flex items-center justify-between gap-4 p-3 rounded-xl hover:bg-black/5 cursor-pointer transition-colors"
           >
-            <motion.div
-              layoutId={`visual-${item.title}-${id}`}
-              className={`h-32 rounded-lg mb-4 bg-gradient-to-br ${item.accent}`}
-            />
-            <motion.h3
-              layoutId={`title-${item.title}-${id}`}
-              className="font-display text-lg text-ink"
+            <div className="flex items-center gap-4 min-w-0">
+              <motion.div
+                layoutId={`thumb-${item.title}-${id}`}
+                className={cn(
+                  "h-12 w-12 shrink-0 rounded-lg bg-gradient-to-br",
+                  item.accent
+                )}
+              />
+              <div className="min-w-0">
+                <motion.h4
+                  layoutId={`title-${item.title}-${id}`}
+                  className="font-medium text-ink truncate"
+                >
+                  {item.title}
+                </motion.h4>
+                <motion.p
+                  layoutId={`subtitle-${item.title}-${id}`}
+                  className="text-sm text-ink-muted truncate"
+                >
+                  {item.subtitle}
+                </motion.p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setActive(item);
+              }}
+              className="shrink-0 text-sm font-medium px-4 py-1.5 rounded-full bg-ink text-base hover:opacity-80 transition-opacity"
             >
-              {item.title}
-            </motion.h3>
-            <motion.p
-              layoutId={`subtitle-${item.subtitle}-${id}`}
-              className="text-sm text-ink-muted mt-2"
-            >
-              {item.subtitle}
-            </motion.p>
-          </motion.div>
+              Play
+            </button>
+          </motion.li>
         ))}
-      </div>
+      </ul>
     </>
   );
 }

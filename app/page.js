@@ -3,6 +3,7 @@ import { AnnouncementBar } from "@/components/ui/announcement-bar";
 import Hero from "@/components/Hero";
 import AboutSection from "@/components/AboutSection";
 import DivisionsSection from "@/components/DivisionsSection";
+import AdminSection from "@/components/AdminSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
 import Footer from "@/components/Footer";
@@ -42,6 +43,7 @@ export default function Home() {
       <Hero />
       <AboutSection />
       <DivisionsSection />
+      <AdminSection />
       <ShowcaseSection />
       <TestimonialSection />
       <Footer />

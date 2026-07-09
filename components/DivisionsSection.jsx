@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Lens } from "./ui/lens";
 import { AnimatedTooltip } from "./ui/animated-tooltip";
 import { Button } from "./ui/button";
 import {
@@ -74,31 +73,23 @@ const fadeUp = {
 function DivisionVisual({ division }) {
   return (
     <div
-      className="relative aspect-[4/3] w-full overflow-hidden rounded-lg"
+      className="relative aspect-[4/3] w-full flex items-center justify-center overflow-hidden rounded-lg transition-transform duration-300 hover:scale-[1.02]"
       style={{
-        background: `linear-gradient(135deg, ${division.accentSolidFrom}33, ${division.accentSolidTo}22), #0D0D14`,
+        background: `linear-gradient(135deg, ${division.accentSolidFrom}, ${division.accentSolidTo})`,
+        boxShadow: `0 12px 32px -10px ${division.accentSolidTo}66`,
       }}
     >
       <div
-        className="absolute inset-0 opacity-40"
+        className="absolute inset-0 opacity-20"
         style={{
           backgroundImage:
-            "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.25) 1px, transparent 0)",
-          backgroundSize: "18px 18px",
+            "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
+          backgroundSize: "22px 22px",
         }}
       />
-      <div
-        className="absolute -bottom-10 -right-10 h-40 w-40 rounded-full blur-3xl opacity-50"
-        style={{ background: division.accentSolidTo }}
-      />
-      <div
-        className="absolute -top-10 -left-10 h-32 w-32 rounded-full blur-3xl opacity-40"
-        style={{ background: division.accentSolidFrom }}
-      />
-      <span
-        className={`absolute bottom-2 right-3 font-display text-3xl bg-gradient-to-r ${division.accent} bg-clip-text text-transparent select-none`}
-      >
-        {division.eyebrow.replace("Divisi ", "0")}
+
+      <span className="relative font-display font-black text-white text-2xl sm:text-3xl leading-none drop-shadow-md px-2 text-center">
+        {division.name}
       </span>
     </div>
   );
@@ -135,9 +126,7 @@ export default function DivisionsSection() {
             >
               <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden">
                 <CardHeader className="p-3 pb-0">
-                  <Lens isStatic position={{ x: 100, y: 60 }}>
-                    <DivisionVisual division={division} />
-                  </Lens>
+                  <DivisionVisual division={division} />
                 </CardHeader>
                 <CardContent className="p-3 pt-4">
                   <CardTitle className="text-lg">{division.name}</CardTitle>
@@ -166,17 +155,11 @@ export default function DivisionsSection() {
                         Gabung
                       </Button>
                     )}
-                    {division.href ? (
-                      <Link href={division.href} className="flex-1">
-                        <Button size="sm" variant="secondary" className="w-full">
-                          Karya
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button size="sm" variant="secondary" className="flex-1">
-                        Karya
+                    <Link href="/anggota" className="flex-1">
+                      <Button size="sm" variant="secondary" className="w-full">
+                        Anggota
                       </Button>
-                    )}
+                    </Link>
                   </div>
                 </CardFooter>
               </Card>
