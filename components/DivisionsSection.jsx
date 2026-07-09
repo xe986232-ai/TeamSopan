@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Lens } from "./ui/lens";
+import { AnimatedTooltip } from "./ui/animated-tooltip";
 
 const DIVISIONS = [
   {
@@ -14,6 +15,11 @@ const DIVISIONS = [
     accent: "from-remix-from to-remix-to",
     accentSolidFrom: "#B026FF",
     accentSolidTo: "#FF2E92",
+    members: [
+      { id: 1, name: "Raka A.", designation: "Lead Remixer", image: "https://i.pravatar.cc/150?img=13" },
+      { id: 2, name: "Dio P.", designation: "Sound Designer", image: "https://i.pravatar.cc/150?img=14" },
+      { id: 3, name: "Fajar N.", designation: "Mix Engineer", image: "https://i.pravatar.cc/150?img=15" },
+    ],
   },
   {
     eyebrow: "Divisi 02",
@@ -25,6 +31,11 @@ const DIVISIONS = [
     accent: "from-creator-from to-creator-to",
     accentSolidFrom: "#00E5FF",
     accentSolidTo: "#3D5AFE",
+    members: [
+      { id: 1, name: "Bagas W.", designation: "Video Editor", image: "https://i.pravatar.cc/150?img=33" },
+      { id: 2, name: "Yoga S.", designation: "Colorist", image: "https://i.pravatar.cc/150?img=51" },
+      { id: 3, name: "Rian K.", designation: "Motion Designer", image: "https://i.pravatar.cc/150?img=52" },
+    ],
   },
   {
     eyebrow: "Divisi 03",
@@ -36,6 +47,11 @@ const DIVISIONS = [
     accent: "from-leadis-from to-leadis-to",
     accentSolidFrom: "#FFD166",
     accentSolidTo: "#FF6FB5",
+    members: [
+      { id: 1, name: "Sasa M.", designation: "Content Creator", image: "https://i.pravatar.cc/150?img=47" },
+      { id: 2, name: "Nadia R.", designation: "Host & Showcase", image: "https://i.pravatar.cc/150?img=45" },
+      { id: 3, name: "Vira L.", designation: "Personal Brand", image: "https://i.pravatar.cc/150?img=44" },
+    ],
   },
 ];
 
@@ -137,6 +153,15 @@ export default function DivisionsSection() {
                       {tag}
                     </span>
                   ))}
+                </div>
+
+                <div className="flex items-center mt-6 pt-5 border-t border-black/10">
+                  <div className="flex items-center mr-4">
+                    <AnimatedTooltip items={division.members} />
+                  </div>
+                  <span className="text-xs text-ink-dim">
+                    {division.members.length} member aktif
+                  </span>
                 </div>
               </div>
             </motion.div>
