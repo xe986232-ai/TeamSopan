@@ -3,12 +3,20 @@ import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X, Users, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "next-themes";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
   const [open, setOpen] = useState(false);
   const [navHeight, setNavHeight] = useState(57);
+  const [mounted, setMounted] = useState(false);
   const navRef = useRef(null);
   const groups = mobileGroups || [{ label: "Menu", items: navItems }];
+  const { resolvedTheme, setTheme } = useTheme();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const updateHeight = () => {
@@ -34,7 +42,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           className
         )}
       >
-      <div className="border-b border-black/5 bg-white/30 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
+      <div className="border-b border-black/5 dark:border-white/10 bg-white/30 dark:bg-black/30 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
         <div className="flex items-center gap-3">
           <button
@@ -102,17 +110,23 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
-          <span className="hidden md:flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 rounded-full px-3 py-1.5">
+          <span className="hidden md:flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 dark:border-white/10 rounded-full px-3 py-1.5">
             <Users size={13} />
             180+
           </span>
-          <span className="hidden md:flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 rounded-full px-3 py-1.5">
+          <span className="hidden md:flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 dark:border-white/10 rounded-full px-3 py-1.5">
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Rekrutmen buka
           </span>
+          {mounted && (
+            <AnimatedThemeToggler
+              theme={resolvedTheme === "dark" ? "dark" : "light"}
+              onThemeChange={(t) => setTheme(t)}
+            />
+          )}
           <a
             href="#gabung"
-            className="flex items-center gap-1 text-xs font-medium border border-black/10 text-white bg-ink px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1 text-xs font-medium border border-black/10 text-white bg-ink-solid px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
           >
             <Sparkles size={12} />
             Gabung
@@ -130,7 +144,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             style={{ top: `${navHeight}px` }}
-            className="sm:hidden fixed inset-x-0 bottom-0 z-[4999] bg-white overflow-y-auto"
+            className="sm:hidden fixed inset-x-0 bottom-0 z-[4999] bg-white dark:bg-base overflow-y-auto"
           >
             <div className="flex flex-col px-6 pt-6 pb-10">
               {groups.map((group, gIdx) => (
@@ -154,20 +168,27 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
               ))}
 
               <div className="flex items-center gap-3 mt-8">
-                <span className="flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 rounded-full px-3 py-1.5">
+                <span className="flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 dark:border-white/10 rounded-full px-3 py-1.5">
                   <Users size={13} />
                   180+
                 </span>
-                <span className="flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 rounded-full px-3 py-1.5">
+                <span className="flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 dark:border-white/10 rounded-full px-3 py-1.5">
                   <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                   Rekrutmen buka
                 </span>
+                {mounted && (
+                  <AnimatedThemeToggler
+                    theme={resolvedTheme === "dark" ? "dark" : "light"}
+                    onThemeChange={(t) => setTheme(t)}
+                    className="border border-black/10 dark:border-white/10"
+                  />
+                )}
               </div>
 
               <a
                 href="#gabung"
                 onClick={() => setOpen(false)}
-                className="flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-ink px-4 py-3 rounded-full hover:opacity-90 transition-opacity mt-6"
+                className="flex items-center justify-center gap-1.5 text-sm font-medium text-white bg-ink-solid px-4 py-3 rounded-full hover:opacity-90 transition-opacity mt-6"
               >
                 <Sparkles size={14} />
                 Gabung

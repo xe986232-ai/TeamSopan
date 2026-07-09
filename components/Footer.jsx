@@ -13,7 +13,7 @@ export default function Footer() {
           </p>
           <a
             href="#top"
-            className="inline-block mt-6 px-6 py-3 rounded-full bg-ink text-white text-sm font-medium hover:opacity-90 transition-opacity"
+            className="inline-block mt-6 px-6 py-3 rounded-full bg-ink-solid text-white text-sm font-medium hover:opacity-90 transition-opacity"
           >
             Hubungi Kami
           </a>

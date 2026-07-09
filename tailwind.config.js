@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+  darkMode: "class",
   content: [
     "./app/**/*.{js,jsx}",
     "./components/**/*.{js,jsx}",
@@ -8,14 +9,17 @@ module.exports = {
     extend: {
       colors: {
         ink: {
-          DEFAULT: "#0B0A10",
-          muted: "#5B5768",
-          dim: "#8B87A0",
+          DEFAULT: "rgb(var(--ink) / <alpha-value>)",
+          muted: "rgb(var(--ink-muted) / <alpha-value>)",
+          dim: "rgb(var(--ink-dim) / <alpha-value>)",
+          // Fixed dark tone for solid CTA buttons — intentionally does NOT
+          // flip in dark mode, since those buttons keep white text on them.
+          solid: "#0B0A10",
         },
         base: {
-          DEFAULT: "#FFFFFF",
-          elevated: "#F6F5F9",
-          line: "#E7E5EF",
+          DEFAULT: "rgb(var(--base) / <alpha-value>)",
+          elevated: "rgb(var(--base-elevated) / <alpha-value>)",
+          line: "rgb(var(--base-line) / <alpha-value>)",
         },
         remix: {
           from: "#B026FF",

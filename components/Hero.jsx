@@ -24,7 +24,7 @@ export default function Hero() {
         <div className="flex flex-wrap gap-4 justify-center">
           <a
             href="#divisi"
-            className="relative rounded-full w-fit px-7 py-3 text-sm font-semibold text-white bg-ink overflow-hidden group"
+            className="relative rounded-full w-fit px-7 py-3 text-sm font-semibold text-white bg-ink-solid overflow-hidden group"
           >
             <span className="relative z-10">Lihat Divisi</span>
             <span className="absolute inset-0 bg-gradient-to-r from-remix-from via-creator-to to-leadis-to opacity-0 group-hover:opacity-30 transition-opacity" />

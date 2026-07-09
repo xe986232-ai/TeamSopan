@@ -2,13 +2,45 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --ink: 11 10 16;           /* #0B0A10 */
+  --ink-muted: 91 87 104;    /* #5B5768 */
+  --ink-dim: 139 135 160;    /* #8B87A0 */
+  --base: 255 255 255;       /* #FFFFFF */
+  --base-elevated: 246 245 249; /* #F6F5F9 */
+  --base-line: 231 229 239;  /* #E7E5EF */
+}
+
+.dark {
+  --ink: 237 236 240;        /* light text on dark bg */
+  --ink-muted: 168 165 184;
+  --ink-dim: 122 118 140;
+  --base: 11 10 18;          /* near-black surface */
+  --base-elevated: 20 19 28;
+  --base-line: 40 38 54;
+}
+
 * {
   scroll-behavior: smooth;
 }
 
 body {
-  background-color: #FFFFFF;
-  color: #0B0A10;
+  background-color: rgb(var(--base));
+  color: rgb(var(--ink));
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* View Transition support for the theme toggler */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Scoped to AnimatedThemeToggler — the toggler sets the data-attribute and
+   the variable only during a theme toggle. */
+html[data-magicui-theme-vt="active"]::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration);
 }
 
 ::selection {

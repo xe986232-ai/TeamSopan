@@ -1,5 +1,6 @@
 import { Unbounded, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const display = Unbounded({
   subsets: ["latin"],
@@ -21,8 +22,14 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${display.variable} ${body.variable}`}>
-      <body className="font-body antialiased">{children}</body>
+    <html
+      lang="id"
+      className={`${display.variable} ${body.variable}`}
+      suppressHydrationWarning
+    >
+      <body className="font-body antialiased bg-base text-ink">
+        <ThemeProvider>{children}</ThemeProvider>
+      </body>
     </html>
   );
 }

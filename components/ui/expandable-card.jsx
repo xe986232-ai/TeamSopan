@@ -127,7 +127,7 @@ export function ExpandableCards({ items }) {
                 e.stopPropagation();
                 setActive(item);
               }}
-              className="shrink-0 text-sm font-medium px-4 py-1.5 rounded-full bg-ink text-base hover:opacity-80 transition-opacity"
+              className="shrink-0 text-sm font-medium px-4 py-1.5 rounded-full bg-ink-solid text-base hover:opacity-80 transition-opacity"
             >
               Play
             </button>
