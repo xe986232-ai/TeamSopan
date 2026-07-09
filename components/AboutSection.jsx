@@ -34,11 +34,10 @@ export default function AboutSection() {
             nggak harus lahir dari satu skill aja.
           </p>
           <p className="text-ink-muted text-lg leading-relaxed">
-            Kami kumpulkan orang-orang yang jago meremix suara, jago
-            menyulap footage jadi cerita lewat editing, dan jago tampil di
-            depan kamera — lalu kasih mereka satu rumah yang sama. Tiga
-            divisi, tiga cara kerja, satu standar: rapi, konsisten, dan
-            berani beda.
+            SOPAN TEAM adalah wadah buat kamu yang jago meremix suara, jago
+            menyulap footage jadi cerita lewat editing, atau jago tampil di
+            depan kamera. Tiga divisi, satu komunitas — tempat kreator saling
+            kenal, berkembang bareng, dan dukung karya satu sama lain.
           </p>
         </motion.div>
       </div>

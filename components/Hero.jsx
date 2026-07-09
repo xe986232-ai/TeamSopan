@@ -17,8 +17,8 @@ export default function Hero() {
         </div>
 
         <div className="font-body font-light text-base md:text-2xl text-ink-muted py-4 max-w-xl">
-          Tiga divisi, satu identitas. Kami meremix suara, mengedit gambar
-          jadi cerita, dan memberi panggung buat kreator perempuan.
+          Tiga divisi, satu wadah. Tempat berkumpulnya kreator remix, video
+          editor, dan kreator konten perempuan yang mau berkembang bareng.
         </div>
 
         <div className="flex flex-wrap gap-4 justify-center">

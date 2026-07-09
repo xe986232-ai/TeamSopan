@@ -20,7 +20,7 @@ const DIVISIONS = [
     href: "/divisi/remix",
     tagline: "Suara baru dari lagu lama",
     description:
-      "Ngolah ulang track jadi versi yang lebih segar — dari mashup, bootleg, sampai remix full produksi.",
+      "Wadah buat kamu yang jago ngolah ulang track jadi versi yang lebih segar — dari mashup, bootleg, sampai remix full produksi.",
     tags: ["Mashup", "Bootleg Remix", "Sound Design"],
     accent: "from-remix-from to-remix-to",
     accentSolidFrom: "#B026FF",
@@ -36,7 +36,7 @@ const DIVISIONS = [
     name: "Creator",
     tagline: "Footage jadi cerita",
     description:
-      "Nyusun potongan gambar jadi konten yang enak ditonton — editing rapi, transisi presisi, color grading konsisten.",
+      "Wadah buat kamu yang jago nyusun potongan gambar jadi konten enak ditonton — editing rapi, transisi presisi, color grading konsisten.",
     tags: ["Video Editing", "Color Grading", "Motion Graphic"],
     accent: "from-creator-from to-creator-to",
     accentSolidFrom: "#00E5FF",
@@ -110,7 +110,7 @@ export default function DivisionsSection() {
             Tiga Divisi
           </span>
           <h2 className="font-display text-4xl sm:text-5xl mt-4 text-ink leading-tight">
-            Satu tim, tiga cara berkarya
+            Satu wadah, tiga cara berkarya
           </h2>
         </motion.div>
 

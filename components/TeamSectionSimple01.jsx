@@ -90,10 +90,10 @@ export const TeamSectionSimple01 = () => {
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
           <span className="text-sm font-semibold text-pink-500">Kenalan yuk</span>
           <h2 className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">
-            Anggota Tim Kami
+            Anggota Komunitas Kami
           </h2>
           <p className="mt-4 text-lg text-ink-muted">
-            Orang-orang di balik karya SOPAN TEAM — dari divisi Remix, Creator, sampai Leadis.
+            Kenalan sama member-member SOPAN TEAM — dari divisi Remix, Creator, sampai Leadis.
           </p>
         </div>
 

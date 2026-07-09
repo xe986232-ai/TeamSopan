@@ -97,9 +97,9 @@ export default function RemixDivisionPage() {
             Suara baru dari lagu lama.
           </p>
           <p className="font-body text-base text-ink-dim mt-4 max-w-2xl mx-auto">
-            Ngolah ulang track jadi versi yang lebih segar — dari mashup,
-            bootleg, sampai remix full produksi. Divisi ini yang bertanggung
-            jawab bikin telinga orang nengok dua kali.
+            Wadah buat kamu yang jago ngolah ulang track jadi versi yang
+            lebih segar — dari mashup, bootleg, sampai remix full produksi.
+            Buat kreator yang mau bikin telinga orang nengok dua kali.
           </p>
 
           <div className="flex flex-wrap gap-2 justify-center mt-6">
