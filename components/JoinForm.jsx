@@ -16,6 +16,8 @@ const DIVISIONS = [
     description: "Mashup, bootleg, sampai remix full produksi.",
     accentFrom: "#B026FF",
     accentTo: "#FF2E92",
+    image:
+      "https://images.unsplash.com/photo-1730818203797-897b2838105a?w=128&h=128&fit=crop&auto=format&q=70",
   },
   {
     id: "creator",
@@ -23,6 +25,8 @@ const DIVISIONS = [
     description: "Video editing, color grading, motion graphic.",
     accentFrom: "#00E5FF",
     accentTo: "#3D5AFE",
+    image:
+      "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=128&h=128&fit=crop&auto=format&q=70",
   },
   {
     id: "leadis",
@@ -30,6 +34,8 @@ const DIVISIONS = [
     description: "Panggung buat kreator perempuan.",
     accentFrom: "#FFD166",
     accentTo: "#FF6FB5",
+    image:
+      "https://images.unsplash.com/photo-1744418939745-a4f22552b992?w=128&h=128&fit=crop&auto=format&q=70",
   },
 ];
 
@@ -174,6 +180,7 @@ export default function JoinForm() {
               id={`division-${division.id}`}
               label={division.name}
               description={division.description}
+              image={division.image}
               accentFrom={division.accentFrom}
               accentTo={division.accentTo}
               checked={divisions.includes(division.id)}

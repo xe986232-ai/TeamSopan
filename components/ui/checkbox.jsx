@@ -16,6 +16,7 @@ const CheckboxCard = React.forwardRef(
       onChange,
       label,
       description,
+      image,
       accentFrom = "#8B5CF6",
       accentTo = "#06B6D4",
       className,
@@ -61,30 +62,34 @@ const CheckboxCard = React.forwardRef(
         </span>
 
         <span className="flex grow items-center gap-3">
-          {/* Orb bulat — pengganti icon, gaya voice-chat AI orb */}
+          {/* Icon bulat — foto divisi */}
           <span
             aria-hidden="true"
             className={cn(
-              "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform",
+              "relative flex h-8 w-8 shrink-0 overflow-hidden rounded-full transition-transform",
               checked && "scale-105"
             )}
             style={{
-              background: `radial-gradient(circle at 32% 30%, ${accentFrom}, ${accentTo} 70%)`,
               boxShadow: checked
-                ? `0 0 0 1px ${accentTo}55, 0 0 14px 2px ${accentTo}66`
+                ? `0 0 0 1px ${accentTo}55, 0 0 10px 1px ${accentTo}55`
                 : `0 0 0 1px ${accentTo}33`,
             }}
           >
-            <span
-              className={cn(
-                "absolute inset-0 rounded-full blur-md opacity-60 transition-opacity",
-                checked ? "opacity-70 animate-pulse" : "opacity-40"
-              )}
-              style={{
-                background: `radial-gradient(circle at 35% 30%, ${accentFrom}, transparent 70%)`,
-              }}
-            />
-            <span className="absolute top-1.5 left-2 h-1.5 w-1.5 rounded-full bg-white/60 blur-[1px]" />
+            {image ? (
+              <img
+                src={image}
+                alt=""
+                className="h-full w-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <span
+                className="h-full w-full"
+                style={{
+                  background: `radial-gradient(circle at 32% 30%, ${accentFrom}, ${accentTo} 70%)`,
+                }}
+              />
+            )}
           </span>
 
           <span className="grid grow gap-0.5">
