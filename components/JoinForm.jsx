@@ -125,52 +125,13 @@ export default function JoinForm() {
   };
 
   return (
-    <motion.form
+    <motion.div
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, margin: "-80px" }}
       variants={fadeUp}
-      onSubmit={handleSubmit}
-      noValidate
-      className="mx-auto w-full max-w-lg rounded-xl border border-black/10 dark:border-white/10 bg-base-elevated p-6 sm:p-8 space-y-6"
+      className="mx-auto w-full max-w-lg space-y-6"
     >
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <TextField
-          id="firstName"
-          label="Nama depan"
-          placeholder="Raka"
-          value={form.firstName}
-          onChange={updateField("firstName")}
-          error={errors.firstName}
-        />
-        <TextField
-          id="lastName"
-          label="Nama belakang"
-          placeholder="Aditya"
-          value={form.lastName}
-          onChange={updateField("lastName")}
-          error={errors.lastName}
-        />
-      </div>
-
-      <TextField
-        id="email"
-        type="email"
-        label="Alamat email"
-        placeholder="kamu@email.com"
-        value={form.email}
-        onChange={updateField("email")}
-        error={errors.email}
-      />
-
-      <PasswordField
-        value={form.password}
-        onChange={updateField("password")}
-      />
-      {errors.password && (
-        <p className="-mt-4 text-xs text-rose-500">{errors.password}</p>
-      )}
-
       <div className="space-y-2.5">
         <span className="text-sm font-medium text-ink">Pilih divisi</span>
         <div className="space-y-2">
@@ -179,9 +140,7 @@ export default function JoinForm() {
               key={division.id}
               id={`division-${division.id}`}
               label={division.name}
-              description={division.description}
               image={division.image}
-              accentFrom={division.accentFrom}
               accentTo={division.accentTo}
               checked={divisions.includes(division.id)}
               onChange={() => toggleDivision(division.id)}
@@ -193,20 +152,63 @@ export default function JoinForm() {
         )}
       </div>
 
-      <Button
-        type="submit"
-        disabled={loading}
-        className="group relative w-full disabled:opacity-100"
+      <form
+        onSubmit={handleSubmit}
+        noValidate
+        className="rounded-xl border border-black/10 dark:border-white/10 bg-base-elevated p-6 sm:p-8 space-y-6"
       >
-        <span className={loading ? "opacity-0" : "opacity-100"}>
-          Daftar Sekarang
-        </span>
-        {loading && (
-          <span className="absolute inset-0 flex items-center justify-center">
-            <Loader2 size={16} className="animate-spin" />
-          </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField
+            id="firstName"
+            label="Nama depan"
+            placeholder="Raka"
+            value={form.firstName}
+            onChange={updateField("firstName")}
+            error={errors.firstName}
+          />
+          <TextField
+            id="lastName"
+            label="Nama belakang"
+            placeholder="Aditya"
+            value={form.lastName}
+            onChange={updateField("lastName")}
+            error={errors.lastName}
+          />
+        </div>
+
+        <TextField
+          id="email"
+          type="email"
+          label="Alamat email"
+          placeholder="kamu@email.com"
+          value={form.email}
+          onChange={updateField("email")}
+          error={errors.email}
+        />
+
+        <PasswordField
+          value={form.password}
+          onChange={updateField("password")}
+        />
+        {errors.password && (
+          <p className="-mt-4 text-xs text-rose-500">{errors.password}</p>
         )}
-      </Button>
-    </motion.form>
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="group relative w-full disabled:opacity-100"
+        >
+          <span className={loading ? "opacity-0" : "opacity-100"}>
+            Daftar Sekarang
+          </span>
+          {loading && (
+            <span className="absolute inset-0 flex items-center justify-center">
+              <Loader2 size={16} className="animate-spin" />
+            </span>
+          )}
+        </Button>
+      </form>
+    </motion.div>
   );
 }
