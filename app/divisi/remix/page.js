@@ -38,6 +38,27 @@ const KARYA = [
   },
 ];
 
+const TESTIMONIALS = [
+  {
+    name: "Raka A.",
+    designation: "Lead Remixer",
+    image: "https://i.pravatar.cc/150?img=13",
+    quote: "Tiap project remix di sini selalu jadi ruang eksperimen baru. Nggak pernah bosen.",
+  },
+  {
+    name: "Dio P.",
+    designation: "Sound Designer",
+    image: "https://i.pravatar.cc/150?img=14",
+    quote: "Detail sound design kecil aja bisa ngubah rasa satu track. Di sini semua orang peduli soal itu.",
+  },
+  {
+    name: "Fajar N.",
+    designation: "Mix Engineer",
+    image: "https://i.pravatar.cc/150?img=15",
+    quote: "Mixing bareng tim yang saling ngerti bikin proses produksi jauh lebih cepat & rapi.",
+  },
+];
+
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
@@ -118,19 +139,30 @@ export default function RemixDivisionPage() {
         </motion.div>
       </section>
 
-      {/* Genre ticker */}
-      <section className="relative py-6 border-y border-black/10 dark:border-white/10 overflow-hidden bg-base-elevated">
+      {/* Testimoni */}
+      <section className="relative py-10 border-y border-black/10 dark:border-white/10 overflow-hidden bg-base-elevated">
         <Marquee pauseOnHover className="[--duration:25s]">
-          {["Mashup", "Bootleg Remix", "Sound Design", "Remix Full Produksi", "Mixing & Mastering"].map(
-            (tag) => (
-              <span
-                key={tag}
-                className="mx-2 text-sm sm:text-base font-medium px-5 py-2 rounded-full text-white bg-gradient-to-r from-remix-from to-remix-to whitespace-nowrap"
-              >
-                {tag}
-              </span>
-            )
-          )}
+          {TESTIMONIALS.map((t) => (
+            <div
+              key={t.name}
+              className="w-72 shrink-0 rounded-xl border border-black/10 dark:border-white/10 bg-base p-4"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={t.image}
+                  alt={t.name}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-ink">{t.name}</p>
+                  <p className="text-xs text-ink-muted">{t.designation}</p>
+                </div>
+              </div>
+              <p className="text-sm text-ink-muted mt-3 leading-relaxed">
+                {t.quote}
+              </p>
+            </div>
+          ))}
         </Marquee>
         <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-base-elevated to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-base-elevated to-transparent" />
