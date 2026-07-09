@@ -139,35 +139,6 @@ export default function RemixDivisionPage() {
         </motion.div>
       </section>
 
-      {/* Testimoni */}
-      <section className="relative py-10 border-y border-black/10 dark:border-white/10 overflow-hidden bg-base-elevated">
-        <Marquee pauseOnHover className="[--duration:25s]">
-          {TESTIMONIALS.map((t) => (
-            <div
-              key={t.name}
-              className="w-72 shrink-0 rounded-xl border border-black/10 dark:border-white/10 bg-base p-4"
-            >
-              <div className="flex items-center gap-3">
-                <img
-                  src={t.image}
-                  alt={t.name}
-                  className="h-10 w-10 rounded-full object-cover"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-ink">{t.name}</p>
-                  <p className="text-xs text-ink-muted">{t.designation}</p>
-                </div>
-              </div>
-              <p className="text-sm text-ink-muted mt-3 leading-relaxed">
-                {t.quote}
-              </p>
-            </div>
-          ))}
-        </Marquee>
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-base-elevated to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-base-elevated to-transparent" />
-      </section>
-
       {/* Member */}
       <section className="px-6 sm:px-10 py-16 sm:py-20">
         <motion.div
@@ -210,6 +181,35 @@ export default function RemixDivisionPage() {
 
           <ExpandableCards items={KARYA} />
         </div>
+      </section>
+
+      {/* Testimoni */}
+      <section className="relative py-10 border-y border-black/10 dark:border-white/10 overflow-hidden bg-base-elevated">
+        <Marquee pauseOnHover className="[--duration:25s]">
+          {TESTIMONIALS.map((t) => (
+            <div
+              key={t.name}
+              className="w-72 shrink-0 rounded-xl border border-black/10 dark:border-white/10 bg-base p-4"
+            >
+              <div className="flex items-center gap-3">
+                <img
+                  src={t.image}
+                  alt={t.name}
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-ink">{t.name}</p>
+                  <p className="text-xs text-ink-muted">{t.designation}</p>
+                </div>
+              </div>
+              <p className="text-sm text-ink-muted mt-3 leading-relaxed">
+                {t.quote}
+              </p>
+            </div>
+          ))}
+        </Marquee>
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-base-elevated to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-base-elevated to-transparent" />
       </section>
 
       <Footer />
