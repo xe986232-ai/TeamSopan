@@ -78,7 +78,7 @@ function Toaster({ toasts, onDismiss }) {
               <Icon size={20} className={cn("shrink-0 mt-0.5", ACCENTS[t.variant])} />
               <div className="min-w-0 flex-1">
                 {t.title && (
-                  <p className="font-display text-sm text-ink leading-snug">{t.title}</p>
+                  <p className="font-body font-semibold text-sm text-ink leading-snug">{t.title}</p>
                 )}
                 {t.description && (
                   <p className="text-xs text-ink-muted mt-1 leading-relaxed">
