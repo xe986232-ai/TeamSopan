@@ -4,10 +4,7 @@ import Hero from "@/components/Hero";
 import AboutSection from "@/components/AboutSection";
 import DivisionsSection from "@/components/DivisionsSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
-<<<<<<< HEAD
 import TestimonialSection from "@/components/TestimonialSection";
-=======
->>>>>>> 4bae373ba614738f430cb8f815451e30ba5136aa
 import Footer from "@/components/Footer";
 
 const navItems = [
@@ -46,15 +43,8 @@ export default function Home() {
       <AboutSection />
       <DivisionsSection />
       <ShowcaseSection />
-<<<<<<< HEAD
       <TestimonialSection />
       <Footer />
     </main>
   );
 }
-=======
-      <Footer />
-    </main>
-  );
-}
->>>>>>> 4bae373ba614738f430cb8f815451e30ba5136aa
