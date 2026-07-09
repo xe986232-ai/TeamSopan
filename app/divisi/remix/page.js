@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { motion } from "framer-motion";
 import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
 import { Button } from "@/components/ui/button";
 import { SiteNavbar } from "@/components/ui/site-navbar";
 import { ExpandableCards } from "@/components/ui/expandable-card";
+import { Marquee } from "@/components/ui/marquee";
 import Footer from "@/components/Footer";
 
 const MEMBERS = [
@@ -80,13 +80,6 @@ export default function RemixDivisionPage() {
           variants={fadeUp}
           className="relative max-w-3xl mx-auto text-center"
         >
-          <Link
-            href="/#divisi"
-            className="inline-block mb-6 text-sm text-ink-muted hover:text-ink transition-colors"
-          >
-            ← Kembali ke semua divisi
-          </Link>
-
           <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
             Divisi 01
           </span>
@@ -123,6 +116,22 @@ export default function RemixDivisionPage() {
             </a>
           </div>
         </motion.div>
+      </section>
+
+      {/* Genre ticker */}
+      <section className="relative py-6 border-y border-black/10 dark:border-white/10 overflow-hidden bg-base-elevated">
+        <Marquee pauseOnHover className="[--duration:25s]">
+          {["Mashup", "Bootleg Remix", "Sound Design", "Remix Full Produksi", "Mixing & Mastering"].map(
+            (tag) => (
+              <span
+                key={tag}
+                className="mx-2 text-sm sm:text-base font-medium px-5 py-2 rounded-full text-white bg-gradient-to-r from-remix-from to-remix-to whitespace-nowrap"
+              >
+                {tag}
+              </span>
+            )
+          )}
+        </Marquee>
       </section>
 
       {/* Member */}
