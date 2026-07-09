@@ -1,0 +1,205 @@
+"use client";
+
+import * as React from "react";
+import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
+import { TextField } from "./ui/text-field";
+import { PasswordField } from "./ui/password-field";
+import { CheckboxCard } from "./ui/checkbox";
+import { Button } from "./ui/button";
+import { useToast } from "./ui/toast";
+
+const DIVISIONS = [
+  {
+    id: "remix",
+    name: "Remix",
+    description: "Mashup, bootleg, sampai remix full produksi.",
+    accentFrom: "#B026FF",
+    accentTo: "#FF2E92",
+  },
+  {
+    id: "creator",
+    name: "Creator",
+    description: "Video editing, color grading, motion graphic.",
+    accentFrom: "#00E5FF",
+    accentTo: "#3D5AFE",
+  },
+  {
+    id: "leadis",
+    name: "Leadis",
+    description: "Panggung buat kreator perempuan.",
+    accentFrom: "#FFD166",
+    accentTo: "#FF6FB5",
+  },
+];
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
+};
+
+export default function JoinForm() {
+  const { toast } = useToast();
+
+  const [form, setForm] = React.useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+  });
+  const [divisions, setDivisions] = React.useState([]);
+  const [errors, setErrors] = React.useState({});
+  const [loading, setLoading] = React.useState(false);
+
+  const updateField = (field) => (e) =>
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+  const toggleDivision = (id) => {
+    setDivisions((prev) =>
+      prev.includes(id) ? prev.filter((d) => d !== id) : [...prev, id]
+    );
+  };
+
+  const validate = () => {
+    const next = {};
+    if (!form.firstName.trim()) next.firstName = "Nama depan wajib diisi";
+    if (!form.lastName.trim()) next.lastName = "Nama belakang wajib diisi";
+    if (!form.email.trim()) {
+      next.email = "Email wajib diisi";
+    } else if (!EMAIL_REGEX.test(form.email)) {
+      next.email = "Format email tidak valid";
+    }
+    if (!form.password || form.password.length < 8) {
+      next.password = "Password minimal 8 karakter";
+    }
+    if (divisions.length === 0) {
+      next.divisions = "Pilih minimal satu divisi";
+    }
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!validate()) {
+      toast({
+        variant: "error",
+        title: "Form belum lengkap",
+        description: "Cek lagi isian yang masih kosong atau belum sesuai.",
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // TODO: sambungkan ke endpoint pendaftaran (mis. Firebase / API route) di sini.
+      await new Promise((resolve) => setTimeout(resolve, 1200));
+
+      toast({
+        variant: "success",
+        title: "Pendaftaran terkirim!",
+        description: `Terima kasih, ${form.firstName}. Tim kami bakal hubungi kamu lewat email.`,
+      });
+
+      setForm({ firstName: "", lastName: "", email: "", password: "" });
+      setDivisions([]);
+      setErrors({});
+    } catch (err) {
+      toast({
+        variant: "error",
+        title: "Gagal mengirim pendaftaran",
+        description: "Coba lagi dalam beberapa saat, ya.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <motion.form
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+      variants={fadeUp}
+      onSubmit={handleSubmit}
+      noValidate
+      className="mx-auto w-full max-w-lg rounded-xl border border-black/10 dark:border-white/10 bg-base-elevated p-6 sm:p-8 space-y-6"
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <TextField
+          id="firstName"
+          label="Nama depan"
+          placeholder="Raka"
+          value={form.firstName}
+          onChange={updateField("firstName")}
+          error={errors.firstName}
+        />
+        <TextField
+          id="lastName"
+          label="Nama belakang"
+          placeholder="Aditya"
+          value={form.lastName}
+          onChange={updateField("lastName")}
+          error={errors.lastName}
+        />
+      </div>
+
+      <TextField
+        id="email"
+        type="email"
+        label="Alamat email"
+        placeholder="kamu@email.com"
+        value={form.email}
+        onChange={updateField("email")}
+        error={errors.email}
+      />
+
+      <PasswordField
+        value={form.password}
+        onChange={updateField("password")}
+      />
+      {errors.password && (
+        <p className="-mt-4 text-xs text-rose-500">{errors.password}</p>
+      )}
+
+      <div className="space-y-2.5">
+        <span className="text-sm font-medium text-ink">Pilih divisi</span>
+        <div className="space-y-2">
+          {DIVISIONS.map((division) => (
+            <CheckboxCard
+              key={division.id}
+              id={`division-${division.id}`}
+              label={division.name}
+              description={division.description}
+              accentFrom={division.accentFrom}
+              accentTo={division.accentTo}
+              checked={divisions.includes(division.id)}
+              onChange={() => toggleDivision(division.id)}
+            />
+          ))}
+        </div>
+        {errors.divisions && (
+          <p className="text-xs text-rose-500">{errors.divisions}</p>
+        )}
+      </div>
+
+      <Button
+        type="submit"
+        disabled={loading}
+        className="group relative w-full disabled:opacity-100"
+      >
+        <span className={loading ? "opacity-0" : "opacity-100"}>
+          Daftar Sekarang
+        </span>
+        {loading && (
+          <span className="absolute inset-0 flex items-center justify-center">
+            <Loader2 size={16} className="animate-spin" />
+          </span>
+        )}
+      </Button>
+    </motion.form>
+  );
+}
