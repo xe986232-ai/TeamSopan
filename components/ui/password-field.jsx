@@ -28,7 +28,18 @@ const STRENGTH_TEXT = {
 };
 
 const PasswordField = React.forwardRef(
-  ({ id = "password", label = "Password", value, onChange, className, ...props }, ref) => {
+  (
+    {
+      id = "password",
+      label = "Password",
+      value,
+      onChange,
+      className,
+      showStrength = true,
+      ...props
+    },
+    ref
+  ) => {
     const [visible, setVisible] = React.useState(false);
 
     const strength = REQUIREMENTS.map((req) => ({
@@ -69,39 +80,43 @@ const PasswordField = React.forwardRef(
           </button>
         </div>
 
-        {/* Indikator kekuatan */}
-        <div
-          className="h-1 w-full overflow-hidden rounded-full bg-base-line"
-          role="progressbar"
-          aria-valuenow={score}
-          aria-valuemin={0}
-          aria-valuemax={4}
-          aria-label="Kekuatan password"
-        >
-          <div
-            className={cn("h-full transition-all duration-500 ease-out", STRENGTH_COLOR[score])}
-            style={{ width: `${(score / 4) * 100}%` }}
-          />
-        </div>
+        {/* Indikator kekuatan — cuma relevan di form daftar */}
+        {showStrength && (
+          <>
+            <div
+              className="h-1 w-full overflow-hidden rounded-full bg-base-line"
+              role="progressbar"
+              aria-valuenow={score}
+              aria-valuemin={0}
+              aria-valuemax={4}
+              aria-label="Kekuatan password"
+            >
+              <div
+                className={cn("h-full transition-all duration-500 ease-out", STRENGTH_COLOR[score])}
+                style={{ width: `${(score / 4) * 100}%` }}
+              />
+            </div>
 
-        <p className="text-xs font-medium text-ink-muted" id={`${id}-description`}>
-          {STRENGTH_TEXT[score]}
-        </p>
+            <p className="text-xs font-medium text-ink-muted" id={`${id}-description`}>
+              {STRENGTH_TEXT[score]}
+            </p>
 
-        <ul className="space-y-1" aria-label="Syarat password">
-          {strength.map((req) => (
-            <li key={req.text} className="flex items-center gap-1.5">
-              {req.met ? (
-                <Check size={13} className="text-emerald-500" />
-              ) : (
-                <X size={13} className="text-ink-dim" />
-              )}
-              <span className={cn("text-xs", req.met ? "text-emerald-500" : "text-ink-dim")}>
-                {req.text}
-              </span>
-            </li>
-          ))}
-        </ul>
+            <ul className="space-y-1" aria-label="Syarat password">
+              {strength.map((req) => (
+                <li key={req.text} className="flex items-center gap-1.5">
+                  {req.met ? (
+                    <Check size={13} className="text-emerald-500" />
+                  ) : (
+                    <X size={13} className="text-ink-dim" />
+                  )}
+                  <span className={cn("text-xs", req.met ? "text-emerald-500" : "text-ink-dim")}>
+                    {req.text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
       </div>
     );
   }
