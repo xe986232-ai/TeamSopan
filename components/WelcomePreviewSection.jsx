@@ -24,14 +24,8 @@ const EXIT_FADE_MS = 1200;
 const T_INTRO_START = GREETING_REVEAL_MS + GREETING_HOLD_MS + GREETING_EXIT_MS;
 const T_EXIT_START = T_INTRO_START + INTRO_ZOOM_MS + INTRO_HOLD_MS;
 
-function getInitials(name) {
-  const trimmed = (name || "").trim();
-  if (!trimmed) return "?";
-  const parts = trimmed.split(/\s+/);
-  const first = parts[0]?.[0] || "";
-  const second = parts[1]?.[0] || "";
-  return (first + second).toUpperCase();
-}
+const AVATAR_URL =
+  "https://images.unsplash.com/photo-1603871165848-0aa92c869fa1?auto=format&fit=crop&q=80&w=400";
 
 // Teks pembuka: zoom tipis besar->kecil di level grup, dipadu blur-in tipis per huruf.
 function GreetingText({ text }) {
@@ -64,7 +58,7 @@ function GreetingText({ text }) {
 
 export default function WelcomePreviewSection({
   name = "Member Sopan",
-  division = "Member SOPAN TEAM",
+  division = "Divisi Remix",
   onFinish,
 }) {
   // tahap: "greeting" -> "intro" -> "exit"
@@ -115,10 +109,12 @@ export default function WelcomePreviewSection({
               transition={{ duration: INTRO_ZOOM_MS / 1000, ease: SMOOTH_EASE }}
               className="flex flex-col items-center"
             >
-              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white/15 shadow-lg mb-6 flex items-center justify-center bg-gradient-to-br from-remix-from via-creator-from to-leadis-to">
-                <span className="font-display font-extrabold text-3xl sm:text-4xl text-white">
-                  {getInitials(name)}
-                </span>
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white/15 shadow-lg mb-6">
+                <img
+                  src={AVATAR_URL}
+                  alt={`Foto ${name}`}
+                  className="w-full h-full object-cover"
+                />
                 {/* kilau putih, sapuan sekali dari kiri sampai mentok kanan lalu hilang */}
                 <motion.div
                   className="absolute top-0 h-full w-1/4 bg-gradient-to-r from-transparent via-white/80 to-transparent"
