@@ -15,9 +15,11 @@ const GREETING_TEXT = "Selamat Bergabung Di Divisi Remix";
 
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
-// Animasi 1: teks zoom dari besar -> kecil (normal), lalu fade out.
-const GREETING_ZOOM_MS = 1000;
-const GREETING_HOLD_MS = 1200;
+// Animasi 1: campuran blur-in per huruf (tipis) + zoom besar->kecil (tipis) + fade.
+const CHAR_DELAY_MS = 30;
+const CHAR_DURATION_MS = 550;
+const GREETING_REVEAL_MS = (GREETING_TEXT.length - 1) * CHAR_DELAY_MS + CHAR_DURATION_MS;
+const GREETING_HOLD_MS = 1100;
 const GREETING_EXIT_MS = 500;
 
 // Animasi 2: Profile + Nama + Divisi muncul bareng, zoom kecil -> besar.
@@ -27,8 +29,37 @@ const INTRO_HOLD_MS = 1900;
 // Fade keseluruhan overlay di penutup.
 const EXIT_FADE_MS = 1200;
 
-const T_INTRO_START = GREETING_ZOOM_MS + GREETING_HOLD_MS + GREETING_EXIT_MS;
+const T_INTRO_START = GREETING_REVEAL_MS + GREETING_HOLD_MS + GREETING_EXIT_MS;
 const T_EXIT_START = T_INTRO_START + INTRO_ZOOM_MS + INTRO_HOLD_MS;
+
+// Teks pembuka: zoom tipis besar->kecil di level grup, dipadu blur-in tipis per huruf.
+function GreetingText({ text }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 1.1 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.9, ease: SMOOTH_EASE }}
+    >
+      <h2 className="font-display font-extrabold text-center text-3xl md:text-5xl text-white">
+        {text.split("").map((char, i) => (
+          <motion.span
+            key={i}
+            initial={{ opacity: 0, filter: "blur(6px)" }}
+            animate={{ opacity: 1, filter: "blur(0px)" }}
+            transition={{
+              delay: (i * CHAR_DELAY_MS) / 1000,
+              duration: CHAR_DURATION_MS / 1000,
+              ease: "easeOut",
+            }}
+            className="inline-block"
+          >
+            {char === " " ? "\u00A0" : char}
+          </motion.span>
+        ))}
+      </h2>
+    </motion.div>
+  );
+}
 
 export default function WelcomePreviewSection() {
   // tahap: "greeting" -> "intro" -> "exit"
@@ -57,18 +88,13 @@ export default function WelcomePreviewSection() {
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4">
         <AnimatePresence mode="wait">
-          {/* Animasi 1: teks pembuka, zoom besar -> kecil, lalu fade out sendirian */}
+          {/* Animasi 1: teks pembuka, blur-in tipis per huruf + zoom tipis + fade, lalu fade out sendirian */}
           {stage === "greeting" && (
             <motion.div
               key="greeting"
-              initial={{ opacity: 0, scale: 1.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, transition: { duration: GREETING_EXIT_MS / 1000, ease: "easeInOut" } }}
-              transition={{ duration: GREETING_ZOOM_MS / 1000, ease: SMOOTH_EASE }}
+              exit={{ opacity: 0, scale: 0.96, transition: { duration: GREETING_EXIT_MS / 1000, ease: "easeInOut" } }}
             >
-              <h2 className="font-display font-extrabold text-center text-3xl md:text-5xl text-white">
-                {GREETING_TEXT}
-              </h2>
+              <GreetingText text={GREETING_TEXT} />
             </motion.div>
           )}
 
@@ -87,18 +113,13 @@ export default function WelcomePreviewSection() {
                   alt={`Foto ${member.name}`}
                   className="w-full h-full object-cover"
                 />
-                {/* kilau putih jalan melintasi foto profile */}
+                {/* kilau putih, sapuan sekali dari kiri sampai mentok kanan lalu hilang */}
                 <motion.div
-                  className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+                  className="absolute top-0 h-full w-1/4 bg-gradient-to-r from-transparent via-white/80 to-transparent"
                   style={{ transform: "skewX(-20deg)" }}
-                  initial={{ x: "-150%" }}
-                  animate={{ x: "250%" }}
-                  transition={{
-                    duration: 1.4,
-                    ease: "easeInOut",
-                    repeat: Infinity,
-                    repeatDelay: 1,
-                  }}
+                  initial={{ left: "-45%" }}
+                  animate={{ left: "145%" }}
+                  transition={{ duration: 0.9, ease: "easeIn", delay: 0.3 }}
                 />
               </div>
 
