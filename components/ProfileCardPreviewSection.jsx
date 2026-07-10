@@ -20,18 +20,6 @@ const sample = {
 export default function ProfileCardPreviewSection() {
   return (
     <section className="bg-base py-16 sm:py-24 px-4">
-      <div className="max-w-6xl mx-auto text-center mb-12">
-        <p className="font-body font-semibold text-sm tracking-widest text-pink-500 uppercase">
-          Preview
-        </p>
-        <h1 className="font-display font-extrabold mt-2 text-3xl sm:text-4xl text-ink">
-          ProfileCard
-        </h1>
-        <p className="font-body font-normal text-ink-muted mt-2 text-sm">
-          Halaman sementara buat lihat tampilan komponen ProfileCard.
-        </p>
-      </div>
-
       <div className="max-w-6xl mx-auto flex justify-center">
         <ProfileCard {...sample} />
       </div>

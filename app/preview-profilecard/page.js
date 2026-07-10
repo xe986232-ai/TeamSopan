@@ -1,5 +1,4 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
-import Footer from "@/components/Footer";
 import ProfileCardPreviewSection from "@/components/ProfileCardPreviewSection";
 
 const navItems = [
@@ -27,7 +26,6 @@ export default function PreviewProfileCardPage() {
     <main className="relative bg-base">
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
       <ProfileCardPreviewSection />
-      <Footer />
     </main>
   );
 }
