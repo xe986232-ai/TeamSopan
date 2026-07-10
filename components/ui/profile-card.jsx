@@ -28,47 +28,53 @@ export default function ProfileCard({
   return (
     <div className="relative w-full max-w-sm">
       <div
-        className="relative flex flex-col items-center p-8 rounded-3xl border transition-all duration-500 ease-out backdrop-blur-xl bg-base-elevated/60 border-black/10 dark:border-white/10"
+        className="relative flex flex-col items-center p-8 rounded-3xl border transition-all duration-500 ease-out backdrop-blur-xl bg-gradient-to-br from-base-elevated/70 via-base-elevated/60 to-remix-from/10 dark:to-leadis-to/10 border-black/10 dark:border-white/10 overflow-hidden"
         style={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)" }}
       >
-        <div className="w-24 h-24 mb-4 rounded-full p-1 border-2 border-black/10 dark:border-white/20">
-          <img
-            src={avatarUrl}
-            alt={`Foto ${name}`}
-            className="w-full h-full rounded-full object-cover"
-            onError={(e) => {
-              e.target.onerror = null;
-              e.target.src = `https://placehold.co/96x96/B026FF/white?text=${name?.charAt(0) || "?"}`;
-            }}
-          />
-        </div>
+        {/* aksen gradient tipis di sudut atas kartu */}
+        <div className="pointer-events-none absolute -top-24 -right-24 w-56 h-56 rounded-full bg-gradient-to-br from-remix-from/25 via-creator-from/15 to-transparent blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-24 w-56 h-56 rounded-full bg-gradient-to-tr from-leadis-to/20 to-transparent blur-3xl" />
 
-        <h2 className="font-display font-bold text-2xl text-ink">{name}</h2>
-        <p className="font-body font-medium text-sm mt-1 text-pink-500">{title}</p>
-        {bio && (
-          <p className="font-body font-normal mt-4 text-center text-sm leading-relaxed text-ink-muted">
-            {bio}
-          </p>
-        )}
-
-        {socialLinks.length > 0 && (
-          <div className="w-1/2 h-px my-6 rounded-full bg-black/10 dark:bg-white/10" />
-        )}
-
-        {socialLinks.length > 0 && (
-          <div className="flex items-center justify-center gap-3">
-            {socialLinks.map((item) => (
-              <SocialButton
-                key={item.id}
-                item={item}
-                setHoveredItem={setHoveredItem}
-                hoveredItem={hoveredItem}
-              />
-            ))}
+        <div className="relative z-10 flex flex-col items-center w-full">
+          <div className="w-24 h-24 mb-4 rounded-full p-1 border-2 border-black/10 dark:border-white/20">
+            <img
+              src={avatarUrl}
+              alt={`Foto ${name}`}
+              className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = `https://placehold.co/96x96/B026FF/white?text=${name?.charAt(0) || "?"}`;
+              }}
+            />
           </div>
-        )}
 
-        {actionButton && <ActionButton action={actionButton} />}
+          <h2 className="font-display font-bold text-2xl text-ink">{name}</h2>
+          <p className="font-body font-medium text-sm mt-1 text-pink-500">{title}</p>
+          {bio && (
+            <p className="font-body font-normal mt-4 text-center text-sm leading-relaxed text-ink-muted">
+              {bio}
+            </p>
+          )}
+
+          {socialLinks.length > 0 && (
+            <div className="w-1/2 h-px my-6 rounded-full bg-black/10 dark:bg-white/10" />
+          )}
+
+          {socialLinks.length > 0 && (
+            <div className="flex items-center justify-center gap-3">
+              {socialLinks.map((item) => (
+                <SocialButton
+                  key={item.id}
+                  item={item}
+                  setHoveredItem={setHoveredItem}
+                  hoveredItem={hoveredItem}
+                />
+              ))}
+            </div>
+          )}
+
+          {actionButton && <ActionButton action={actionButton} />}
+        </div>
       </div>
 
       <div className="absolute inset-0 rounded-3xl -z-10 opacity-30 blur-2xl bg-gradient-to-r from-remix-from/50 to-leadis-to/50" />
