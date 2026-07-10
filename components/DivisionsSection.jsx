@@ -104,7 +104,7 @@ export default function DivisionsSection() {
           whileInView="show"
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
-          className="max-w-2xl mb-4"
+          className="max-w-2xl mx-auto mb-4 text-center"
         >
           <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Tiga Divisi
