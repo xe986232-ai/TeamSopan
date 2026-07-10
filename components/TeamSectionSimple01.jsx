@@ -88,11 +88,11 @@ export const TeamSectionSimple01 = () => {
     <section className="bg-base py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-4 md:px-8">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-          <span className="text-sm font-semibold text-pink-500">Kenalan yuk</span>
-          <h2 className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">
+          <span className="font-body font-semibold text-sm text-pink-500">Kenalan yuk</span>
+          <h2 className="font-display font-extrabold mt-3 text-3xl text-ink sm:text-4xl">
             Anggota Komunitas Kami
           </h2>
-          <p className="mt-4 text-lg text-ink-muted">
+          <p className="font-body font-normal mt-4 text-lg text-ink-muted">
             Kenalan sama member-member SOPAN TEAM — dari divisi Remix, Creator, sampai Leadis.
           </p>
         </div>
@@ -107,10 +107,10 @@ export const TeamSectionSimple01 = () => {
                   className="h-20 w-20 rounded-full object-cover border border-black/10 md:h-24 md:w-24"
                 />
                 <div className="text-center">
-                  <h3 className="text-lg font-semibold text-ink">{item.name}</h3>
-                  <p className="text-sm text-pink-500">{item.title}</p>
+                  <h3 className="font-display font-bold text-lg text-ink">{item.name}</h3>
+                  <p className="font-body font-medium text-sm text-pink-500">{item.title}</p>
                   {item.division && (
-                    <p className="text-sm text-ink-muted mt-0.5">{item.division}</p>
+                    <p className="font-body font-normal text-sm text-ink-muted mt-0.5">{item.division}</p>
                   )}
                 </div>
 

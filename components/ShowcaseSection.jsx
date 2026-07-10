@@ -40,10 +40,10 @@ export default function ShowcaseSection() {
         transition={{ duration: 0.7 }}
         className="max-w-2xl mx-auto px-6 sm:px-10 mb-10 text-center"
       >
-        <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+        <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
           Aktivitas Terakhir
         </span>
-        <h2 className="font-display text-3xl sm:text-4xl mt-4 text-ink">
+        <h2 className="font-display font-bold text-3xl sm:text-4xl mt-4 text-ink">
           Apa yang lagi dikerjain tim
         </h2>
       </motion.div>

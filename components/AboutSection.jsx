@@ -17,7 +17,7 @@ export default function AboutSection() {
           viewport={{ once: true, margin: "-100px" }}
           variants={fadeUp}
         >
-          <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+          <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Tentang Kami
           </span>
         </motion.div>
@@ -29,11 +29,11 @@ export default function AboutSection() {
           variants={fadeUp}
           className="space-y-6"
         >
-          <p className="font-display text-2xl sm:text-3xl lg:text-4xl leading-snug text-ink">
+          <p className="font-display font-bold text-2xl sm:text-3xl lg:text-4xl leading-snug text-ink">
             SOPAN TEAM lahir dari satu keyakinan sederhana: karya yang bagus
             nggak harus lahir dari satu skill aja.
           </p>
-          <p className="text-ink-muted text-lg leading-relaxed">
+          <p className="font-body font-normal text-ink-muted text-lg leading-relaxed">
             SOPAN TEAM adalah wadah buat kamu yang jago meremix suara, jago
             menyulap footage jadi cerita lewat editing, atau jago tampil di
             depan kamera. Tiga divisi, satu komunitas — tempat kreator saling

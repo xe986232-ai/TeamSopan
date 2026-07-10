@@ -101,16 +101,16 @@ export default function RemixDivisionPage() {
           variants={fadeUp}
           className="relative max-w-3xl mx-auto text-center"
         >
-          <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+          <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Divisi 01
           </span>
           <h1 className="font-display font-black text-5xl sm:text-7xl mt-4 bg-gradient-to-r from-remix-from to-remix-to bg-clip-text text-transparent">
             Remix
           </h1>
-          <p className="font-body text-lg sm:text-xl text-ink-muted mt-4 max-w-xl mx-auto">
+          <p className="font-body font-medium text-lg sm:text-xl text-ink-muted mt-4 max-w-xl mx-auto">
             Suara baru dari lagu lama.
           </p>
-          <p className="font-body text-base text-ink-dim mt-4 max-w-2xl mx-auto">
+          <p className="font-body font-normal text-base text-ink-dim mt-4 max-w-2xl mx-auto">
             Wadah buat kamu yang jago ngolah ulang track jadi versi yang
             lebih segar — dari mashup, bootleg, sampai remix full produksi.
             Buat kreator yang mau bikin telinga orang nengok dua kali.
@@ -148,10 +148,10 @@ export default function RemixDivisionPage() {
           transition={{ duration: 0.7 }}
           className="max-w-3xl mx-auto text-center"
         >
-          <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+          <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Tim
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl mt-4 text-ink">
+          <h2 className="font-display font-bold text-3xl sm:text-4xl mt-4 text-ink">
             Yang meracik di balik layar
           </h2>
 
@@ -171,10 +171,10 @@ export default function RemixDivisionPage() {
             transition={{ duration: 0.7 }}
             className="max-w-2xl mb-10 text-center mx-auto"
           >
-            <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+            <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
               Karya Terbaru
             </span>
-            <h2 className="font-display text-3xl sm:text-4xl mt-4 text-ink">
+            <h2 className="font-display font-bold text-3xl sm:text-4xl mt-4 text-ink">
               Apa yang lagi diracik divisi Remix
             </h2>
           </motion.div>
@@ -192,10 +192,10 @@ export default function RemixDivisionPage() {
           transition={{ duration: 0.7 }}
           className="max-w-2xl mx-auto px-6 sm:px-10 mb-8 text-center"
         >
-          <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+          <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Kata Mereka
           </span>
-          <h2 className="font-display text-3xl sm:text-4xl mt-4 text-ink">
+          <h2 className="font-display font-bold text-3xl sm:text-4xl mt-4 text-ink">
             Cerita dari divisi Remix
           </h2>
         </motion.div>

@@ -29,10 +29,10 @@ export default function AdminSection() {
     <section className="bg-base py-16 sm:py-24">
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center mb-12">
-          <p className="text-sm font-medium tracking-widest text-pink-500 uppercase">
+          <p className="font-body font-semibold text-sm tracking-widest text-pink-500 uppercase">
             Meet The Team
           </p>
-          <h2 className="mt-2 text-3xl font-bold text-ink sm:text-4xl">
+          <h2 className="font-display font-extrabold mt-2 text-3xl text-ink sm:text-4xl">
             Admin & Pendiri
           </h2>
         </div>
@@ -54,16 +54,16 @@ export default function AdminSection() {
 
               <div className="relative p-4 sm:p-6 lg:p-8 min-h-[320px] flex flex-col justify-between">
                 <div>
-                  <p className="text-sm font-medium tracking-widest text-pink-400 uppercase">
+                  <p className="font-body font-semibold text-sm tracking-widest text-pink-400 uppercase">
                     {admin.role}
                   </p>
-                  <p className="text-xl font-bold text-white sm:text-2xl">
+                  <p className="font-display font-bold text-xl text-white sm:text-2xl">
                     {admin.name}
                   </p>
                 </div>
 
                 <div className="translate-y-8 transform opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-                  <p className="text-sm text-white/90">{admin.desc}</p>
+                  <p className="font-body font-normal text-sm text-white/90">{admin.desc}</p>
                 </div>
               </div>
             </a>
