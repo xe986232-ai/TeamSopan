@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import BlurInText from "@/components/ui/blur-in-text";
 
 // Placeholder — nanti disambungkan ke data member beneran.
 const member = {
@@ -14,69 +13,35 @@ const member = {
 
 const GREETING_TEXT = "Selamat Bergabung Di Divisi Remix";
 
-// Durasi dihitung otomatis dari panjang teks (mengikuti timing BlurInText:
-// delay per karakter 50ms + durasi reveal 800ms) supaya animasi 1 tidak
-// pernah tumpang tindih dengan animasi 2.
-const GREETING_REVEAL_MS = (GREETING_TEXT.length - 1) * 50 + 800;
-const GREETING_HOLD_MS = 900; // jeda baca sebelum animasi 1 keluar
-
-const AVATAR_ZOOM_MS = 1300; // profile zoom ke depan, pelan
-const GAP_AFTER_AVATAR_MS = 300;
-
-// Nama & Divisi pakai fade + naik + blur-out satu kesatuan (bukan per huruf)
-// biar mulus, tidak kaku/patah-patah.
-const NAME_REVEAL_MS = 900;
-const GAP_AFTER_NAME_MS = 250;
-
-const DIVISION_REVEAL_MS = 800;
-
-const SETTLE_GAP_MS = 350; // jeda sebentar setelah Divisi kebaca
-const SETTLE_DURATION_MS = 1000; // profile naik pelan & smooth
-const HOLD_AFTER_SETTLE_MS = 1200; // jeda sebelum overlay ditutup
-
-const EXIT_FADE_MS = 1200; // overlay fade out, balik ke halaman utama
-
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
-const T_AVATAR_START = GREETING_REVEAL_MS + GREETING_HOLD_MS;
-const T_NAME_START = T_AVATAR_START + AVATAR_ZOOM_MS + GAP_AFTER_AVATAR_MS;
-const T_DIVISION_START = T_NAME_START + NAME_REVEAL_MS + GAP_AFTER_NAME_MS;
-const T_SETTLE_START = T_DIVISION_START + DIVISION_REVEAL_MS + SETTLE_GAP_MS;
-const T_EXIT_START = T_SETTLE_START + SETTLE_DURATION_MS + HOLD_AFTER_SETTLE_MS;
+// Animasi 1: teks zoom dari besar -> kecil (normal), lalu fade out.
+const GREETING_ZOOM_MS = 1000;
+const GREETING_HOLD_MS = 1200;
+const GREETING_EXIT_MS = 500;
 
-// Fade + naik dikit + blur-out, satu kesatuan (bukan per karakter).
-function SmoothIn({ text, className }) {
-  return (
-    <motion.p
-      initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
-      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-      transition={{ duration: 0.9, ease: SMOOTH_EASE }}
-      className={`font-display font-extrabold text-center ${className}`}
-    >
-      {text}
-    </motion.p>
-  );
-}
+// Animasi 2: Profile + Nama + Divisi muncul bareng, zoom kecil -> besar.
+const INTRO_ZOOM_MS = 1000;
+const INTRO_HOLD_MS = 1900;
+
+// Fade keseluruhan overlay di penutup.
+const EXIT_FADE_MS = 1200;
+
+const T_INTRO_START = GREETING_ZOOM_MS + GREETING_HOLD_MS + GREETING_EXIT_MS;
+const T_EXIT_START = T_INTRO_START + INTRO_ZOOM_MS + INTRO_HOLD_MS;
 
 export default function WelcomePreviewSection() {
-  // tahap: "greeting" -> "avatar" -> "name" -> "division" -> "settled" -> "exit"
+  // tahap: "greeting" -> "intro" -> "exit"
   const [stage, setStage] = useState("greeting");
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStage("avatar"), T_AVATAR_START),
-      setTimeout(() => setStage("name"), T_NAME_START),
-      setTimeout(() => setStage("division"), T_DIVISION_START),
-      setTimeout(() => setStage("settled"), T_SETTLE_START),
+      setTimeout(() => setStage("intro"), T_INTRO_START),
       setTimeout(() => setStage("exit"), T_EXIT_START),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  const showAvatar = stage !== "greeting";
-  const showName = ["name", "division", "settled", "exit"].includes(stage);
-  const showDivision = ["division", "settled", "exit"].includes(stage);
-  const isSettled = stage === "settled" || stage === "exit";
   const isExiting = stage === "exit";
 
   return (
@@ -92,61 +57,57 @@ export default function WelcomePreviewSection() {
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4">
         <AnimatePresence mode="wait">
-          {/* Animasi 1: teks pembuka sendirian dulu */}
+          {/* Animasi 1: teks pembuka, zoom besar -> kecil, lalu fade out sendirian */}
           {stage === "greeting" && (
             <motion.div
               key="greeting"
-              exit={{ opacity: 0, filter: "blur(6px)" }}
-              transition={{ duration: 0.5, ease: "easeInOut" }}
+              initial={{ opacity: 0, scale: 1.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, transition: { duration: GREETING_EXIT_MS / 1000, ease: "easeInOut" } }}
+              transition={{ duration: GREETING_ZOOM_MS / 1000, ease: SMOOTH_EASE }}
             >
-              <BlurInText
-                text={GREETING_TEXT}
-                className="text-3xl md:text-5xl text-white"
-              />
+              <h2 className="font-display font-extrabold text-center text-3xl md:text-5xl text-white">
+                {GREETING_TEXT}
+              </h2>
             </motion.div>
           )}
 
-          {/* Animasi 2: Profile -> Nama -> Divisi (mulus, bukan per huruf), lalu naik pelan */}
-          {showAvatar && (
+          {/* Animasi 2: Profile + Nama + Divisi muncul bareng, zoom kecil -> besar */}
+          {stage !== "greeting" && (
             <motion.div
               key="member-intro"
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: 1,
-                y: isSettled ? -24 : 0,
-              }}
-              transition={{
-                opacity: { duration: 0.5, ease: "easeInOut" },
-                y: { duration: SETTLE_DURATION_MS / 1000, ease: SMOOTH_EASE },
-              }}
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: INTRO_ZOOM_MS / 1000, ease: SMOOTH_EASE }}
               className="flex flex-col items-center"
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.6 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: AVATAR_ZOOM_MS / 1000,
-                  ease: [0.25, 0.46, 0.45, 0.94],
-                }}
-                className="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white/15 shadow-lg mb-6"
-              >
+              <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white/15 shadow-lg mb-6">
                 <img
                   src={member.avatarUrl}
                   alt={`Foto ${member.name}`}
                   className="w-full h-full object-cover"
                 />
-              </motion.div>
-
-              {showName && (
-                <SmoothIn text={member.name} className="text-2xl md:text-4xl text-white" />
-              )}
-
-              {showDivision && (
-                <SmoothIn
-                  text={member.division}
-                  className="text-lg md:text-2xl text-pink-400 mt-1"
+                {/* kilau putih jalan melintasi foto profile */}
+                <motion.div
+                  className="absolute top-0 left-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+                  style={{ transform: "skewX(-20deg)" }}
+                  initial={{ x: "-150%" }}
+                  animate={{ x: "250%" }}
+                  transition={{
+                    duration: 1.4,
+                    ease: "easeInOut",
+                    repeat: Infinity,
+                    repeatDelay: 1,
+                  }}
                 />
-              )}
+              </div>
+
+              <h3 className="font-display font-extrabold text-center text-2xl md:text-4xl text-white">
+                {member.name}
+              </h3>
+              <p className="font-display font-bold text-center text-lg md:text-2xl text-pink-400 mt-1">
+                {member.division}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
