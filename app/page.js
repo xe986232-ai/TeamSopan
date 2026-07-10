@@ -7,6 +7,7 @@ import AdminSection from "@/components/AdminSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
 import Footer from "@/components/Footer";
+import WelcomeGate from "@/components/WelcomeGate";
 
 const navItems = [
   { name: "Tentang", link: "#tentang" },
@@ -45,6 +46,7 @@ const mobileGroups = [
 export default function Home() {
   return (
     <main id="top" className="relative bg-base">
+      <WelcomeGate />
       <AnnouncementBar href="#divisi">
         ✨ SOPAN TEAM buka rekrutmen member baru — gabung sekarang
       </AnnouncementBar>

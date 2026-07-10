@@ -2,11 +2,13 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { TextField } from "./ui/text-field";
 import { PasswordField } from "./ui/password-field";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/toast";
+import { WELCOME_NAME_KEY } from "@/lib/welcome";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -15,6 +17,7 @@ const fadeUp = {
 
 export default function LoginForm() {
   const { toast } = useToast();
+  const router = useRouter();
 
   const [form, setForm] = React.useState({
     username: "",
@@ -48,7 +51,8 @@ export default function LoginForm() {
 
     setLoading(true);
     try {
-      // TODO: sambungkan ke endpoint login beneran (mis. Firebase Auth / API route) di sini.
+      // Perumpamaan sementara: anggap username + password apa aja valid.
+      // TODO: ganti dengan verifikasi beneran (mis. Firebase Auth / API route) di sini.
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
       toast({
@@ -56,6 +60,10 @@ export default function LoginForm() {
         title: "Berhasil masuk!",
         description: `Selamat datang kembali, ${form.username}.`,
       });
+
+      // Oper nama ke beranda buat ditampilin di animasi welcome.
+      sessionStorage.setItem(WELCOME_NAME_KEY, form.username);
+      router.push("/");
     } catch (err) {
       toast({
         variant: "error",
