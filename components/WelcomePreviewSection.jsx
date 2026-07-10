@@ -15,30 +15,48 @@ const member = {
 const GREETING_TEXT = "Selamat Bergabung Di Divisi Remix";
 
 // Durasi dihitung otomatis dari panjang teks (mengikuti timing BlurInText:
-// delay per karakter 50ms + durasi reveal 800ms) supaya tiap elemen
-// tidak pernah tumpang tindih satu sama lain.
+// delay per karakter 50ms + durasi reveal 800ms) supaya animasi 1 tidak
+// pernah tumpang tindih dengan animasi 2.
 const GREETING_REVEAL_MS = (GREETING_TEXT.length - 1) * 50 + 800;
 const GREETING_HOLD_MS = 900; // jeda baca sebelum animasi 1 keluar
 
 const AVATAR_ZOOM_MS = 1300; // profile zoom ke depan, pelan
 const GAP_AFTER_AVATAR_MS = 300;
 
-const NAME_REVEAL_MS = (member.name.length - 1) * 50 + 800;
-const GAP_AFTER_NAME_MS = 150;
+// Nama & Divisi pakai fade + naik + blur-out satu kesatuan (bukan per huruf)
+// biar mulus, tidak kaku/patah-patah.
+const NAME_REVEAL_MS = 900;
+const GAP_AFTER_NAME_MS = 250;
 
-const DIVISION_REVEAL_MS = (member.division.length - 1) * 50 + 800;
+const DIVISION_REVEAL_MS = 800;
 
 const SETTLE_GAP_MS = 350; // jeda sebentar setelah Divisi kebaca
-const SETTLE_DURATION_MS = 1000; // profile "naik" pelan & smooth, bukan langsung diam kaku
+const SETTLE_DURATION_MS = 1000; // profile naik pelan & smooth
 const HOLD_AFTER_SETTLE_MS = 1200; // jeda sebelum overlay ditutup
 
 const EXIT_FADE_MS = 1200; // overlay fade out, balik ke halaman utama
+
+const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
 const T_AVATAR_START = GREETING_REVEAL_MS + GREETING_HOLD_MS;
 const T_NAME_START = T_AVATAR_START + AVATAR_ZOOM_MS + GAP_AFTER_AVATAR_MS;
 const T_DIVISION_START = T_NAME_START + NAME_REVEAL_MS + GAP_AFTER_NAME_MS;
 const T_SETTLE_START = T_DIVISION_START + DIVISION_REVEAL_MS + SETTLE_GAP_MS;
 const T_EXIT_START = T_SETTLE_START + SETTLE_DURATION_MS + HOLD_AFTER_SETTLE_MS;
+
+// Fade + naik dikit + blur-out, satu kesatuan (bukan per karakter).
+function SmoothIn({ text, className }) {
+  return (
+    <motion.p
+      initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
+      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      transition={{ duration: 0.9, ease: SMOOTH_EASE }}
+      className={`font-display font-extrabold text-center ${className}`}
+    >
+      {text}
+    </motion.p>
+  );
+}
 
 export default function WelcomePreviewSection() {
   // tahap: "greeting" -> "avatar" -> "name" -> "division" -> "settled" -> "exit"
@@ -63,18 +81,14 @@ export default function WelcomePreviewSection() {
 
   return (
     <motion.div
-      className="fixed inset-0 z-[100] flex flex-col items-center justify-center overflow-hidden bg-black"
+      className="fixed inset-0 z-[6000] flex flex-col items-center justify-center overflow-hidden bg-black"
       animate={{ opacity: isExiting ? 0 : 1 }}
       transition={{ duration: EXIT_FADE_MS / 1000, ease: "easeInOut" }}
       style={{ pointerEvents: isExiting ? "none" : "auto" }}
     >
       {/* gradient tipis-tipis di atas background hitam */}
-      <div
-        className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent"
-      />
-      <div
-        className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent"
-      />
+      <div className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
+      <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
 
       <div className="relative z-10 flex flex-col items-center justify-center px-4">
         <AnimatePresence mode="wait">
@@ -92,7 +106,7 @@ export default function WelcomePreviewSection() {
             </motion.div>
           )}
 
-          {/* Animasi 2: Profile -> Nama -> Divisi, lalu naik pelan & smooth */}
+          {/* Animasi 2: Profile -> Nama -> Divisi (mulus, bukan per huruf), lalu naik pelan */}
           {showAvatar && (
             <motion.div
               key="member-intro"
@@ -103,10 +117,7 @@ export default function WelcomePreviewSection() {
               }}
               transition={{
                 opacity: { duration: 0.5, ease: "easeInOut" },
-                y: {
-                  duration: SETTLE_DURATION_MS / 1000,
-                  ease: [0.22, 1, 0.36, 1],
-                },
+                y: { duration: SETTLE_DURATION_MS / 1000, ease: SMOOTH_EASE },
               }}
               className="flex flex-col items-center"
             >
@@ -127,14 +138,11 @@ export default function WelcomePreviewSection() {
               </motion.div>
 
               {showName && (
-                <BlurInText
-                  text={member.name}
-                  className="text-2xl md:text-4xl text-white"
-                />
+                <SmoothIn text={member.name} className="text-2xl md:text-4xl text-white" />
               )}
 
               {showDivision && (
-                <BlurInText
+                <SmoothIn
                   text={member.division}
                   className="text-lg md:text-2xl text-pink-400 mt-1"
                 />
