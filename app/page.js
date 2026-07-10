@@ -11,6 +11,8 @@ import Footer from "@/components/Footer";
 const navItems = [
   { name: "Tentang", link: "#tentang" },
   { name: "Divisi", link: "#divisi" },
+  { name: "Ketentuan", link: "/ketentuan" },
+  { name: "Privasi", link: "/privasi" },
 ];
 
 const mobileGroups = [
@@ -29,6 +31,13 @@ const mobileGroups = [
       { name: "Remix", link: "#divisi" },
       { name: "Creator", link: "#divisi" },
       { name: "Leadis", link: "#divisi" },
+    ],
+  },
+  {
+    label: "Legal",
+    items: [
+      { name: "Ketentuan Layanan", link: "/ketentuan" },
+      { name: "Kebijakan Privasi", link: "/privasi" },
     ],
   },
 ];

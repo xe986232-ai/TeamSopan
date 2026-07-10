@@ -2,28 +2,28 @@
 
 import Image from "next/image";
 
-// TODO: ganti "Nama Admin 2" & "Nama Admin 3" dengan nama, jabatan, dan foto asli.
+// TODO: lengkapi foto & deskripsi asli tiap admin divisi kalau sudah ada.
 const admins = [
   {
-    name: "Tony Wayne",
-    role: "Founder",
+    name: "Candra",
+    role: "Divisi Remix",
     image:
       "https://images.unsplash.com/photo-1603871165848-0aa92c869fa1?auto=format&fit=crop&q=80&w=1160",
-    desc: "Pendiri SOPAN TEAM, bertanggung jawab atas visi dan arah pengembangan komunitas.",
+    desc: "Admin Divisi Remix, mengelola karya dan koordinasi kreator remix.",
   },
   {
-    name: "Nama Admin 2",
-    role: "Co-Founder",
+    name: "Gatau dahh",
+    role: "Divisi Creator",
     image:
       "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=1160",
-    desc: "Mengelola operasional harian dan koordinasi antar divisi.",
+    desc: "Admin Divisi Creator, mengelola karya dan koordinasi video editor.",
   },
   {
-    name: "Nama Admin 3",
-    role: "Admin",
+    name: "Apalagi ini",
+    role: "Divisi Leadis",
     image:
       "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=1160",
-    desc: "Mengurus komunikasi member dan konten komunitas.",
+    desc: "Admin Divisi Leadis, mengelola karya dan koordinasi kreator konten perempuan.",
   },
 ];
 
@@ -36,7 +36,7 @@ export default function AdminSection() {
             Meet The Team
           </p>
           <h2 className="font-display font-extrabold mt-2 text-3xl text-ink sm:text-4xl">
-            Admin & Pendiri
+            Admin Divisi
           </h2>
         </div>
 

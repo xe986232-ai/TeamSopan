@@ -9,6 +9,13 @@
   --base: 255 255 255;       /* #FFFFFF */
   --base-elevated: 246 245 249; /* #F6F5F9 */
   --base-line: 231 229 239;  /* #E7E5EF */
+
+  /* RainbowButton accent colors */
+  --color-1: 0 100% 63%;
+  --color-2: 270 100% 63%;
+  --color-3: 210 100% 63%;
+  --color-4: 195 100% 63%;
+  --color-5: 90 100% 63%;
 }
 
 .dark {

@@ -33,6 +33,11 @@ module.exports = {
           from: "#FFD166",
           to: "#FF6FB5",
         },
+        "color-1": "hsl(var(--color-1))",
+        "color-2": "hsl(var(--color-2))",
+        "color-3": "hsl(var(--color-3))",
+        "color-4": "hsl(var(--color-4))",
+        "color-5": "hsl(var(--color-5))",
       },
       fontFamily: {
         // Outfit powers the whole site now (headings + body).
@@ -62,11 +67,16 @@ module.exports = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
+        "rainbow": {
+          "0%": { "background-position": "0%" },
+          "100%": { "background-position": "200%" },
+        },
       },
       animation: {
         "aurora": "aurora 60s linear infinite",
         "scroll": "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",
+        "rainbow": "rainbow var(--speed, 2s) infinite linear",
       },
     },
   },
