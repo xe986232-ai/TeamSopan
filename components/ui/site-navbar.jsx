@@ -91,7 +91,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
       S
     </motion.span>
   </span>
-  <span className="text-ink text-xs whitespace-nowrap">
+  <span className="font-body font-semibold text-ink text-xs whitespace-nowrap">
     Sopan Team
   </span>
 </a>
@@ -102,7 +102,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             <a
               key={`nav-${idx}`}
               href={item.link}
-              className="text-xs text-ink-muted hover:text-ink transition-colors"
+              className="font-body font-medium text-xs text-ink-muted hover:text-ink transition-colors"
             >
               {item.name}
             </a>

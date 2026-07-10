@@ -6,8 +6,8 @@ export default function Footer() {
     >
       <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between gap-10">
         <div>
-          <h3 className="font-display text-3xl text-ink">Mau gabung?</h3>
-          <p className="text-ink-muted mt-3 max-w-sm">
+          <h3 className="font-display font-extrabold text-3xl text-ink">Mau gabung?</h3>
+          <p className="font-body font-normal text-ink-muted mt-3 max-w-sm">
             Kami selalu buka ruang buat orang yang serius mau berkarya di
             Remix, Creator, atau Leadis. Daftar sekarang dan ceritain karya kamu.
           </p>
@@ -21,17 +21,17 @@ export default function Footer() {
 
         <div className="flex gap-12">
           <div>
-            <span className="text-xs tracking-[0.3em] uppercase text-ink-dim">
+            <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-ink-dim">
               Divisi
             </span>
-            <ul className="mt-4 space-y-2 text-ink-muted text-sm">
+            <ul className="font-body font-normal mt-4 space-y-2 text-ink-muted text-sm">
               <li>Remix</li>
               <li>Creator</li>
               <li>Leadis</li>
             </ul>
           </div>
           <div>
-            <span className="text-xs tracking-[0.3em] uppercase text-ink-dim">
+            <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-ink-dim">
               Sosial
             </span>
             <ul className="mt-4 space-y-2 text-ink-muted text-sm">

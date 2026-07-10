@@ -106,10 +106,10 @@ export default function DivisionsSection() {
           variants={fadeUp}
           className="max-w-2xl mb-4"
         >
-          <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+          <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
             Tiga Divisi
           </span>
-          <h2 className="font-display text-4xl sm:text-5xl mt-4 text-ink leading-tight">
+          <h2 className="font-display font-extrabold text-4xl sm:text-5xl mt-4 text-ink leading-tight">
             Satu tim, tiga cara berkarya
           </h2>
         </motion.div>
@@ -129,8 +129,8 @@ export default function DivisionsSection() {
                   <DivisionVisual division={division} />
                 </CardHeader>
                 <CardContent className="p-3 pt-4">
-                  <CardTitle className="text-lg">{division.name}</CardTitle>
-                  <CardDescription className="text-xs mt-1">
+                  <CardTitle className="font-display font-bold text-lg">{division.name}</CardTitle>
+                  <CardDescription className="font-body font-normal text-xs mt-1">
                     {division.description}
                   </CardDescription>
                 </CardContent>

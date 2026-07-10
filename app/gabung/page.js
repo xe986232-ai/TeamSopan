@@ -48,13 +48,13 @@ export default function GabungPage() {
             variants={fadeUp}
             className="relative max-w-xl mx-auto text-center mb-12"
           >
-            <span className="text-sm tracking-[0.3em] uppercase text-ink-muted">
+            <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
               Pendaftaran
             </span>
-            <h1 className="font-display text-4xl sm:text-5xl mt-4 text-ink leading-tight">
+            <h1 className="font-display font-extrabold text-4xl sm:text-5xl mt-4 text-ink leading-tight">
               Gabung ke SOPAN TEAM
             </h1>
-            <p className="font-body text-base text-ink-muted mt-4">
+            <p className="font-body font-normal text-base text-ink-muted mt-4">
               Isi data diri kamu dan pilih divisi yang paling cocok. Tim kami
               bakal follow up lewat email yang kamu daftarkan.
             </p>
