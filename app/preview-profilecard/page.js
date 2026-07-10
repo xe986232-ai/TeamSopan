@@ -1,37 +1,33 @@
-"use client";
+import { SiteNavbar } from "@/components/ui/site-navbar";
+import Footer from "@/components/Footer";
+import ProfileCardPreviewSection from "@/components/ProfileCardPreviewSection";
 
-import ProfileCard from "@/components/ui/profile-card";
-import { Instagram, Music2, Youtube } from "lucide-react";
+const navItems = [
+  { name: "Tentang", link: "/#tentang" },
+  { name: "Divisi", link: "/#divisi" },
+];
 
-const sample = {
-  name: "Candra",
-  title: "Divisi Remix",
-  bio: "Admin Divisi Remix, mengelola karya dan koordinasi kreator remix di SOPAN TEAM.",
-  avatarUrl:
-    "https://images.unsplash.com/photo-1603871165848-0aa92c869fa1?auto=format&fit=crop&q=80&w=800",
-  socialLinks: [
-    { id: "instagram", icon: Instagram, label: "Instagram", href: "#" },
-    { id: "tiktok", icon: Music2, label: "TikTok", href: "#" },
-    { id: "youtube", icon: Youtube, label: "YouTube", href: "#" },
-  ],
-  actionButton: { text: "Contact Me", href: "#" },
+const mobileGroups = [
+  {
+    label: "Menu",
+    items: [
+      { name: "Beranda", link: "/#top" },
+      { name: "Tentang", link: "/#tentang" },
+      { name: "Divisi", link: "/#divisi" },
+    ],
+  },
+];
+
+export const metadata = {
+  title: "Preview ProfileCard",
 };
 
-export default function PreviewProfileCard() {
+export default function PreviewProfileCardPage() {
   return (
-    <main className="min-h-screen bg-base py-16 px-4">
-      <div className="max-w-6xl mx-auto text-center mb-12">
-        <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-ink">
-          Preview ProfileCard
-        </h1>
-        <p className="font-body font-normal text-ink-muted mt-2 text-sm">
-          Halaman sementara buat lihat tampilan komponen ProfileCard (versi ringan).
-        </p>
-      </div>
-
-      <div className="max-w-6xl mx-auto flex justify-center">
-        <ProfileCard {...sample} />
-      </div>
+    <main className="relative bg-base">
+      <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
+      <ProfileCardPreviewSection />
+      <Footer />
     </main>
   );
 }
