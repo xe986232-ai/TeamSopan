@@ -1,612 +1,123 @@
 "use client";
 
-import React, { useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState } from "react";
+import { ArrowUpRight } from "lucide-react";
 
-const DEFAULT_INNER_GRADIENT = 'linear-gradient(145deg,#60496e8c 0%,#71C4FF44 100%)';
-
-const ANIMATION_CONFIG = {
-  INITIAL_DURATION: 1200,
-  INITIAL_X_OFFSET: 70,
-  INITIAL_Y_OFFSET: 60,
-  DEVICE_BETA_OFFSET: 20,
-  ENTER_TRANSITION_MS: 180
-};
-
-const clamp = (v, min = 0, max = 100) => Math.min(Math.max(v, min), max);
-const round = (v, precision = 3) => parseFloat(v.toFixed(precision));
-const adjust = (v, fMin, fMax, tMin, tMax) => round(tMin + ((tMax - tMin) * (v - fMin)) / (fMax - fMin));
-
-// Inject keyframes once
-const KEYFRAMES_ID = 'pc-keyframes';
-if (typeof document !== 'undefined' && !document.getElementById(KEYFRAMES_ID)) {
-  const style = document.createElement('style');
-  style.id = KEYFRAMES_ID;
-  style.textContent = `
-    @keyframes pc-holo-bg {
-      0% { background-position: 0 var(--background-y), 0 0, center; }
-      100% { background-position: 0 var(--background-y), 90% 90%, center; }
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-const ProfileCardComponent = ({
-  avatarUrl = '<Placeholder for avatar URL>',
-  iconUrl = '<Placeholder for icon URL>',
-  grainUrl = '<Placeholder for grain URL>',
-  innerGradient,
-  behindGlowEnabled = true,
-  behindGlowColor,
-  behindGlowSize,
-  className = '',
-  enableTilt = true,
-  enableMobileTilt = false,
-  mobileTiltSensitivity = 5,
-  miniAvatarUrl,
-  name = 'Javi A. Torres',
-  title = 'Software Engineer',
-  handle = 'javicodes',
-  status = 'Online',
-  contactText = 'Contact',
-  showUserInfo = true,
-  onContactClick
-}) => {
-  const wrapRef = useRef(null);
-  const shellRef = useRef(null);
-
-  const enterTimerRef = useRef(null);
-  const leaveRafRef = useRef(null);
-
-  const tiltEngine = useMemo(() => {
-    if (!enableTilt) return null;
-
-    let rafId = null;
-    let running = false;
-    let lastTs = 0;
-
-    let currentX = 0;
-    let currentY = 0;
-    let targetX = 0;
-    let targetY = 0;
-
-    const DEFAULT_TAU = 0.14;
-    const INITIAL_TAU = 0.6;
-    let initialUntil = 0;
-
-    const setVarsFromXY = (x, y) => {
-      const shell = shellRef.current;
-      const wrap = wrapRef.current;
-      if (!shell || !wrap) return;
-
-      const width = shell.clientWidth || 1;
-      const height = shell.clientHeight || 1;
-
-      const percentX = clamp((100 / width) * x);
-      const percentY = clamp((100 / height) * y);
-
-      const centerX = percentX - 50;
-      const centerY = percentY - 50;
-
-      const properties = {
-        '--pointer-x': `${percentX}%`,
-        '--pointer-y': `${percentY}%`,
-        '--background-x': `${adjust(percentX, 0, 100, 35, 65)}%`,
-        '--background-y': `${adjust(percentY, 0, 100, 35, 65)}%`,
-        '--pointer-from-center': `${clamp(Math.hypot(percentY - 50, percentX - 50) / 50, 0, 1)}`,
-        '--pointer-from-top': `${percentY / 100}`,
-        '--pointer-from-left': `${percentX / 100}`,
-        '--rotate-x': `${round(-(centerX / 5))}deg`,
-        '--rotate-y': `${round(centerY / 4)}deg`
-      };
-
-      for (const [k, v] of Object.entries(properties)) wrap.style.setProperty(k, v);
-    };
-
-    const step = ts => {
-      if (!running) return;
-      if (lastTs === 0) lastTs = ts;
-      const dt = (ts - lastTs) / 1000;
-      lastTs = ts;
-
-      const tau = ts < initialUntil ? INITIAL_TAU : DEFAULT_TAU;
-      const k = 1 - Math.exp(-dt / tau);
-
-      currentX += (targetX - currentX) * k;
-      currentY += (targetY - currentY) * k;
-
-      setVarsFromXY(currentX, currentY);
-
-      const stillFar = Math.abs(targetX - currentX) > 0.05 || Math.abs(targetY - currentY) > 0.05;
-
-      if (stillFar || document.hasFocus()) {
-        rafId = requestAnimationFrame(step);
-      } else {
-        running = false;
-        lastTs = 0;
-        if (rafId) {
-          cancelAnimationFrame(rafId);
-          rafId = null;
-        }
-      }
-    };
-
-    const start = () => {
-      if (running) return;
-      running = true;
-      lastTs = 0;
-      rafId = requestAnimationFrame(step);
-    };
-
-    return {
-      setImmediate(x, y) {
-        currentX = x;
-        currentY = y;
-        setVarsFromXY(currentX, currentY);
-      },
-      setTarget(x, y) {
-        targetX = x;
-        targetY = y;
-        start();
-      },
-      toCenter() {
-        const shell = shellRef.current;
-        if (!shell) return;
-        this.setTarget(shell.clientWidth / 2, shell.clientHeight / 2);
-      },
-      beginInitial(durationMs) {
-        initialUntil = performance.now() + durationMs;
-        start();
-      },
-      getCurrent() {
-        return { x: currentX, y: currentY, tx: targetX, ty: targetY };
-      },
-      cancel() {
-        if (rafId) cancelAnimationFrame(rafId);
-        rafId = null;
-        running = false;
-        lastTs = 0;
-      }
-    };
-  }, [enableTilt]);
-
-  const getOffsets = (evt, el) => {
-    const rect = el.getBoundingClientRect();
-    return { x: evt.clientX - rect.left, y: evt.clientY - rect.top };
-  };
-
-  const handlePointerMove = useCallback(
-    event => {
-      const shell = shellRef.current;
-      if (!shell || !tiltEngine) return;
-      const { x, y } = getOffsets(event, shell);
-      tiltEngine.setTarget(x, y);
-    },
-    [tiltEngine]
-  );
-
-  const handlePointerEnter = useCallback(
-    event => {
-      const shell = shellRef.current;
-      if (!shell || !tiltEngine) return;
-
-      shell.classList.add('active');
-      shell.classList.add('entering');
-      if (enterTimerRef.current) window.clearTimeout(enterTimerRef.current);
-      enterTimerRef.current = window.setTimeout(() => {
-        shell.classList.remove('entering');
-      }, ANIMATION_CONFIG.ENTER_TRANSITION_MS);
-
-      const { x, y } = getOffsets(event, shell);
-      tiltEngine.setTarget(x, y);
-    },
-    [tiltEngine]
-  );
-
-  const handlePointerLeave = useCallback(() => {
-    const shell = shellRef.current;
-    if (!shell || !tiltEngine) return;
-
-    tiltEngine.toCenter();
-
-    const checkSettle = () => {
-      const { x, y, tx, ty } = tiltEngine.getCurrent();
-      const settled = Math.hypot(tx - x, ty - y) < 0.6;
-      if (settled) {
-        shell.classList.remove('active');
-        leaveRafRef.current = null;
-      } else {
-        leaveRafRef.current = requestAnimationFrame(checkSettle);
-      }
-    };
-    if (leaveRafRef.current) cancelAnimationFrame(leaveRafRef.current);
-    leaveRafRef.current = requestAnimationFrame(checkSettle);
-  }, [tiltEngine]);
-
-  const handleDeviceOrientation = useCallback(
-    event => {
-      const shell = shellRef.current;
-      if (!shell || !tiltEngine) return;
-
-      const { beta, gamma } = event;
-      if (beta == null || gamma == null) return;
-
-      const centerX = shell.clientWidth / 2;
-      const centerY = shell.clientHeight / 2;
-      const x = clamp(centerX + gamma * mobileTiltSensitivity, 0, shell.clientWidth);
-      const y = clamp(
-        centerY + (beta - ANIMATION_CONFIG.DEVICE_BETA_OFFSET) * mobileTiltSensitivity,
-        0,
-        shell.clientHeight
-      );
-
-      tiltEngine.setTarget(x, y);
-    },
-    [tiltEngine, mobileTiltSensitivity]
-  );
-
-  useEffect(() => {
-    if (!enableTilt || !tiltEngine) return;
-
-    const shell = shellRef.current;
-    if (!shell) return;
-
-    const pointerMoveHandler = handlePointerMove;
-    const pointerEnterHandler = handlePointerEnter;
-    const pointerLeaveHandler = handlePointerLeave;
-    const deviceOrientationHandler = handleDeviceOrientation;
-
-    shell.addEventListener('pointerenter', pointerEnterHandler);
-    shell.addEventListener('pointermove', pointerMoveHandler);
-    shell.addEventListener('pointerleave', pointerLeaveHandler);
-
-    const handleClick = () => {
-      if (!enableMobileTilt || location.protocol !== 'https:') return;
-      const anyMotion = window.DeviceMotionEvent;
-      if (anyMotion && typeof anyMotion.requestPermission === 'function') {
-        anyMotion
-          .requestPermission()
-          .then(state => {
-            if (state === 'granted') {
-              window.addEventListener('deviceorientation', deviceOrientationHandler);
-            }
-          })
-          .catch(console.error);
-      } else {
-        window.addEventListener('deviceorientation', deviceOrientationHandler);
-      }
-    };
-    shell.addEventListener('click', handleClick);
-
-    const initialX = (shell.clientWidth || 0) - ANIMATION_CONFIG.INITIAL_X_OFFSET;
-    const initialY = ANIMATION_CONFIG.INITIAL_Y_OFFSET;
-    tiltEngine.setImmediate(initialX, initialY);
-    tiltEngine.toCenter();
-    tiltEngine.beginInitial(ANIMATION_CONFIG.INITIAL_DURATION);
-
-    return () => {
-      shell.removeEventListener('pointerenter', pointerEnterHandler);
-      shell.removeEventListener('pointermove', pointerMoveHandler);
-      shell.removeEventListener('pointerleave', pointerLeaveHandler);
-      shell.removeEventListener('click', handleClick);
-      window.removeEventListener('deviceorientation', deviceOrientationHandler);
-      if (enterTimerRef.current) window.clearTimeout(enterTimerRef.current);
-      if (leaveRafRef.current) cancelAnimationFrame(leaveRafRef.current);
-      tiltEngine.cancel();
-      shell.classList.remove('entering');
-    };
-  }, [
-    enableTilt,
-    enableMobileTilt,
-    tiltEngine,
-    handlePointerMove,
-    handlePointerEnter,
-    handlePointerLeave,
-    handleDeviceOrientation
-  ]);
-
-  const cardRadius = '30px';
-
-  const cardStyle = useMemo(
-    () => ({
-      '--icon': iconUrl ? `url(${iconUrl})` : 'none',
-      '--grain': grainUrl ? `url(${grainUrl})` : 'none',
-      '--inner-gradient': innerGradient ?? DEFAULT_INNER_GRADIENT,
-      '--behind-glow-color': behindGlowColor ?? 'rgba(125, 190, 255, 0.67)',
-      '--behind-glow-size': behindGlowSize ?? '50%',
-      '--pointer-x': '50%',
-      '--pointer-y': '50%',
-      '--pointer-from-center': '0',
-      '--pointer-from-top': '0.5',
-      '--pointer-from-left': '0.5',
-      '--card-opacity': '0',
-      '--rotate-x': '0deg',
-      '--rotate-y': '0deg',
-      '--background-x': '50%',
-      '--background-y': '50%',
-      '--card-radius': cardRadius,
-      '--sunpillar-1': 'hsl(2, 100%, 73%)',
-      '--sunpillar-2': 'hsl(53, 100%, 69%)',
-      '--sunpillar-3': 'hsl(93, 100%, 69%)',
-      '--sunpillar-4': 'hsl(176, 100%, 76%)',
-      '--sunpillar-5': 'hsl(228, 100%, 74%)',
-      '--sunpillar-6': 'hsl(283, 100%, 73%)',
-      '--sunpillar-clr-1': 'var(--sunpillar-1)',
-      '--sunpillar-clr-2': 'var(--sunpillar-2)',
-      '--sunpillar-clr-3': 'var(--sunpillar-3)',
-      '--sunpillar-clr-4': 'var(--sunpillar-4)',
-      '--sunpillar-clr-5': 'var(--sunpillar-5)',
-      '--sunpillar-clr-6': 'var(--sunpillar-6)'
-    }),
-    [iconUrl, grainUrl, innerGradient, behindGlowColor, behindGlowSize, cardRadius]
-  );
-
-  const handleContactClick = useCallback(() => {
-    onContactClick?.();
-  }, [onContactClick]);
-
-  // Complex styles that require CSS variables and can't be done with Tailwind
-  const shineStyle = {
-    maskImage: 'var(--icon)',
-    maskMode: 'luminance',
-    maskRepeat: 'repeat',
-    maskSize: '150%',
-    maskPosition: 'top calc(200% - (var(--background-y) * 5)) left calc(100% - var(--background-x))',
-    filter: 'brightness(0.66) contrast(1.33) saturate(0.33) opacity(0.5)',
-    animation: 'pc-holo-bg 18s linear infinite',
-    animationPlayState: 'running',
-    mixBlendMode: 'color-dodge',
-    '--space': '5%',
-    '--angle': '-45deg',
-    transform: 'translate3d(0, 0, 1px)',
-    overflow: 'hidden',
-    zIndex: 3,
-    background: 'transparent',
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundImage: `
-      repeating-linear-gradient(
-        0deg,
-        var(--sunpillar-clr-1) calc(var(--space) * 1),
-        var(--sunpillar-clr-2) calc(var(--space) * 2),
-        var(--sunpillar-clr-3) calc(var(--space) * 3),
-        var(--sunpillar-clr-4) calc(var(--space) * 4),
-        var(--sunpillar-clr-5) calc(var(--space) * 5),
-        var(--sunpillar-clr-6) calc(var(--space) * 6),
-        var(--sunpillar-clr-1) calc(var(--space) * 7)
-      ),
-      repeating-linear-gradient(
-        var(--angle),
-        #0e152e 0%,
-        hsl(180, 10%, 60%) 3.8%,
-        hsl(180, 29%, 66%) 4.5%,
-        hsl(180, 10%, 60%) 5.2%,
-        #0e152e 10%,
-        #0e152e 12%
-      ),
-      radial-gradient(
-        farthest-corner circle at var(--pointer-x) var(--pointer-y),
-        hsla(0, 0%, 0%, 0.1) 12%,
-        hsla(0, 0%, 0%, 0.15) 20%,
-        hsla(0, 0%, 0%, 0.25) 120%
-      )
-    `.replace(/\s+/g, ' '),
-    gridArea: '1 / -1',
-    borderRadius: cardRadius,
-    pointerEvents: 'none'
-  };
-
-  const glareStyle = {
-    transform: 'translate3d(0, 0, 1.1px)',
-    overflow: 'hidden',
-    backgroundImage: `radial-gradient(
-      farthest-corner circle at var(--pointer-x) var(--pointer-y),
-      hsl(248, 25%, 80%) 12%,
-      hsla(207, 40%, 30%, 0.8) 90%
-    )`,
-    mixBlendMode: 'overlay',
-    filter: 'brightness(0.8) contrast(1.2)',
-    zIndex: 4,
-    gridArea: '1 / -1',
-    borderRadius: cardRadius,
-    pointerEvents: 'none'
-  };
+/**
+ * --- Glassmorphism Profile Card (versi ringan) ---
+ * Kartu profil dengan efek glass sederhana, tanpa animation loop atau
+ * mix-blend-mode berat. Warna mengikuti token project (ink/base).
+ *
+ * @param {string} avatarUrl - URL foto avatar.
+ * @param {string} name - Nama.
+ * @param {string} title - Jabatan / role.
+ * @param {string} bio - Deskripsi singkat.
+ * @param {{id:string, icon:React.ElementType, label:string, href:string}[]} socialLinks
+ * @param {{text:string, href:string}} actionButton
+ */
+export default function ProfileCard({
+  avatarUrl,
+  name,
+  title,
+  bio,
+  socialLinks = [],
+  actionButton,
+}) {
+  const [hoveredItem, setHoveredItem] = useState(null);
 
   return (
-    <div
-      ref={wrapRef}
-      className={`relative touch-none ${className}`.trim()}
-      style={{ perspective: '500px', transform: 'translate3d(0, 0, 0.1px)', ...cardStyle }}
-    >
-      {behindGlowEnabled && (
-        <div
-          className="absolute inset-0 z-0 pointer-events-none transition-opacity duration-200 ease-out"
-          style={{
-            background: `radial-gradient(circle at var(--pointer-x) var(--pointer-y), var(--behind-glow-color) 0%, transparent var(--behind-glow-size))`,
-            filter: 'blur(50px) saturate(1.1)',
-            opacity: 'calc(0.8 * var(--card-opacity))'
-          }}
-        />
-      )}
-      <div ref={shellRef} className="relative z-[1] group">
-        <section
-          className="grid relative overflow-hidden backface-hidden"
-          style={{
-            height: '80svh',
-            maxHeight: '540px',
-            aspectRatio: '0.718',
-            borderRadius: cardRadius,
-            backgroundBlendMode: 'color-dodge, normal, normal, normal',
-            boxShadow:
-              'rgba(0, 0, 0, 0.8) calc((var(--pointer-from-left) * 10px) - 3px) calc((var(--pointer-from-top) * 20px) - 6px) 20px -5px',
-            transition: 'transform 1s ease',
-            transform: 'translateZ(0) rotateX(0deg) rotateY(0deg)',
-            background: 'rgba(0, 0, 0, 0.9)'
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.transition = 'none';
-            e.currentTarget.style.transform = 'translateZ(0) rotateX(var(--rotate-y)) rotateY(var(--rotate-x))';
-          }}
-          onMouseLeave={e => {
-            const shell = shellRef.current;
-            if (shell?.classList.contains('entering')) {
-              e.currentTarget.style.transition = 'transform 180ms ease-out';
-            } else {
-              e.currentTarget.style.transition = 'transform 1s ease';
-            }
-            e.currentTarget.style.transform = 'translateZ(0) rotateX(0deg) rotateY(0deg)';
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'var(--inner-gradient)',
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
-              borderRadius: cardRadius,
-              display: 'grid',
-              gridArea: '1 / -1'
+    <div className="relative w-full max-w-sm">
+      <div
+        className="relative flex flex-col items-center p-8 rounded-3xl border transition-all duration-500 ease-out backdrop-blur-xl bg-base-elevated/60 border-black/10 dark:border-white/10"
+        style={{ boxShadow: "0 8px 32px rgba(0, 0, 0, 0.1)" }}
+      >
+        <div className="w-24 h-24 mb-4 rounded-full p-1 border-2 border-black/10 dark:border-white/20">
+          <img
+            src={avatarUrl}
+            alt={`Foto ${name}`}
+            className="w-full h-full rounded-full object-cover"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = `https://placehold.co/96x96/B026FF/white?text=${name?.charAt(0) || "?"}`;
             }}
-          >
-            {/* Shine layer */}
-            <div style={shineStyle} />
+          />
+        </div>
 
-            {/* Glare layer */}
-            <div style={glareStyle} />
+        <h2 className="font-display font-bold text-2xl text-ink">{name}</h2>
+        <p className="font-body font-medium text-sm mt-1 text-pink-500">{title}</p>
+        {bio && (
+          <p className="font-body font-normal mt-4 text-center text-sm leading-relaxed text-ink-muted">
+            {bio}
+          </p>
+        )}
 
-            {/* Avatar content */}
-            <div
-              className="overflow-visible backface-hidden"
-              style={{
-                mixBlendMode: 'luminosity',
-                transform: 'translateZ(2px)',
-                gridArea: '1 / -1',
-                borderRadius: cardRadius,
-                pointerEvents: 'none'
-              }}
-            >
-              <img
-                className="w-full absolute left-1/2 bottom-[-1px] backface-hidden will-change-transform transition-transform duration-[120ms] ease-out"
-                src={avatarUrl}
-                alt={`${name || 'User'} avatar`}
-                loading="lazy"
-                style={{
-                  transformOrigin: '50% 100%',
-                  transform:
-                    'translateX(calc(-50% + (var(--pointer-from-left) - 0.5) * 6px)) translateZ(0) scaleY(calc(1 + (var(--pointer-from-top) - 0.5) * 0.02)) scaleX(calc(1 + (var(--pointer-from-left) - 0.5) * 0.01))',
-                  borderRadius: cardRadius
-                }}
-                onError={e => {
-                  const t = e.target;
-                  t.style.display = 'none';
-                }}
+        {socialLinks.length > 0 && (
+          <div className="w-1/2 h-px my-6 rounded-full bg-black/10 dark:bg-white/10" />
+        )}
+
+        {socialLinks.length > 0 && (
+          <div className="flex items-center justify-center gap-3">
+            {socialLinks.map((item) => (
+              <SocialButton
+                key={item.id}
+                item={item}
+                setHoveredItem={setHoveredItem}
+                hoveredItem={hoveredItem}
               />
-              {showUserInfo && (
-                <div
-                  className="absolute z-[2] flex items-center justify-between backdrop-blur-[30px] border border-white/10 pointer-events-auto"
-                  style={{
-                    '--ui-inset': '20px',
-                    '--ui-radius-bias': '6px',
-                    bottom: 'var(--ui-inset)',
-                    left: 'var(--ui-inset)',
-                    right: 'var(--ui-inset)',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: 'calc(max(0px, var(--card-radius) - var(--ui-inset) + var(--ui-radius-bias)))',
-                    padding: '12px 14px'
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="rounded-full overflow-hidden border border-white/10 flex-shrink-0"
-                      style={{ width: '48px', height: '48px' }}
-                    >
-                      <img
-                        className="w-full h-full object-cover rounded-full"
-                        src={miniAvatarUrl || avatarUrl}
-                        alt={`${name || 'User'} mini avatar`}
-                        loading="lazy"
-                        style={{ display: 'block', gridArea: 'auto', borderRadius: '50%', pointerEvents: 'auto' }}
-                        onError={e => {
-                          const t = e.target;
-                          t.style.opacity = '0.5';
-                          t.src = avatarUrl;
-                        }}
-                      />
-                    </div>
-                    <div className="flex flex-col items-start gap-1.5">
-                      <div className="text-sm font-medium text-white/90 leading-none">@{handle}</div>
-                      <div className="text-sm text-white/70 leading-none">{status}</div>
-                    </div>
-                  </div>
-                  <button
-                    className="border border-white/10 rounded-lg px-4 py-3 text-xs font-semibold text-white/90 cursor-pointer backdrop-blur-[10px] transition-all duration-200 ease-out hover:border-white/40 hover:-translate-y-px"
-                    onClick={handleContactClick}
-                    style={{ pointerEvents: 'auto', display: 'block', gridArea: 'auto', borderRadius: '8px' }}
-                    type="button"
-                    aria-label={`Contact ${name || 'user'}`}
-                  >
-                    {contactText}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Details content */}
-            <div
-              className="max-h-full overflow-hidden text-center relative z-[5]"
-              style={{
-                transform:
-                  'translate3d(calc(var(--pointer-from-left) * -6px + 3px), calc(var(--pointer-from-top) * -6px + 3px), 0.1px)',
-                mixBlendMode: 'luminosity',
-                gridArea: '1 / -1',
-                borderRadius: cardRadius,
-                pointerEvents: 'none'
-              }}
-            >
-              <div className="w-full absolute flex flex-col" style={{ top: '3em', display: 'flex', gridArea: 'auto' }}>
-                <h3
-                  className="font-semibold m-0"
-                  style={{
-                    fontSize: 'min(5svh, 3em)',
-                    backgroundImage: 'linear-gradient(to bottom, #fff, #6f6fbe)',
-                    backgroundSize: '1em 1.5em',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    display: 'block',
-                    gridArea: 'auto',
-                    borderRadius: '0',
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  {name}
-                </h3>
-                <p
-                  className="font-semibold whitespace-nowrap mx-auto w-min"
-                  style={{
-                    position: 'relative',
-                    top: '-12px',
-                    fontSize: '16px',
-                    margin: '0 auto',
-                    backgroundImage: 'linear-gradient(to bottom, #fff, #4a4ac0)',
-                    backgroundSize: '1em 1.5em',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    WebkitBackgroundClip: 'text',
-                    display: 'block',
-                    gridArea: 'auto',
-                    borderRadius: '0',
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  {title}
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
-        </section>
+        )}
+
+        {actionButton && <ActionButton action={actionButton} />}
       </div>
+
+      <div className="absolute inset-0 rounded-3xl -z-10 opacity-30 blur-2xl bg-gradient-to-r from-remix-from/50 to-leadis-to/50" />
     </div>
   );
-};
+}
 
-const ProfileCard = React.memo(ProfileCardComponent);
-export default ProfileCard;
+const SocialButton = ({ item, setHoveredItem, hoveredItem }) => (
+  <div className="relative">
+    <a
+      href={item.href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ease-out group overflow-hidden bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
+      onMouseEnter={() => setHoveredItem(item.id)}
+      onMouseLeave={() => setHoveredItem(null)}
+      aria-label={item.label}
+    >
+      <item.icon
+        size={20}
+        className="transition-all duration-200 ease-out text-ink-muted group-hover:text-ink"
+      />
+    </a>
+    <Tooltip item={item} hoveredItem={hoveredItem} />
+  </div>
+);
+
+const ActionButton = ({ action }) => (
+  <a
+    href={action.href}
+    className="flex items-center gap-2 px-6 py-3 mt-8 rounded-full font-semibold text-sm transition-all duration-300 ease-out hover:scale-[1.03] active:scale-95 group text-white bg-ink-solid dark:bg-white dark:text-ink-solid"
+    style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}
+  >
+    <span>{action.text}</span>
+    <ArrowUpRight
+      size={16}
+      className="transition-transform duration-300 ease-out group-hover:rotate-45"
+    />
+  </a>
+);
+
+const Tooltip = ({ item, hoveredItem }) => (
+  <div
+    role="tooltip"
+    className={`absolute -top-11 left-1/2 -translate-x-1/2 z-50 px-3 py-1.5 rounded-lg backdrop-blur-md border text-xs font-medium whitespace-nowrap transition-all duration-300 ease-out pointer-events-none bg-base-elevated text-ink border-black/10 dark:border-white/10 ${
+      hoveredItem === item.id ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+    }`}
+    style={{ boxShadow: "0 4px 20px rgba(0,0,0,0.1)" }}
+  >
+    {item.label}
+  </div>
+);
