@@ -1,7 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Sound effect ringan bikinan sendiri lewat Web Audio API (tanpa file audio
+// eksternal) — "whoosh" tipis pas teks pembuka muncul, "chime" pas profile
+// muncul. Browser modern nge-block audio otomatis sebelum ada interaksi
+// user; efek ini akan langsung nyala begitu user pertama kali tap/klik apa
+// pun di halaman kalau autoplay-nya sempat diblokir.
+function playWhoosh(ctx) {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(220, now);
+  osc.frequency.exponentialRampToValueAtTime(660, now + 0.5);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.15, now + 0.08);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.6);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(now);
+  osc.stop(now + 0.6);
+}
+
+function playChime(ctx) {
+  if (!ctx) return;
+  const now = ctx.currentTime;
+  const notes = [523.25, 659.25, 783.99]; // arpeggio C5-E5-G5, kesan "ta-da"
+  notes.forEach((freq, i) => {
+    const start = now + i * 0.09;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(0.2, start + 0.03);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.5);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(start);
+    osc.stop(start + 0.5);
+  });
+}
 
 // Placeholder — nanti disambungkan ke data member beneran.
 const member = {
@@ -44,7 +84,7 @@ function GreetingText({ text }) {
         {text.split("").map((char, i) => (
           <motion.span
             key={i}
-            initial={{ opacity: 0, filter: "blur(3px)" }}
+            initial={{ opacity: 0, filter: "blur(1px)" }}
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{
               delay: (i * CHAR_DELAY_MS) / 1000,
@@ -64,14 +104,39 @@ function GreetingText({ text }) {
 export default function WelcomePreviewSection() {
   // tahap: "greeting" -> "intro" -> "exit"
   const [stage, setStage] = useState("greeting");
+  const audioCtxRef = useRef(null);
+
+  const getAudioCtx = () => {
+    if (typeof window === "undefined") return null;
+    if (!audioCtxRef.current) {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      audioCtxRef.current = new Ctx();
+    }
+    return audioCtxRef.current;
+  };
 
   useEffect(() => {
+    const ctx = getAudioCtx();
+    if (ctx && ctx.state === "suspended") {
+      const resume = () => ctx.resume();
+      window.addEventListener("pointerdown", resume, { once: true });
+      window.addEventListener("keydown", resume, { once: true });
+    }
+    playWhoosh(ctx);
+
     const timers = [
       setTimeout(() => setStage("intro"), T_INTRO_START),
       setTimeout(() => setStage("exit"), T_EXIT_START),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
+
+  useEffect(() => {
+    if (stage === "intro") {
+      playChime(audioCtxRef.current);
+    }
+  }, [stage]);
 
   const isExiting = stage === "exit";
 
