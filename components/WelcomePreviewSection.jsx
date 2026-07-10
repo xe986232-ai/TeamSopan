@@ -44,7 +44,7 @@ function GreetingText({ text }) {
         {text.split("").map((char, i) => (
           <motion.span
             key={i}
-            initial={{ opacity: 0, filter: "blur(6px)" }}
+            initial={{ opacity: 0, filter: "blur(3px)" }}
             animate={{ opacity: 1, filter: "blur(0px)" }}
             transition={{
               delay: (i * CHAR_DELAY_MS) / 1000,
