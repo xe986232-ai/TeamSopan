@@ -19,9 +19,36 @@ const outfit = Outfit({
 });
 
 export const metadata = {
-  title: "SOPAN TEAM",
+  metadataBase: new URL("https://sopan.vercel.app"),
+  title: {
+    default: "SOPAN TEAM",
+    template: "%s | SOPAN TEAM",
+  },
   description:
-    "SOPAN TEAM — komunitas kreator dengan tiga divisi: Remix, Creator, dan Leadis.",
+    "SOPAN TEAM — komunitas kreator dengan tiga divisi: Remix, Creator, dan Leadis. Tempat berkumpulnya kreator remix, video editor, dan kreator konten perempuan yang mau berkembang bareng.",
+  keywords: [
+    "SOPAN TEAM",
+    "komunitas kreator",
+    "remix",
+    "video editor",
+    "content creator",
+    "Leadis",
+  ],
+  openGraph: {
+    title: "SOPAN TEAM",
+    description:
+      "Tiga divisi, satu wadah. Tempat berkumpulnya kreator remix, video editor, dan kreator konten perempuan yang mau berkembang bareng.",
+    url: "https://sopan.vercel.app",
+    siteName: "SOPAN TEAM",
+    locale: "id_ID",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SOPAN TEAM",
+    description:
+      "Tiga divisi, satu wadah. Tempat berkumpulnya kreator remix, video editor, dan kreator konten perempuan yang mau berkembang bareng.",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -34,17 +34,35 @@ export default function Footer() {
             <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-ink-dim">
               Sosial
             </span>
-            <ul className="mt-4 space-y-2 text-ink-muted text-sm">
-              <li>Instagram</li>
-              <li>TikTok</li>
-              <li>YouTube</li>
+            <ul className="font-body font-normal mt-4 space-y-2 text-ink-muted text-sm">
+              <li>
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-ink transition-colors">
+                  Instagram
+                </a>
+              </li>
+              <li>
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-ink transition-colors">
+                  TikTok
+                </a>
+              </li>
+              <li>
+                <a href="#" target="_blank" rel="noopener noreferrer" className="hover:text-ink transition-colors">
+                  YouTube
+                </a>
+              </li>
             </ul>
           </div>
         </div>
       </div>
 
-      <p className="max-w-6xl mx-auto mt-16 text-xs text-ink-dim">
-        &copy; {new Date().getFullYear()} SOPAN TEAM. Semua hak dilindungi.
+      <p className="font-body font-normal max-w-6xl mx-auto mt-16 text-xs text-ink-dim flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span>&copy; {new Date().getFullYear()} SOPAN TEAM. Semua hak dilindungi.</span>
+        <a href="/privasi" className="hover:text-ink-muted transition-colors">
+          Kebijakan Privasi
+        </a>
+        <a href="/ketentuan" className="hover:text-ink-muted transition-colors">
+          Ketentuan Layanan
+        </a>
       </p>
     </footer>
   );

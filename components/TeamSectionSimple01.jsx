@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Instagram, Linkedin, Twitter } from "lucide-react";
 
 const teamMembers = [
@@ -101,9 +102,11 @@ export const TeamSectionSimple01 = () => {
           <ul className="grid w-full grid-cols-2 justify-items-center gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4">
             {teamMembers.map((item) => (
               <li key={item.name} className="flex flex-col items-center gap-2">
-                <img
+                <Image
                   src={item.avatarUrl}
                   alt={item.name}
+                  width={96}
+                  height={96}
                   className="h-20 w-20 rounded-full object-cover border border-black/10 md:h-24 md:w-24"
                 />
                 <div className="text-center">

@@ -13,6 +13,20 @@ const TESTIMONIALS = [
     date: "9 Jul 2026",
     text: "Gabung ke divisi Remix di SOPAN TEAM itu keputusan terbaik tahun ini. Timnya suportif banget dan progress skill musik gue jauh lebih cepat dibanding belajar sendirian.",
   },
+  {
+    name: "Sari Kusuma",
+    handle: "sarikusuma",
+    verified: false,
+    date: "2 Jul 2026",
+    text: "Divisi Leadis ngasih ruang buat gue tampil tanpa takut dihakimi. Semua member saling dukung, jarang nemu komunitas kayak gini.",
+  },
+  {
+    name: "Bima Prasetya",
+    handle: "bimapras",
+    verified: false,
+    date: "28 Jun 2026",
+    text: "Baru gabung 2 bulan di Creator, udah dapet banyak masukan soal color grading dari member senior. Belajarnya cepet karena langsung praktek bareng tim.",
+  },
 ];
 
 export default function TestimonialSection() {

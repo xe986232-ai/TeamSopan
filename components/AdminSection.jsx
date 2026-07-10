@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+
+// TODO: ganti "Nama Admin 2" & "Nama Admin 3" dengan nama, jabatan, dan foto asli.
 const admins = [
   {
     name: "Tony Wayne",
@@ -44,10 +47,12 @@ export default function AdminSection() {
               href="#"
               className="group relative block overflow-hidden rounded-xl border border-black/10 shadow-sm"
             >
-              <img
+              <Image
                 alt={admin.name}
                 src={admin.image}
-                className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                fill
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
               {/* gradient overlay supaya teks tetap terbaca di atas foto */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
