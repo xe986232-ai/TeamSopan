@@ -55,32 +55,26 @@ const QUESTION_LINE_1 = "Kami punya tiga divisi keren.";
 const QUESTION_LINE_2 = "Kamu mau gabung di divisi mana?";
 const QUESTION_HOLD_MS = 1000;
 
-// ---- Komponen teks per-huruf (blur-in tipis + zoom) ----
+// ---- Komponen teks per-huruf (fade + rise ringan, GPU-friendly) ----
 function RevealText({ text, className }) {
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 1.08 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.8, ease: SMOOTH_EASE }}
-    >
-      <h2 className={className}>
-        {text.split("").map((char, i) => (
-          <motion.span
-            key={i}
-            initial={{ opacity: 0, filter: "blur(1px)" }}
-            animate={{ opacity: 1, filter: "blur(0px)" }}
-            transition={{
-              delay: (i * CHAR_DELAY_MS) / 1000,
-              duration: CHAR_DURATION_MS / 1000,
-              ease: "easeOut",
-            }}
-            className="inline-block"
-          >
-            {char === " " ? "\u00A0" : char}
-          </motion.span>
-        ))}
-      </h2>
-    </motion.div>
+    <h2 className={className}>
+      {text.split("").map((char, i) => (
+        <motion.span
+          key={i}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            delay: (i * CHAR_DELAY_MS) / 1000,
+            duration: CHAR_DURATION_MS / 1000,
+            ease: SMOOTH_EASE,
+          }}
+          className="inline-block will-change-transform"
+        >
+          {char === " " ? "\u00A0" : char}
+        </motion.span>
+      ))}
+    </h2>
   );
 }
 
@@ -433,21 +427,26 @@ export default function JoinForm() {
     router.push("/");
   };
 
-  const isFullScreenStage = ["greeting", "question", "loading", "success"].includes(stage);
+  // Kunci scroll body selama flow full-screen ini aktif, biar gak ada
+  // konten halaman lain yang nyelip kelihatan di belakang overlay.
+  React.useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = original;
+    };
+  }, []);
 
   return (
     <div
-      className={
-        isFullScreenStage
-          ? "fixed inset-0 z-[3000] flex items-center justify-center overflow-hidden bg-black"
-          : "relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-black rounded-3xl py-16"
-      }
+      className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black py-10"
+      style={{ WebkitOverflowScrolling: "touch" }}
     >
-      {/* gradient glow, sama pola dengan WelcomePreviewSection */}
-      <div className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
-      <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
+      {/* gradient glow, sama pola dengan WelcomePreviewSection — fixed jadi selalu nutupin seluruh viewport */}
+      <div className="pointer-events-none fixed -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
+      <div className="pointer-events-none fixed -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
 
-      <div className="relative z-10 w-full flex items-center justify-center">
+      <div className="relative z-10 w-full flex items-center justify-center min-h-full px-4">
         <AnimatePresence mode="wait">
           {stage === "greeting" && (
             <GreetingStage onDone={() => setStage("question")} />
