@@ -9,7 +9,6 @@ import {
   CardContent,
   CardDescription,
   CardFooter,
-  CardHeader,
   CardTitle,
 } from "./ui/card";
 
@@ -22,7 +21,7 @@ const DIVISIONS = [
     description:
       "Ngolah ulang track jadi versi yang lebih segar — dari mashup, bootleg, sampai remix full produksi.",
     tags: ["Mashup", "Bootleg Remix", "Sound Design"],
-    accent: "from-remix-from to-remix-to",
+    soft: "#F1E9FF",
     accentSolidFrom: "#B026FF",
     accentSolidTo: "#FF2E92",
     members: [
@@ -38,7 +37,7 @@ const DIVISIONS = [
     description:
       "Nyusun potongan gambar jadi konten yang enak ditonton — editing rapi, transisi presisi, color grading konsisten.",
     tags: ["Video Editing", "Color Grading", "Motion Graphic"],
-    accent: "from-creator-from to-creator-to",
+    soft: "#DFF7EC",
     accentSolidFrom: "#00E5FF",
     accentSolidTo: "#3D5AFE",
     members: [
@@ -54,7 +53,7 @@ const DIVISIONS = [
     description:
       "Wadah khusus kreator perempuan buat tampil, bikin konten, dan berkembang bareng dalam satu keluarga SOPAN TEAM.",
     tags: ["Content Creation", "Live & Showcase", "Personal Branding"],
-    accent: "from-leadis-from to-leadis-to",
+    soft: "#FFEFD9",
     accentSolidFrom: "#FFD166",
     accentSolidTo: "#FF6FB5",
     members: [
@@ -70,28 +69,21 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } },
 };
 
-function DivisionVisual({ division }) {
+function TaskIcon({ color }) {
   return (
-    <div
-      className="relative aspect-[4/3] w-full flex items-center justify-center overflow-hidden rounded-lg transition-transform duration-300 hover:scale-[1.02]"
-      style={{
-        background: `linear-gradient(135deg, ${division.accentSolidFrom}, ${division.accentSolidTo})`,
-        boxShadow: `0 12px 32px -10px ${division.accentSolidTo}66`,
-      }}
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
     >
-      <div
-        className="absolute inset-0 opacity-20"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.35) 1px, transparent 0)",
-          backgroundSize: "22px 22px",
-        }}
-      />
-
-      <span className="relative font-display font-black text-white text-2xl sm:text-3xl leading-none drop-shadow-md px-2 text-center">
-        {division.name}
-      </span>
-    </div>
+      <path d="M9 11l3 3L22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
   );
 }
 
@@ -124,43 +116,52 @@ export default function DivisionsSection() {
               variants={fadeUp}
               transition={{ delay: i * 0.1 }}
             >
-              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden">
-                <CardHeader className="p-3 pb-0">
-                  <DivisionVisual division={division} />
-                </CardHeader>
-                <CardContent className="p-3 pt-4">
-                  <CardTitle className="font-display font-bold text-lg">{division.name}</CardTitle>
-                  <CardDescription className="font-body font-normal text-xs mt-1">
+              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden rounded-[28px] border-0">
+                {/* Soft pastel top block */}
+                <div
+                  className="p-5 pb-6"
+                  style={{ backgroundColor: division.soft }}
+                >
+                  <span className="font-body font-medium text-[11px] tracking-wide text-black/50">
+                    {division.eyebrow}
+                  </span>
+                  <CardTitle className="font-display font-extrabold text-2xl leading-tight text-ink-solid mt-1">
+                    {division.name}
+                  </CardTitle>
+                  <CardDescription className="font-body font-normal text-sm mt-2 text-black/60 leading-relaxed">
                     {division.description}
                   </CardDescription>
-                </CardContent>
-                <CardFooter className="p-3 pt-0 flex-col items-stretch gap-3">
-                  <div className="flex items-center justify-between border-t border-black/10 dark:border-white/10 pt-3">
-                    <div className="flex items-center">
-                      <AnimatedTooltip items={division.members} />
-                    </div>
+
+                  <div className="flex items-center gap-2 mt-4">
+                    <TaskIcon color={division.accentSolidFrom} />
+                    <span className="font-body font-medium text-sm text-black/70">
+                      {division.tags.length} skill fokus
+                    </span>
+                  </div>
+                </div>
+
+                {/* White bottom block */}
+                <CardContent className="p-5 pt-4">
+                  <div className="flex items-center justify-between">
+                    <AnimatedTooltip items={division.members} />
                     <span className="text-[11px] text-ink-dim">
                       {division.members.length} member aktif
                     </span>
                   </div>
-                  <div className="flex gap-2">
-                    {division.href ? (
-                      <Link href={division.href} className="flex-1">
-                        <Button size="sm" className="w-full">
-                          Gabung
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button size="sm" className="flex-1">
-                        Gabung
-                      </Button>
-                    )}
-                    <Link href="/anggota" className="flex-1">
-                      <Button size="sm" variant="secondary" className="w-full">
-                        Anggota
-                      </Button>
+                </CardContent>
+                <CardFooter className="p-5 pt-0 flex-col items-stretch gap-2">
+                  {division.href ? (
+                    <Link href={division.href} className="w-full">
+                      <Button className="w-full h-11 rounded-full">Gabung Divisi</Button>
                     </Link>
-                  </div>
+                  ) : (
+                    <Button className="w-full h-11 rounded-full">Gabung Divisi</Button>
+                  )}
+                  <Link href="/anggota" className="w-full">
+                    <Button variant="secondary" className="w-full h-11 rounded-full">
+                      Lihat Anggota
+                    </Button>
+                  </Link>
                 </CardFooter>
               </Card>
             </motion.div>
