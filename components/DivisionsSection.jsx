@@ -56,6 +56,7 @@ const DIVISIONS = [
     soft: "#FFEFD9",
     accentSolidFrom: "#FFD166",
     accentSolidTo: "#FF6FB5",
+    extraCount: "99+",
     members: [
       { id: 1, name: "Sasa M.", designation: "Content Creator", image: "https://i.pravatar.cc/150?img=47" },
       { id: 2, name: "Nadia R.", designation: "Host & Showcase", image: "https://i.pravatar.cc/150?img=45" },
@@ -116,10 +117,10 @@ export default function DivisionsSection() {
               variants={fadeUp}
               transition={{ delay: i * 0.1 }}
             >
-              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden rounded-[28px] border border-black/5 dark:border-white/10 bg-base-elevated p-2.5">
+              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden rounded-[24px] border border-black/5 dark:border-white/10 bg-base-elevated p-1">
                 {/* Soft pastel inset block — sits inside the white card with a visible margin */}
                 <div
-                  className="rounded-[20px] p-5 pb-6"
+                  className="rounded-[18px] p-5 pb-6"
                   style={{ backgroundColor: division.soft }}
                 >
                   <span className="font-body font-medium text-[11px] tracking-wide text-black/50">
@@ -141,17 +142,26 @@ export default function DivisionsSection() {
                 </div>
 
                 {/* White bottom block */}
-                <CardContent className="px-2.5 pt-4 pb-1">
+                <CardContent className="px-4 pt-4 pb-1">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
                       <AnimatedTooltip items={division.members} />
+                      {division.extraCount ? (
+                        <div className="group relative -mr-4 z-0">
+                          <div className="relative !m-0 h-10 w-10 rounded-full border-2 border-white bg-ink-solid flex items-center justify-center !p-0">
+                            <span className="text-white text-[10px] font-bold leading-none">
+                              {division.extraCount}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
                     <span className="text-[11px] text-ink-dim">
                       {division.members.length} member aktif
                     </span>
                   </div>
                 </CardContent>
-                <CardFooter className="px-2.5 pt-3 pb-1 flex-col items-stretch gap-2">
+                <CardFooter className="px-4 pt-3 pb-2 flex-col items-stretch gap-2">
                   {division.href ? (
                     <Link href={division.href} className="w-full">
                       <Button className="w-full h-11 rounded-full">Gabung Divisi</Button>
