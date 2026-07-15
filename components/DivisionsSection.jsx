@@ -116,10 +116,10 @@ export default function DivisionsSection() {
               variants={fadeUp}
               transition={{ delay: i * 0.1 }}
             >
-              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden rounded-[28px] border-0">
-                {/* Soft pastel top block */}
+              <Card className="w-full max-w-xs mx-auto shadow-none overflow-hidden rounded-[28px] border border-black/5 dark:border-white/10 bg-base-elevated p-2.5">
+                {/* Soft pastel inset block — sits inside the white card with a visible margin */}
                 <div
-                  className="p-5 pb-6"
+                  className="rounded-[20px] p-5 pb-6"
                   style={{ backgroundColor: division.soft }}
                 >
                   <span className="font-body font-medium text-[11px] tracking-wide text-black/50">
@@ -141,15 +141,17 @@ export default function DivisionsSection() {
                 </div>
 
                 {/* White bottom block */}
-                <CardContent className="p-5 pt-4">
+                <CardContent className="px-2.5 pt-4 pb-1">
                   <div className="flex items-center justify-between">
-                    <AnimatedTooltip items={division.members} />
+                    <div className="flex items-center">
+                      <AnimatedTooltip items={division.members} />
+                    </div>
                     <span className="text-[11px] text-ink-dim">
                       {division.members.length} member aktif
                     </span>
                   </div>
                 </CardContent>
-                <CardFooter className="p-5 pt-0 flex-col items-stretch gap-2">
+                <CardFooter className="px-2.5 pt-3 pb-1 flex-col items-stretch gap-2">
                   {division.href ? (
                     <Link href={division.href} className="w-full">
                       <Button className="w-full h-11 rounded-full">Gabung Divisi</Button>
