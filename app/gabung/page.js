@@ -27,14 +27,12 @@ export default function GabungPage() {
         />
 
         {/*
-          JoinForm sekarang mengatur seluruh alur pendaftaran secara bertahap:
+          JoinForm mengatur seluruh alur pendaftaran secara bertahap:
           sapaan -> pertanyaan divisi -> pilih divisi -> form -> loading -> sukses.
-          Tahap sapaan/pertanyaan/loading/sukses tampil full-screen (fixed),
-          jadi section ini cukup jadi wadah untuk tahap pilih-divisi & form.
+          Setiap tahap tampil sebagai overlay full-screen (fixed inset-0) di atas
+          navbar & footer di bawah ini.
         */}
-        <section className="relative overflow-hidden px-6 sm:px-10 pt-28 pb-20 sm:pt-32 sm:pb-28">
-          <JoinForm />
-        </section>
+        <JoinForm />
 
         <Footer />
       </main>

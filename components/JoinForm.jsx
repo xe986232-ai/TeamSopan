@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft } from "lucide-react";
@@ -99,7 +100,7 @@ function GreetingStage({ onDone }) {
     >
       <RevealText
         text={GREETING_TEXT}
-        className="font-display font-extrabold text-3xl md:text-5xl text-white"
+        className="font-display font-extrabold text-3xl md:text-5xl text-ink"
       />
     </motion.div>
   );
@@ -121,10 +122,10 @@ function QuestionStage({ onDone }) {
       transition={{ duration: 0.7, ease: SMOOTH_EASE }}
       className="flex flex-col items-center justify-center text-center px-6 gap-2"
     >
-      <h2 className="font-display font-extrabold text-2xl md:text-4xl text-white">
+      <h2 className="font-display font-extrabold text-2xl md:text-4xl text-ink">
         {QUESTION_LINE_1}
       </h2>
-      <h2 className="font-display font-extrabold text-2xl md:text-4xl text-white">
+      <h2 className="font-display font-extrabold text-2xl md:text-4xl text-ink">
         {QUESTION_LINE_2}
       </h2>
     </motion.div>
@@ -149,10 +150,10 @@ function PickDivisionStage({ division, onSelect, onContinue }) {
         transition={{ duration: 0.7, ease: SMOOTH_EASE }}
         className="text-center mb-8"
       >
-        <span className="font-body font-semibold text-xs sm:text-sm tracking-[0.3em] uppercase text-white/50">
+        <span className="font-body font-semibold text-xs sm:text-sm tracking-[0.3em] uppercase text-ink-muted">
           Pilih Divisi
         </span>
-        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-white mt-2">
+        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-ink mt-2">
           {QUESTION_LINE_2}
         </h2>
       </motion.div>
@@ -168,14 +169,18 @@ function PickDivisionStage({ division, onSelect, onContinue }) {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: SMOOTH_EASE, delay: i * 0.12 }}
               onClick={() => onSelect(item.id)}
-              className="group relative text-left rounded-2xl p-5 border transition-all"
-              style={{
-                borderColor: active ? item.accentTo : "rgba(255,255,255,0.12)",
-                background: active
-                  ? `linear-gradient(135deg, ${item.accentFrom}22, ${item.accentTo}22)`
-                  : "rgba(255,255,255,0.04)",
-                boxShadow: active ? `0 0 0 1px ${item.accentTo}55, 0 12px 32px -12px ${item.accentTo}66` : "none",
-              }}
+              className={`group relative text-left rounded-2xl p-5 border transition-all ${
+                active ? "" : "border-black/10 dark:border-white/12 bg-black/[0.02] dark:bg-white/[0.04]"
+              }`}
+              style={
+                active
+                  ? {
+                      borderColor: item.accentTo,
+                      background: `linear-gradient(135deg, ${item.accentFrom}22, ${item.accentTo}22)`,
+                      boxShadow: `0 0 0 1px ${item.accentTo}55, 0 12px 32px -12px ${item.accentTo}66`,
+                    }
+                  : undefined
+              }
             >
               <div className="flex items-center gap-3 mb-3">
                 <span
@@ -184,17 +189,9 @@ function PickDivisionStage({ division, onSelect, onContinue }) {
                 >
                   <img src={item.image} alt="" className="h-full w-full object-cover" loading="lazy" />
                 </span>
-                <span className="font-display font-bold text-lg text-white">{item.name}</span>
+                <span className="font-display font-bold text-lg text-ink">{item.name}</span>
               </div>
-              <p className="text-sm text-white/60 leading-relaxed">{item.description}</p>
-
-              {active && (
-                <motion.div
-                  layoutId="division-active-badge"
-                  className="absolute top-3 right-3 h-2.5 w-2.5 rounded-full"
-                  style={{ background: item.accentTo, boxShadow: `0 0 8px 2px ${item.accentTo}` }}
-                />
-              )}
+              <p className="text-sm text-ink-muted leading-relaxed">{item.description}</p>
             </motion.button>
           );
         })}
@@ -216,6 +213,18 @@ function PickDivisionStage({ division, onSelect, onContinue }) {
           Lanjut Isi Data
         </Button>
       </motion.div>
+
+      <motion.p
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="text-center text-sm text-ink-muted mt-6"
+      >
+        Sudah punya akun?{" "}
+        <Link href="/masuk" className="font-medium text-ink hover:underline">
+          Masuk di sini
+        </Link>
+      </motion.p>
     </motion.div>
   );
 }
@@ -236,16 +245,16 @@ function FormStage({ division, form, errors, loading, onChangeField, onBack, onS
       <button
         type="button"
         onClick={onBack}
-        className="flex items-center gap-1.5 text-xs sm:text-sm text-white/50 hover:text-white/80 transition-colors mb-4"
+        className="flex items-center gap-1.5 text-xs sm:text-sm text-ink-muted hover:text-ink/80 transition-colors mb-4"
       >
         <ArrowLeft size={14} /> Ganti divisi
       </button>
 
       <div className="text-center mb-6">
-        <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-white/50">
+        <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-ink-muted">
           Formulir Pendaftaran
         </span>
-        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-white mt-2">
+        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-ink mt-2">
           Daftar sebagai calon anggota{" "}
           <span style={{ color: selected?.accentTo }}>{selected?.name}</span>
         </h2>
@@ -318,8 +327,8 @@ function LoadingStage() {
       transition={{ duration: 0.4 }}
       className="flex flex-col items-center justify-center gap-4 text-center px-6"
     >
-      <Loader2 size={32} className="animate-spin text-white/80" />
-      <p className="font-body text-sm text-white/60">Mengirim pendaftaran kamu...</p>
+      <Loader2 size={32} className="animate-spin text-ink/80" />
+      <p className="font-body text-sm text-ink-muted">Mengirim pendaftaran kamu...</p>
     </motion.div>
   );
 }
@@ -339,7 +348,7 @@ function SuccessStage({ firstName, onBackHome }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: SMOOTH_EASE }}
-        className="font-display font-extrabold text-2xl md:text-3xl text-white"
+        className="font-display font-extrabold text-2xl md:text-3xl text-ink"
       >
         Terima kasih telah mendaftar di SOPAN TEAM{firstName ? `, ${firstName}` : ""}! 🎉
       </motion.h2>
@@ -347,7 +356,7 @@ function SuccessStage({ firstName, onBackHome }) {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: SMOOTH_EASE, delay: 0.5 }}
-        className="font-body text-base md:text-lg text-white/70"
+        className="font-body text-base md:text-lg text-ink-muted"
       >
         Pendaftaran kamu sedang diproses oleh admin. Kami akan mengabari lewat email yang kamu daftarkan.
       </motion.p>
@@ -433,21 +442,13 @@ export default function JoinForm() {
     router.push("/");
   };
 
-  const isFullScreenStage = ["greeting", "question", "loading", "success"].includes(stage);
-
   return (
-    <div
-      className={
-        isFullScreenStage
-          ? "fixed inset-0 z-[3000] flex items-center justify-center overflow-hidden bg-black"
-          : "relative min-h-[70vh] flex items-center justify-center overflow-hidden bg-black rounded-3xl py-16"
-      }
-    >
+    <div className="fixed inset-0 z-[3000] flex items-center justify-center overflow-y-auto bg-base">
       {/* gradient glow, sama pola dengan WelcomePreviewSection */}
       <div className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
       <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
 
-      <div className="relative z-10 w-full flex items-center justify-center">
+      <div className="relative z-10 w-full flex items-center justify-center py-24 px-4">
         <AnimatePresence mode="wait">
           {stage === "greeting" && (
             <GreetingStage onDone={() => setStage("question")} />
