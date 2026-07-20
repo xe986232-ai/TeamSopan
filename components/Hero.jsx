@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { SoftGlowBackground } from "./ui/soft-glow-background";
+import GlitchText from "./ui/glitch-text";
 
 export default function Hero() {
   return (
@@ -12,9 +13,10 @@ export default function Hero() {
         transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
         className="relative flex flex-col gap-4 items-center justify-center px-4 text-center"
       >
-        <div className="font-hero font-black uppercase text-5xl md:text-8xl text-ink text-center leading-[0.95]">
-          Sopan Team
-        </div>
+        <GlitchText
+          text="Sopan Team"
+          className="font-hero font-black uppercase text-5xl md:text-8xl text-ink text-center leading-[0.95]"
+        />
 
         <div className="font-body font-normal text-base md:text-2xl text-ink-muted py-4 max-w-xl">
           Tiga divisi, satu wadah. Tempat berkumpulnya kreator remix, video
