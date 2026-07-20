@@ -12,7 +12,10 @@ export default function Hero() {
         transition={{ delay: 0.3, duration: 0.8, ease: "easeInOut" }}
         className="relative flex flex-col gap-4 items-center justify-center px-4 text-center"
       >
-        <div className="font-hero font-black uppercase text-5xl md:text-8xl text-ink text-center leading-[0.95]">
+        <div
+          data-text="Sopan Team"
+          className="glitch-text font-hero font-black uppercase text-5xl md:text-8xl text-ink text-center leading-[0.95]"
+        >
           Sopan Team
         </div>
 
