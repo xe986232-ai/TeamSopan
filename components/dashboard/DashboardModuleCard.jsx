@@ -1,12 +1,14 @@
 import { ArrowRight } from "lucide-react";
 
-// Warna pastel dipetakan dari nama, biar pemanggilannya gampang: <DashboardModuleCard color="pink" ... />
+// Nama key dipertahankan biar data di halaman lain gak perlu diubah, tapi
+// semua warna sekarang cuma varian dari warna utama dashboard (biru) +
+// abu-abu netral — biar gak "kebanyakan warna" kayak sebelumnya.
 const COLOR_MAP = {
-  pink: "bg-[#FFE1EC]",
-  blue: "bg-[#DCEEFF]",
-  yellow: "bg-[#FFF3C4]",
-  green: "bg-[#DCF7E3]",
-  purple: "bg-[#EDE4FF]",
+  pink: "bg-[#EAF2FF]",
+  blue: "bg-[#D8E9FF]",
+  yellow: "bg-[#F0F3F7]",
+  green: "bg-[#EAF2FF]",
+  purple: "bg-[#D8E9FF]",
 };
 
 export default function DashboardModuleCard({
