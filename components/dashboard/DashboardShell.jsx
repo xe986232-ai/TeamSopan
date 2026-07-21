@@ -5,6 +5,7 @@ import {
   useDashboardSidebar,
 } from "./DashboardSidebarContext";
 import DashboardSidebar from "./DashboardSidebar";
+import DashboardScrollDivider from "./DashboardScrollDivider";
 
 // Dipisah dari provider biar bisa baca state `open` dan ganti tampilan
 // bungkusnya. Saat nav TERTUTUP: gak ada sisa warna biru / padding sama
@@ -21,10 +22,14 @@ function DashboardShellInner({ children, rightPanel }) {
     >
       <div
         className={`flex items-start transition-[gap] duration-300 ${
-          open ? "gap-5" : "gap-0"
+          open ? "gap-3" : "gap-0"
         }`}
       >
         <DashboardSidebar />
+
+        {/* Pemisah bar hitam tipis — cuma ada selama sidebar dibuka,
+            karena cuma di situ ada celah antara background nav & konten. */}
+        {open && <DashboardScrollDivider />}
 
         {/* min-w-0 penting: tanpa ini, flex child gak mau menyusut pas
             sidebar dibuka, jadi kesannya "ketutup" bukan "kegeser". */}
