@@ -21,7 +21,7 @@ export default function DashboardScrollDivider() {
   const thumbTop = useTransform(smoothProgress, [0, 1], ["0%", "82%"]);
 
   return (
-    <div aria-hidden className="flex w-[3px] shrink-0 self-stretch py-1">
+    <div aria-hidden className="flex w-[3px] h-full shrink-0 self-stretch py-1">
       <div className="relative w-full rounded-full bg-black/10 overflow-hidden">
         <motion.div
           style={{ top: thumbTop }}

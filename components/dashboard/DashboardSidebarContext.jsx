@@ -10,15 +10,37 @@ export function DashboardSidebarProvider({ children }) {
   // otomatis dibuka.
   const [open, setOpen] = React.useState(false);
 
+  // isDesktop dipakai DashboardShell buat milih mode layout:
+  // - Desktop: sidebar ikut alur flex (lebar berubah, konten menyesuaikan
+  //   sisa ruang) — di layar lebar ini gak masalah karena ruang berlimpah.
+  // - Mobile/tablet: sidebar jadi overlay tetap (lebar konstan, gak pernah
+  //   resize), konten cuma di-translate ke kanan. Jadi konten gak pernah
+  //   "menyempit"/reflow, cuma "kegeser".
+  const [isDesktop, setIsDesktop] = React.useState(false);
+
   React.useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth >= 1024) {
-      setOpen(true);
-    }
+    if (typeof window === "undefined") return;
+
+    const mql = window.matchMedia("(min-width: 1024px)");
+
+    const sync = () => {
+      setIsDesktop(mql.matches);
+      setOpen(mql.matches);
+    };
+
+    sync();
+    mql.addEventListener("change", sync);
+    return () => mql.removeEventListener("change", sync);
   }, []);
 
   const value = React.useMemo(
-    () => ({ open, setOpen, toggle: () => setOpen((prev) => !prev) }),
-    [open]
+    () => ({
+      open,
+      setOpen,
+      toggle: () => setOpen((prev) => !prev),
+      isDesktop,
+    }),
+    [open, isDesktop]
   );
 
   return (
