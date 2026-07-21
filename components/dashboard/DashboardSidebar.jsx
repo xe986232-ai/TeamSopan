@@ -160,7 +160,7 @@ export default function DashboardSidebar({ mode = "flow" }) {
   // sendiri gak pernah bikin apa pun di sebelahnya ikut resize/reflow.
   if (mode === "overlay") {
     return (
-      <div className="absolute inset-y-0 left-0" style={{ width: SIDEBAR_WIDTH }}>
+      <div className="absolute inset-y-0 left-0 z-0" style={{ width: SIDEBAR_WIDTH }}>
         <SidebarContent pathname={pathname} />
       </div>
     );

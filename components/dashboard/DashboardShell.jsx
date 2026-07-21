@@ -30,14 +30,14 @@ function DashboardShellInner({ children, rightPanel }) {
 
   if (!isDesktop) {
     return (
-      <div className="relative min-h-screen overflow-x-hidden bg-[#1677F5]">
+      <div className="relative min-h-screen overflow-x-hidden bg-[#1677F5] isolate">
         <DashboardSidebar mode="overlay" />
 
         <motion.div
           initial={false}
           animate={{ x: open ? SIDEBAR_WIDTH + MOBILE_GAP : 0 }}
           transition={{ duration: 0.38, ease: SMOOTH_EASE }}
-          className="relative min-h-screen w-full bg-white"
+          className="relative z-10 min-h-screen w-full bg-white"
         >
           {/* Bar pemisah nempel di tepi kiri layer konten. Cuma keliatan
               pas konten ke-translate ke kanan, karena sebelum itu ketutup
