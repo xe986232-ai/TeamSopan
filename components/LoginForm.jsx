@@ -86,7 +86,7 @@ export default function LoginForm() {
       <form
         onSubmit={handleSubmit}
         noValidate
-        className="rounded-xl border border-black/10 dark:border-white/10 bg-base-elevated p-6 sm:p-8 space-y-6"
+        className="space-y-6"
       >
         <TextField
           id="username"
