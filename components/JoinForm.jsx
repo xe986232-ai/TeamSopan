@@ -262,7 +262,7 @@ function FormStage({ division, form, errors, loading, onChangeField, onBack, onS
       <form
         onSubmit={onSubmit}
         noValidate
-        className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xl p-6 sm:p-8 space-y-6"
+        className="space-y-6"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <TextField
