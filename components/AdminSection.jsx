@@ -58,13 +58,22 @@ export default function AdminSection() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
               <div className="relative p-4 sm:p-6 lg:p-8 min-h-[320px] flex flex-col justify-between">
-                <div>
-                  <p className="font-body font-semibold text-sm tracking-widest text-pink-400 uppercase">
-                    {admin.role}
-                  </p>
-                  <p className="font-display font-bold text-xl text-white sm:text-2xl">
-                    {admin.name}
-                  </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-body font-semibold text-sm tracking-widest text-pink-400 uppercase">
+                      {admin.role}
+                    </p>
+                    <p className="font-display font-bold text-xl text-white sm:text-2xl">
+                      {admin.name}
+                    </p>
+                  </div>
+                  <Image
+                    alt="Sopan Team"
+                    src="/sopan-logo.svg"
+                    width={32}
+                    height={32}
+                    className="shrink-0 rounded-full bg-white/90 p-1.5 shadow-md"
+                  />
                 </div>
 
                 <div className="translate-y-8 transform opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
