@@ -19,8 +19,8 @@ const DIVISIONS = [
     href: "/divisi/remix",
     tagline: "Suara baru dari lagu lama",
     description:
-      "Ngolah ulang track jadi versi yang lebih segar — dari mashup, bootleg, sampai remix full produksi.",
-    tags: ["Mashup", "Bootleg Remix", "Sound Design"],
+      "Ngolah track lewat DAW jadi remix versi sendiri — dari mashup, bootleg remix, sampai produksi remix full version siap rilis.",
+    tags: ["Remix", "DAW Production", "Bootleg Remix"],
     soft: "#F1E9FF",
     accentSolidFrom: "#B026FF",
     accentSolidTo: "#FF2E92",
@@ -34,10 +34,10 @@ const DIVISIONS = [
   {
     eyebrow: "Divisi 02",
     name: "Creator",
-    tagline: "Footage jadi cerita",
+    tagline: "Jedag-jedug bikin nagih",
     description:
-      "Nyusun potongan gambar jadi konten yang enak ditonton — editing rapi, transisi presisi, color grading konsisten.",
-    tags: ["Video Editing", "Color Grading", "Motion Graphic"],
+      "Racik footage jadi konten jedag-jedug yang bikin nagih pakai Alight Motion atau CapCut — transisi ngebut, efek nampol, siap FYP.",
+    tags: ["Alight Motion", "CapCut", "Edit Jedag-Jedug"],
     soft: "#DFF7EC",
     accentSolidFrom: "#00E5FF",
     accentSolidTo: "#3D5AFE",
@@ -51,10 +51,10 @@ const DIVISIONS = [
   {
     eyebrow: "Divisi 03",
     name: "Leadis",
-    tagline: "Panggung buat kreator perempuan",
+    tagline: "Jedag-jedug khusus kreator cewek",
     description:
-      "Wadah khusus kreator perempuan buat tampil, bikin konten, dan berkembang bareng dalam satu keluarga SOPAN TEAM.",
-    tags: ["Content Creation", "Live & Showcase", "Personal Branding"],
+      "Sama kayak Creator — edit jedag-jedug pakai Alight Motion atau CapCut, tapi ini rumahnya para kreator cewek buat berkarya bareng.",
+    tags: ["Alight Motion", "CapCut", "Kreator Cewek"],
     soft: "#FFEFD9",
     accentSolidFrom: "#FFD166",
     accentSolidTo: "#FF6FB5",
