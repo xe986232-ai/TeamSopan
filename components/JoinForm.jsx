@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { TextField } from "./ui/text-field";
-import { PasswordField } from "./ui/password-field";
+import { TextareaField } from "./ui/textarea-field";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/toast";
 
@@ -31,7 +31,7 @@ const DIVISIONS = [
   },
   {
     id: "leadis",
-    name: "Leadis",
+    name: "Creator Ladies",
     description: "Panggung buat kreator perempuan.",
     accentFrom: "#FFD166",
     accentTo: "#FF6FB5",
@@ -40,7 +40,7 @@ const DIVISIONS = [
   },
 ];
 
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const WHATSAPP_REGEX = /^(\+?\d[\d\s-]{7,15}\d)$/;
 
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
@@ -264,39 +264,77 @@ function FormStage({ division, form, errors, loading, onChangeField, onBack, onS
         noValidate
         className="space-y-6"
       >
+        <TextField
+          id="fullName"
+          label="Nama lengkap / nama panggilan"
+          placeholder="Raka Aditya"
+          value={form.fullName}
+          onChange={onChangeField("fullName")}
+          error={errors.fullName}
+        />
+
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <TextField
-            id="firstName"
-            label="Nama depan"
-            placeholder="Raka"
-            value={form.firstName}
-            onChange={onChangeField("firstName")}
-            error={errors.firstName}
+            id="age"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            label="Umur"
+            placeholder="19"
+            value={form.age}
+            onChange={onChangeField("age")}
+            error={errors.age}
           />
           <TextField
-            id="lastName"
-            label="Nama belakang"
-            placeholder="Aditya"
-            value={form.lastName}
-            onChange={onChangeField("lastName")}
-            error={errors.lastName}
+            id="domicile"
+            label="Domisili"
+            placeholder="Mataram, NTB"
+            value={form.domicile}
+            onChange={onChangeField("domicile")}
+            error={errors.domicile}
           />
         </div>
 
         <TextField
-          id="email"
-          type="email"
-          label="Alamat email"
-          placeholder="kamu@email.com"
-          value={form.email}
-          onChange={onChangeField("email")}
-          error={errors.email}
+          id="whatsapp"
+          type="tel"
+          inputMode="tel"
+          label="Nomor WhatsApp"
+          placeholder="0812xxxxxxx"
+          value={form.whatsapp}
+          onChange={onChangeField("whatsapp")}
+          error={errors.whatsapp}
         />
 
-        <PasswordField value={form.password} onChange={onChangeField("password")} />
-        {errors.password && (
-          <p className="-mt-4 text-xs text-rose-400">{errors.password}</p>
-        )}
+        <TextareaField
+          id="experience"
+          label="Pengalaman"
+          placeholder={`Ceritain pengalaman kamu di dunia ${selected?.name ?? "ini"}...`}
+          rows={3}
+          value={form.experience}
+          onChange={onChangeField("experience")}
+          error={errors.experience}
+        />
+
+        <TextField
+          id="portfolio"
+          type="url"
+          label="Link portofolio / karya (opsional)"
+          placeholder="https://instagram.com/username"
+          value={form.portfolio}
+          onChange={onChangeField("portfolio")}
+          error={errors.portfolio}
+        />
+
+        <TextareaField
+          id="reason"
+          label="Alasan ingin bergabung"
+          placeholder="Kenapa kamu pengen jadi bagian dari SOPAN TEAM?"
+          rows={3}
+          value={form.reason}
+          onChange={onChangeField("reason")}
+          error={errors.reason}
+        />
 
         <Button
           type="submit"
@@ -333,7 +371,7 @@ function LoadingStage() {
 }
 
 // ---- Tahap 6: Sukses (dua baris teks bertahap) ----
-function SuccessStage({ firstName, onBackHome }) {
+function SuccessStage({ name, onBackHome }) {
   return (
     <motion.div
       key="success"
@@ -349,7 +387,7 @@ function SuccessStage({ firstName, onBackHome }) {
         transition={{ duration: 0.6, ease: SMOOTH_EASE }}
         className="font-display font-extrabold text-2xl md:text-3xl text-ink"
       >
-        Terima kasih telah mendaftar di SOPAN TEAM{firstName ? `, ${firstName}` : ""}! 🎉
+        Terima kasih telah mendaftar di SOPAN TEAM{name ? `, ${name}` : ""}! 🎉
       </motion.h2>
       <motion.p
         initial={{ opacity: 0, y: 12 }}
@@ -357,7 +395,8 @@ function SuccessStage({ firstName, onBackHome }) {
         transition={{ duration: 0.6, ease: SMOOTH_EASE, delay: 0.5 }}
         className="font-body text-base md:text-lg text-ink-muted"
       >
-        Pendaftaran kamu sedang diproses oleh admin. Kami akan mengabari lewat email yang kamu daftarkan.
+        Data kamu sedang direview admin. Kalau lolos pengecekan awal, kami akan
+        menghubungi kamu lewat nomor WhatsApp yang kamu daftarkan untuk sesi seleksi.
       </motion.p>
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -380,10 +419,13 @@ export default function JoinForm() {
   const [stage, setStage] = React.useState("greeting");
   const [division, setDivision] = React.useState(null);
   const [form, setForm] = React.useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
+    fullName: "",
+    age: "",
+    domicile: "",
+    whatsapp: "",
+    experience: "",
+    portfolio: "",
+    reason: "",
   });
   const [errors, setErrors] = React.useState({});
   const [loading, setLoading] = React.useState(false);
@@ -393,16 +435,26 @@ export default function JoinForm() {
 
   const validate = () => {
     const next = {};
-    if (!form.firstName.trim()) next.firstName = "Nama depan wajib diisi";
-    if (!form.lastName.trim()) next.lastName = "Nama belakang wajib diisi";
-    if (!form.email.trim()) {
-      next.email = "Email wajib diisi";
-    } else if (!EMAIL_REGEX.test(form.email)) {
-      next.email = "Format email tidak valid";
+    if (!form.fullName.trim()) next.fullName = "Nama wajib diisi";
+
+    const ageNum = Number(form.age);
+    if (!form.age) {
+      next.age = "Umur wajib diisi";
+    } else if (!Number.isInteger(ageNum) || ageNum < 10 || ageNum > 100) {
+      next.age = "Masukkan umur yang valid";
     }
-    if (!form.password || form.password.length < 8) {
-      next.password = "Password minimal 8 karakter";
+
+    if (!form.domicile.trim()) next.domicile = "Domisili wajib diisi";
+
+    if (!form.whatsapp.trim()) {
+      next.whatsapp = "Nomor WhatsApp wajib diisi";
+    } else if (!WHATSAPP_REGEX.test(form.whatsapp.trim())) {
+      next.whatsapp = "Format nomor WhatsApp tidak valid";
     }
+
+    if (!form.experience.trim()) next.experience = "Ceritain pengalaman kamu dulu, ya";
+    if (!form.reason.trim()) next.reason = "Alasan bergabung wajib diisi";
+
     setErrors(next);
     return Object.keys(next).length === 0;
   };
@@ -475,7 +527,7 @@ export default function JoinForm() {
           )}
           {stage === "loading" && <LoadingStage />}
           {stage === "success" && (
-            <SuccessStage firstName={form.firstName} onBackHome={goHome} />
+            <SuccessStage name={form.fullName.split(" ")[0]} onBackHome={goHome} />
           )}
         </AnimatePresence>
       </div>
