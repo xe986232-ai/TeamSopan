@@ -1,4 +1,4 @@
-import { Unbounded, Outfit } from "next/font/google";
+import { Unbounded, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -16,6 +16,15 @@ const outfit = Outfit({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800", "900"],
   variable: "--font-outfit",
+});
+
+// Space Grotesk — dipakai khusus untuk label/tag aksen kecil (mis. nama
+// divisi berwarna) supaya beda karakter dari body/heading, tanpa
+// mengganggu Unbounded yang direservasi untuk hero title.
+const accent = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-accent",
 });
 
 export const metadata = {
@@ -55,7 +64,7 @@ export default function RootLayout({ children }) {
   return (
     <html
       lang="id"
-      className={`${hero.variable} ${outfit.variable}`}
+      className={`${hero.variable} ${outfit.variable} ${accent.variable}`}
       suppressHydrationWarning
     >
       <body className="font-body antialiased bg-base text-ink">
