@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Play, Pause, Youtube, ExternalLink } from "lucide-react";
 
 // Ganti `src` dengan file audio asli karya divisi Remix begitu tersedia.
@@ -44,15 +45,6 @@ function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toFixed(1).padStart(4, "0")}`;
-}
-
-function initials(name) {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
 }
 
 // Ikon TikTok yang disederhanakan (bukan reproduksi logo resmi) —
@@ -246,11 +238,14 @@ export default function TrendingSoundSection() {
         {/* Header: avatar kecil + nama artist, "Divisi Remix" pink di bawahnya, CTA di kanan */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            <span
-              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display font-bold text-white text-sm"
-              style={{ background: "linear-gradient(135deg, #B026FF, #FF2E92)" }}
-            >
-              {initials(sound.creator)}
+            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white overflow-hidden">
+              <Image
+                src="/sopan-logo-black.png"
+                alt={sound.creator}
+                width={20}
+                height={26}
+                className="object-contain"
+              />
             </span>
             <div>
               <p className="font-body font-semibold text-sm text-ink leading-tight">
