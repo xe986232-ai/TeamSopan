@@ -2,17 +2,20 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Play, Pause } from "lucide-react";
+import { Play, Pause, Youtube, ExternalLink } from "lucide-react";
 
 // Ganti `src` dengan file audio asli karya divisi Remix begitu tersedia.
 // Untuk sekarang pakai placeholder — taruh file di public/audio/ lalu
 // update path di bawah (contoh: "/audio/remix-trending-01.mp3").
+// `link` & `platform` = tujuan tombol "dengerin full version" (tiktok | youtube).
 const TRENDING_SOUND = {
   id: "trend-01",
   title: "Remix Closing Set",
   creator: "Divisi Remix",
   src: "/audio/placeholder-01.mp3",
-  durationFallback: 20, // dipakai untuk waveform sebelum metadata audio ke-load
+  durationFallback: 20,
+  link: "https://www.tiktok.com/@sopanteam",
+  platform: "tiktok", // "tiktok" | "youtube"
 };
 
 const BAR_COUNT = 150;
@@ -30,7 +33,6 @@ function generateWaveform(seed = 1, bars = BAR_COUNT) {
   for (let i = 0; i < bars; i++) {
     value = (value * 9301 + 49297) % 233280;
     const rand = value / 233280;
-    // Sedikit dibuat "bergelombang" biar tidak acak rata, mirip gaya referensi.
     const wave = Math.sin(i / 6) * 0.15;
     heights.push(Math.min(1, Math.max(0.05, 0.35 + rand * 0.55 + wave)));
   }
@@ -42,6 +44,25 @@ function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${s.toFixed(1).padStart(4, "0")}`;
+}
+
+function initials(name) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+// Ikon TikTok yang disederhanakan (bukan reproduksi logo resmi) —
+// dipakai supaya tombol CTA tetap jelas platformnya tanpa memakai aset pihak ketiga.
+function TikTokGlyph({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
+      <path d="M16.6 3c.42 2.2 1.94 3.86 4.2 4.14v3.02a7.2 7.2 0 0 1-4.2-1.36v6.93a6.27 6.27 0 1 1-6.27-6.27c.22 0 .43.01.64.04v3.1a3.16 3.16 0 1 0 2.2 3.01V3h3.43Z" />
+    </svg>
+  );
 }
 
 function WaveformBars({ heights, colorClass }) {
@@ -163,6 +184,9 @@ export default function TrendingSoundSection() {
     }
   };
 
+  const PlatformIcon = sound.platform === "youtube" ? Youtube : TikTokGlyph;
+  const platformLabel = sound.platform === "youtube" ? "YouTube" : "TikTok";
+
   return (
     <section id="trending-sound" className="relative py-20 sm:py-24">
       <motion.div
@@ -183,6 +207,7 @@ export default function TrendingSoundSection() {
         </p>
       </motion.div>
 
+      {/* Tidak dibungkus card besar — elemen berdiri sendiri di atas background section */}
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -190,81 +215,100 @@ export default function TrendingSoundSection() {
         transition={{ duration: 0.6 }}
         className="max-w-2xl mx-auto px-6 sm:px-10"
       >
-        <div className="rounded-2xl border border-base-line bg-base-elevated p-4 sm:p-5">
-          <audio
-            ref={audioRef}
-            src={sound.src}
-            preload="metadata"
-            onTimeUpdate={handleTimeUpdate}
-            onLoadedMetadata={handleLoadedMetadata}
-            onEnded={handleEnded}
-            className="hidden"
-          />
-
-          <div className="mb-3">
-            <h3 className="font-body font-semibold text-sm text-ink truncate">
-              {sound.title}
-            </h3>
-            <p className="text-xs text-ink-muted truncate">{sound.creator}</p>
-          </div>
-
+        {/* Header: avatar kecil + nama artist, "Divisi Remix" pink di bawahnya, CTA di kanan */}
+        <div className="flex items-start justify-between gap-3 mb-4">
           <div className="flex items-center gap-3">
-            {/* Tombol play/pause — hitam putih monokrom */}
-            <button
-              type="button"
-              onClick={togglePlay}
-              aria-label={isPlaying ? "Pause" : "Play"}
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-95 dark:bg-white dark:text-black"
+            <span
+              className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display font-bold text-white text-sm"
+              style={{ background: "linear-gradient(135deg, #B026FF, #FF2E92)" }}
             >
-              {isPlaying ? (
-                <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
-              ) : (
-                <Play className="h-4 w-4 ml-0.5 fill-current" aria-hidden="true" />
-              )}
-            </button>
-
-            {/* Waveform + progress overlay + playhead, mengikuti referensi */}
-            <div
-              ref={trackRef}
-              role="slider"
-              tabIndex={0}
-              aria-label="Seek posisi audio"
-              aria-valuemin={0}
-              aria-valuemax={Math.round(duration || 0)}
-              aria-valuenow={Math.round(currentTime)}
-              aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
-              onPointerDown={handlePointerDown}
-              onKeyDown={handleKeyDown}
-              className="relative overflow-hidden rounded-lg bg-black/[0.06] dark:bg-white/[0.06] px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
-            >
-              <div className="pointer-events-none relative z-10 h-full w-full">
-                {/* Layer waveform belum terdengar (redup) */}
-                <WaveformBars
-                  heights={waveform}
-                  colorClass="fill-black/35 dark:fill-white/35"
-                />
-                {/* Layer waveform sudah terdengar (terang), diclip sesuai progress */}
-                <div
-                  className="absolute inset-0"
-                  style={{
-                    clipPath: `inset(0px ${(1 - progress) * 100}% 0px 0px)`,
-                  }}
-                >
-                  <WaveformBars heights={waveform} colorClass="fill-[#818cf8]" />
-                </div>
-              </div>
-
-              {/* Playhead */}
-              <span
-                className="pointer-events-none absolute inset-y-1.5 z-20 w-0.5 -translate-x-1/2 rounded-full bg-black dark:bg-white"
-                style={{ left: `${progress * 100}%` }}
-              />
+              {initials(sound.creator)}
+            </span>
+            <div>
+              <p className="font-body font-semibold text-sm text-ink leading-tight">
+                {sound.creator}
+              </p>
+              <p className="text-xs font-semibold leading-tight mt-0.5 text-remix-to">
+                Divisi Remix
+              </p>
             </div>
           </div>
 
-          <div className="mt-2 text-right text-xs tabular-nums text-ink-dim">
-            {formatTime(currentTime)} / {formatTime(duration)}
+          <a
+            href={sound.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-remix-to/30 bg-remix-to/[0.06] px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-remix-to/[0.12] hover:border-remix-to/50"
+          >
+            <PlatformIcon className="h-3.5 w-3.5 text-remix-to" aria-hidden="true" />
+            <span className="hidden sm:inline">Dengar di</span> {platformLabel}
+            <ExternalLink className="h-3 w-3 text-ink-muted" aria-hidden="true" />
+          </a>
+        </div>
+
+        <audio
+          ref={audioRef}
+          src={sound.src}
+          preload="metadata"
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata}
+          onEnded={handleEnded}
+          className="hidden"
+        />
+
+        <div className="flex items-center gap-3">
+          {/* Tombol play/pause — hitam putih monokrom */}
+          <button
+            type="button"
+            onClick={togglePlay}
+            aria-label={isPlaying ? "Pause" : "Play"}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-95 dark:bg-white dark:text-black"
+          >
+            {isPlaying ? (
+              <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
+            ) : (
+              <Play className="h-4 w-4 ml-0.5 fill-current" aria-hidden="true" />
+            )}
+          </button>
+
+          {/* Waveform + progress overlay + playhead */}
+          <div
+            ref={trackRef}
+            role="slider"
+            tabIndex={0}
+            aria-label="Seek posisi audio"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
+            onPointerDown={handlePointerDown}
+            onKeyDown={handleKeyDown}
+            className="relative overflow-hidden rounded-lg bg-black/[0.06] dark:bg-white/[0.06] px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
+          >
+            <div className="pointer-events-none relative z-10 h-full w-full">
+              <WaveformBars
+                heights={waveform}
+                colorClass="fill-black/35 dark:fill-white/35"
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  clipPath: `inset(0px ${(1 - progress) * 100}% 0px 0px)`,
+                }}
+              >
+                <WaveformBars heights={waveform} colorClass="fill-[#818cf8]" />
+              </div>
+            </div>
+
+            <span
+              className="pointer-events-none absolute inset-y-1.5 z-20 w-0.5 -translate-x-1/2 rounded-full bg-black dark:bg-white"
+              style={{ left: `${progress * 100}%` }}
+            />
           </div>
+        </div>
+
+        <div className="mt-2 text-right text-xs tabular-nums text-ink-dim">
+          {formatTime(currentTime)} / {formatTime(duration)}
         </div>
       </motion.div>
     </section>
