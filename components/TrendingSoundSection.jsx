@@ -228,7 +228,7 @@ export default function TrendingSoundSection() {
               <p className="font-body font-semibold text-sm text-ink leading-tight">
                 {sound.creator}
               </p>
-              <p className="text-xs font-semibold leading-tight mt-0.5 text-remix-to">
+              <p className="font-accent text-xs font-semibold leading-tight mt-0.5 tracking-wide text-remix-to">
                 Divisi Remix
               </p>
             </div>
@@ -238,11 +238,20 @@ export default function TrendingSoundSection() {
             href={sound.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-remix-to/30 bg-remix-to/[0.06] px-3 py-1.5 text-xs font-semibold text-ink transition hover:bg-remix-to/[0.12] hover:border-remix-to/50"
+            className="group relative isolate shrink-0 inline-flex items-center gap-1.5 rounded-full p-[1.5px] transition"
+            style={{ background: "linear-gradient(135deg, #B026FF, #FF2E92)" }}
           >
-            <PlatformIcon className="h-3.5 w-3.5 text-remix-to" aria-hidden="true" />
-            <span className="hidden sm:inline">Dengar di</span> {platformLabel}
-            <ExternalLink className="h-3 w-3 text-ink-muted" aria-hidden="true" />
+            <span className="flex items-center gap-1.5 rounded-full bg-base px-3 py-1.5 text-xs font-semibold text-ink transition group-hover:bg-transparent group-hover:text-white">
+              <PlatformIcon
+                className="h-3.5 w-3.5 text-remix-to transition group-hover:text-white"
+                aria-hidden="true"
+              />
+              <span className="hidden sm:inline">Dengar di</span> {platformLabel}
+              <ExternalLink
+                className="h-3 w-3 text-ink-muted transition group-hover:text-white/80"
+                aria-hidden="true"
+              />
+            </span>
           </a>
         </div>
 
@@ -299,11 +308,6 @@ export default function TrendingSoundSection() {
                 <WaveformBars heights={waveform} colorClass="fill-[#818cf8]" />
               </div>
             </div>
-
-            <span
-              className="pointer-events-none absolute inset-y-1.5 z-20 w-0.5 -translate-x-1/2 rounded-full bg-black dark:bg-white"
-              style={{ left: `${progress * 100}%` }}
-            />
           </div>
         </div>
 
