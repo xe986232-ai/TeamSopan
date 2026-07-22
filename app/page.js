@@ -1,6 +1,7 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
 import { AnnouncementBar } from "@/components/ui/announcement-bar";
 import Hero from "@/components/Hero";
+import EcosystemBeamSection from "@/components/EcosystemBeamSection";
 import AboutSection from "@/components/AboutSection";
 import DivisionsSection from "@/components/DivisionsSection";
 import TrendingSoundSection from "@/components/TrendingSoundSection";
@@ -53,6 +54,7 @@ export default function Home() {
       </AnnouncementBar>
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
       <Hero />
+      <EcosystemBeamSection />
       <AboutSection />
       <DivisionsSection />
       <TrendingSoundSection />
