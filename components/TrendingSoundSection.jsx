@@ -97,6 +97,8 @@ export default function TrendingSoundSection() {
   const sound = TRENDING_SOUND;
   const audioRef = useRef(null);
   const trackRef = useRef(null);
+  const rafRef = useRef(null);
+  const startTimestampRef = useRef(0); // performance.now() saat play dimulai, dikurangi offset waktu berjalan
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(sound.durationFallback);
@@ -105,49 +107,74 @@ export default function TrendingSoundSection() {
 
   const waveform = useMemo(() => generateWaveform(1), []);
 
-  const handleTimeUpdate = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !audio.duration || isDragging) return;
-    setCurrentTime(audio.currentTime);
-    setProgress(audio.currentTime / audio.duration);
-  }, [isDragging]);
-
   const handleLoadedMetadata = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !Number.isFinite(audio.duration)) return;
     setDuration(audio.duration);
   }, []);
 
-  const handleEnded = useCallback(() => {
+  const stopClock = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  }, []);
+
+  const finishPlayback = useCallback(() => {
+    stopClock();
     setIsPlaying(false);
     setProgress(0);
     setCurrentTime(0);
-  }, []);
+    startTimestampRef.current = 0;
+  }, [stopClock]);
+
+  // Clock internal — tidak bergantung ke event `timeupdate` dari elemen
+  // <audio>, supaya waveform tetap "hidup" walau file audio belum ada
+  // (misal masih placeholder). Kalau file audio asli sudah terpasang,
+  // ini tetap akurat karena disinkronkan ke performance.now() saat play.
+  const tick = useCallback(() => {
+    if (!duration) return;
+    const elapsed = (performance.now() - startTimestampRef.current) / 1000;
+    if (elapsed >= duration) {
+      finishPlayback();
+      return;
+    }
+    setCurrentTime(elapsed);
+    setProgress(elapsed / duration);
+    rafRef.current = requestAnimationFrame(tick);
+  }, [duration, finishPlayback]);
 
   const togglePlay = () => {
     const audio = audioRef.current;
-    if (!audio) return;
     if (isPlaying) {
-      audio.pause();
+      audio?.pause();
+      stopClock();
       setIsPlaying(false);
-    } else {
-      audio.play().catch(() => {
-        // Gagal play (misal file belum ada) — biarkan diam, jangan crash UI.
-      });
-      setIsPlaying(true);
+      return;
     }
+    audio?.play().catch(() => {
+      // Gagal play (misal file belum ada) — biarkan diam, clock internal
+      // tetap jalan supaya UI tidak terasa "macet".
+    });
+    startTimestampRef.current = performance.now() - currentTime * 1000;
+    setIsPlaying(true);
+    rafRef.current = requestAnimationFrame(tick);
   };
+
+  useEffect(() => stopClock, [stopClock]);
 
   const seekFromClientX = useCallback(
     (clientX) => {
       const audio = audioRef.current;
       const track = trackRef.current;
-      if (!audio || !track || !duration) return;
+      if (!track || !duration) return;
       const rect = track.getBoundingClientRect();
       const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-      audio.currentTime = ratio * duration;
+      const newTime = ratio * duration;
+      if (audio && Number.isFinite(audio.duration)) {
+        audio.currentTime = newTime;
+      }
+      startTimestampRef.current = performance.now() - newTime * 1000;
       setProgress(ratio);
-      setCurrentTime(ratio * duration);
+      setCurrentTime(newTime);
     },
     [duration]
   );
@@ -170,17 +197,18 @@ export default function TrendingSoundSection() {
   }, [isDragging, seekFromClientX]);
 
   const handleKeyDown = (e) => {
-    const audio = audioRef.current;
-    if (!audio || !duration) return;
+    if (!duration) return;
     const step = duration * 0.02;
     if (e.key === "ArrowRight") {
-      audio.currentTime = Math.min(duration, audio.currentTime + step);
-      setProgress(audio.currentTime / duration);
-      setCurrentTime(audio.currentTime);
+      const newTime = Math.min(duration, currentTime + step);
+      startTimestampRef.current = performance.now() - newTime * 1000;
+      setProgress(newTime / duration);
+      setCurrentTime(newTime);
     } else if (e.key === "ArrowLeft") {
-      audio.currentTime = Math.max(0, audio.currentTime - step);
-      setProgress(audio.currentTime / duration);
-      setCurrentTime(audio.currentTime);
+      const newTime = Math.max(0, currentTime - step);
+      startTimestampRef.current = performance.now() - newTime * 1000;
+      setProgress(newTime / duration);
+      setCurrentTime(newTime);
     }
   };
 
@@ -259,9 +287,7 @@ export default function TrendingSoundSection() {
           ref={audioRef}
           src={sound.src}
           preload="metadata"
-          onTimeUpdate={handleTimeUpdate}
           onLoadedMetadata={handleLoadedMetadata}
-          onEnded={handleEnded}
           className="hidden"
         />
 
@@ -292,7 +318,7 @@ export default function TrendingSoundSection() {
             aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
             onPointerDown={handlePointerDown}
             onKeyDown={handleKeyDown}
-            className="relative overflow-hidden rounded-lg bg-black/[0.06] dark:bg-white/[0.06] px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
+            className="relative overflow-hidden px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
           >
             <div className="pointer-events-none relative z-10 h-full w-full">
               <WaveformBars
