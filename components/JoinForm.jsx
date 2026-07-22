@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Check } from "lucide-react";
 import { TextField } from "./ui/text-field";
 import { TextareaField } from "./ui/textarea-field";
 import { Button } from "./ui/button";
@@ -41,6 +41,29 @@ const DIVISIONS = [
 ];
 
 const WHATSAPP_REGEX = /^(\+?\d[\d\s-]{7,15}\d)$/;
+
+const TERMS_SECTIONS = [
+  {
+    title: "1. Keanggotaan",
+    body: "Keanggotaan SOPAN TEAM bersifat sukarela. Tim admin berhak menyeleksi calon member lewat form ini, chat/telepon WhatsApp, dan masa trial sebelum status Member Resmi diberikan.",
+  },
+  {
+    title: "2. Proses seleksi",
+    body: "Setelah mendaftar, data kamu direview admin lalu (kalau lolos) dihubungi lewat WhatsApp untuk sesi seleksi. Lolos seleksi, kamu masuk masa Trial Member 2\u20134 minggu sebelum jadi Member Resmi.",
+  },
+  {
+    title: "3. Kewajiban member",
+    body: "Setiap member diharapkan berperilaku sopan, saling menghargai antar kreator, dan tidak menyalahgunakan nama SOPAN TEAM untuk kepentingan pribadi yang merugikan komunitas.",
+  },
+  {
+    title: "4. Konten & karya",
+    body: "Karya yang kamu buat tetap jadi hak milik kamu. SOPAN TEAM dapat menampilkan karya member di situs atau media sosial resmi sebagai showcase, dengan kredit yang sesuai.",
+  },
+  {
+    title: "5. Data pendaftaran",
+    body: "Data yang kamu isi (nama, umur, domisili, nomor WhatsApp, dll.) hanya dipakai untuk proses seleksi dan komunikasi internal SOPAN TEAM, tidak dibagikan ke pihak luar.",
+  },
+];
 
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
@@ -228,6 +251,98 @@ function PickDivisionStage({ division, onSelect, onContinue }) {
   );
 }
 
+// ---- Tahap 3.5: Ketentuan (harus discroll sampai bawah dulu) ----
+function TermsStage({ division, onBack, onAgree }) {
+  const selected = DIVISIONS.find((d) => d.id === division);
+  const contentRef = React.useRef(null);
+  const [hasReadToBottom, setHasReadToBottom] = React.useState(false);
+
+  const handleScroll = () => {
+    const el = contentRef.current;
+    if (!el) return;
+    const scrollPercentage = el.scrollTop / (el.scrollHeight - el.clientHeight);
+    if (scrollPercentage >= 0.99 && !hasReadToBottom) {
+      setHasReadToBottom(true);
+    }
+  };
+
+  return (
+    <motion.div
+      key="terms"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.6, ease: SMOOTH_EASE }}
+      className="w-full max-w-lg mx-auto px-4 sm:px-0"
+    >
+      <button
+        type="button"
+        onClick={onBack}
+        className="flex items-center gap-1.5 text-xs sm:text-sm text-ink-muted hover:text-ink/80 transition-colors mb-4"
+      >
+        <ArrowLeft size={14} /> Ganti divisi
+      </button>
+
+      <div className="text-center mb-6">
+        <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase text-ink-muted">
+          Sebelum Lanjut
+        </span>
+        <h2 className="font-display font-extrabold text-xl sm:text-2xl text-ink mt-2">
+          Baca dulu ketentuan calon anggota{" "}
+          <span style={{ color: selected?.accentTo }}>{selected?.name}</span>
+        </h2>
+      </div>
+
+      <div className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] overflow-hidden">
+        <div
+          ref={contentRef}
+          onScroll={handleScroll}
+          className="max-h-[45vh] overflow-y-auto px-5 py-4 space-y-4"
+        >
+          {TERMS_SECTIONS.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <p className="font-display font-bold text-sm text-ink">{section.title}</p>
+              <p className="font-body text-sm text-ink-muted leading-relaxed">{section.body}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="border-t border-black/10 dark:border-white/10 px-5 py-3 flex items-center gap-2">
+          {hasReadToBottom ? (
+            <>
+              <Check size={14} className="text-emerald-500 shrink-0" />
+              <span className="text-xs text-ink-muted">Sudah dibaca sampai bawah</span>
+            </>
+          ) : (
+            <span className="text-xs text-ink-dim">
+              Scroll sampai bawah dulu buat lanjut
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-center mt-6">
+        <Button
+          type="button"
+          size="lg"
+          disabled={!hasReadToBottom}
+          onClick={onAgree}
+          className="px-8 disabled:opacity-40"
+        >
+          Saya Setuju & Lanjut
+        </Button>
+      </div>
+
+      <p className="text-center text-xs text-ink-dim mt-4">
+        Baca versi lengkapnya di{" "}
+        <Link href="/ketentuan" target="_blank" className="underline hover:text-ink-muted">
+          halaman Ketentuan Layanan
+        </Link>
+      </p>
+    </motion.div>
+  );
+}
+
 // ---- Tahap 4: Form (zoom + fade) ----
 function FormStage({ division, form, errors, loading, onChangeField, onBack, onSubmit }) {
   const selected = DIVISIONS.find((d) => d.id === division);
@@ -246,7 +361,7 @@ function FormStage({ division, form, errors, loading, onChangeField, onBack, onS
         onClick={onBack}
         className="flex items-center gap-1.5 text-xs sm:text-sm text-ink-muted hover:text-ink/80 transition-colors mb-4"
       >
-        <ArrowLeft size={14} /> Ganti divisi
+        <ArrowLeft size={14} /> Kembali
       </button>
 
       <div className="text-center mb-6">
@@ -415,7 +530,7 @@ export default function JoinForm() {
   const { toast } = useToast();
   const router = useRouter();
 
-  // stage: greeting -> question -> pickDivision -> form -> loading -> success
+  // stage: greeting -> question -> pickDivision -> terms -> form -> loading -> success
   const [stage, setStage] = React.useState("greeting");
   const [division, setDivision] = React.useState(null);
   const [form, setForm] = React.useState({
@@ -511,7 +626,14 @@ export default function JoinForm() {
             <PickDivisionStage
               division={division}
               onSelect={setDivision}
-              onContinue={() => division && setStage("form")}
+              onContinue={() => division && setStage("terms")}
+            />
+          )}
+          {stage === "terms" && (
+            <TermsStage
+              division={division}
+              onBack={() => setStage("pickDivision")}
+              onAgree={() => setStage("form")}
             />
           )}
           {stage === "form" && (
@@ -521,7 +643,7 @@ export default function JoinForm() {
               errors={errors}
               loading={loading}
               onChangeField={updateField}
-              onBack={() => setStage("pickDivision")}
+              onBack={() => setStage("terms")}
               onSubmit={handleSubmit}
             />
           )}
