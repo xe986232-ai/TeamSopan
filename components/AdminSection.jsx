@@ -1,33 +1,72 @@
-"use client";
-
 import Image from "next/image";
+import { createPublicSupabaseClient } from "@/lib/supabase/client";
 
-// TODO: lengkapi foto & deskripsi asli tiap admin divisi kalau sudah ada.
-const admins = [
+// Fallback kalau Supabase belum di-setup / lagi error / foto belum diupload,
+// biar halaman tetap tampil bagus.
+const DEFAULT_ADMINS = [
   {
+    slug: "remix",
     name: "Candra",
     role: "Divisi Remix",
-    image:
+    image_url:
       "https://images.unsplash.com/photo-1603871165848-0aa92c869fa1?auto=format&fit=crop&q=80&w=1160",
-    desc: "Admin Divisi Remix, mengelola karya dan koordinasi kreator remix.",
+    description: "Admin Divisi Remix, mengelola karya dan koordinasi kreator remix.",
   },
   {
+    slug: "creator",
     name: "Gatau dahh",
     role: "Divisi Creator",
-    image:
+    image_url:
       "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=1160",
-    desc: "Admin Divisi Creator, mengelola karya dan koordinasi video editor.",
+    description: "Admin Divisi Creator, mengelola karya dan koordinasi video editor.",
   },
   {
+    slug: "leadis",
     name: "Apalagi ini",
     role: "Divisi Leadis",
-    image:
+    image_url:
       "https://images.unsplash.com/photo-1633332755192-727a05c4013d?auto=format&fit=crop&q=80&w=1160",
-    desc: "Admin Divisi Leadis, mengelola karya dan koordinasi kreator konten perempuan.",
+    description: "Admin Divisi Leadis, mengelola karya dan koordinasi kreator konten perempuan.",
   },
 ];
 
-export default function AdminSection() {
+const ROLE_LABEL = {
+  remix: "Divisi Remix",
+  creator: "Divisi Creator",
+  leadis: "Divisi Leadis",
+};
+
+async function getDivisionAdmins() {
+  try {
+    const supabase = createPublicSupabaseClient();
+    const { data, error } = await supabase
+      .from("division_admins")
+      .select("*")
+      .order("slug");
+
+    if (error || !data || data.length === 0) {
+      throw error || new Error("empty");
+    }
+
+    // pakai foto default kalau admin belum pernah upload foto
+    return data.map((admin) => {
+      const fallback = DEFAULT_ADMINS.find((d) => d.slug === admin.slug);
+      return {
+        slug: admin.slug,
+        name: admin.name,
+        role: ROLE_LABEL[admin.slug] || admin.role,
+        description: admin.description,
+        image_url: admin.image_url || fallback?.image_url,
+      };
+    });
+  } catch {
+    return DEFAULT_ADMINS;
+  }
+}
+
+export default async function AdminSection() {
+  const admins = await getDivisionAdmins();
+
   return (
     <section className="bg-base py-16 sm:py-24">
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
@@ -41,15 +80,15 @@ export default function AdminSection() {
         </div>
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {admins.map((admin, i) => (
+          {admins.map((admin) => (
             <a
-              key={i}
+              key={admin.slug}
               href="#"
               className="group relative block overflow-hidden rounded-xl border border-black/10 shadow-sm"
             >
               <Image
                 alt={admin.name}
-                src={admin.image}
+                src={admin.image_url}
                 fill
                 sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                 className="object-cover transition-transform duration-300 group-hover:scale-105"
@@ -78,7 +117,7 @@ export default function AdminSection() {
                 </div>
 
                 <div className="translate-y-8 transform opacity-0 transition-all group-hover:translate-y-0 group-hover:opacity-100">
-                  <p className="font-body font-normal text-sm text-white/90">{admin.desc}</p>
+                  <p className="font-body font-normal text-sm text-white/90">{admin.description}</p>
                 </div>
               </div>
             </a>

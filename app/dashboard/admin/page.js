@@ -1,16 +1,43 @@
-import { Pencil } from "lucide-react";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
-import DivisionBadge from "@/components/dashboard/DivisionBadge";
-import AvatarInitials from "@/components/dashboard/AvatarInitials";
+import AdminPhotoCard from "./AdminPhotoCard";
 import { DIVISION_ADMINS } from "@/lib/dashboard-data";
+import { createPublicSupabaseClient } from "@/lib/supabase/client";
 
 export const metadata = {
   title: "Admin Divisi | Dashboard SOPAN TEAM",
 };
 
-export default function AdminDivisiPage() {
+export const dynamic = "force-dynamic";
+
+async function getDivisionAdmins() {
+  try {
+    const supabase = createPublicSupabaseClient();
+    const { data, error } = await supabase
+      .from("division_admins")
+      .select("*")
+      .order("slug");
+
+    if (error || !data || data.length === 0) {
+      throw error || new Error("empty");
+    }
+    return data;
+  } catch {
+    // fallback ke data statis kalau Supabase belum di-setup / lagi error,
+    // biar halaman tetap jalan.
+    return DIVISION_ADMINS.map((a) => ({
+      slug: a.division,
+      name: a.name,
+      description: a.desc,
+      image_url: null,
+    }));
+  }
+}
+
+export default async function AdminDivisiPage() {
+  const admins = await getDivisionAdmins();
+
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
       <DashboardTopbar
@@ -20,33 +47,8 @@ export default function AdminDivisiPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {DIVISION_ADMINS.map((admin) => (
-          <div
-            key={admin.id}
-            className="rounded-2xl border border-black/[0.06] p-5 flex flex-col gap-3"
-          >
-            <div className="flex items-center justify-between">
-              <AvatarInitials name={admin.name} size={44} />
-              <button
-                type="button"
-                aria-label={`Ubah admin ${admin.name}`}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-black/40 hover:bg-black/5 hover:text-black/70 transition-colors"
-              >
-                <Pencil size={14} />
-              </button>
-            </div>
-
-            <div>
-              <p className="font-display font-bold text-sm text-[#111827]">
-                {admin.name}
-              </p>
-              <div className="mt-1.5">
-                <DivisionBadge divisionId={admin.division} />
-              </div>
-            </div>
-
-            <p className="text-xs text-black/50 leading-relaxed">{admin.desc}</p>
-          </div>
+        {admins.map((admin) => (
+          <AdminPhotoCard key={admin.slug} admin={admin} />
         ))}
       </div>
     </DashboardShell>

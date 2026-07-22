@@ -10,6 +10,10 @@ import TestimonialSection from "@/components/TestimonialSection";
 import Footer from "@/components/Footer";
 import WelcomeGate from "@/components/WelcomeGate";
 
+// Revalidate tiap 60 detik biar foto admin divisi yang baru diupload dari
+// dashboard otomatis kepakai di homepage tanpa perlu deploy ulang.
+export const revalidate = 60;
+
 const navItems = [
   { name: "Tentang", link: "#tentang" },
   { name: "Divisi", link: "#divisi" },
