@@ -30,12 +30,6 @@ const DEFAULT_ADMINS = [
   },
 ];
 
-const ROLE_LABEL = {
-  remix: "Divisi Remix",
-  creator: "Divisi Creator",
-  leadis: "Divisi Leadis",
-};
-
 async function getDivisionAdmins() {
   try {
     const supabase = createPublicSupabaseClient();
@@ -54,7 +48,7 @@ async function getDivisionAdmins() {
       return {
         slug: admin.slug,
         name: admin.name,
-        role: ROLE_LABEL[admin.slug] || admin.role,
+        role: admin.role,
         description: admin.description,
         image_url: admin.image_url || fallback?.image_url,
       };

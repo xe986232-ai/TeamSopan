@@ -57,3 +57,35 @@ export async function uploadAdminPhoto(formData) {
 
   return { success: true, imageUrl: publicUrlData.publicUrl };
 }
+
+export async function updateAdminInfo(formData) {
+  const slug = formData.get("slug");
+  const name = formData.get("name")?.toString().trim();
+  const role = formData.get("role")?.toString().trim();
+  const description = formData.get("description")?.toString().trim();
+
+  if (!slug || !name || !role) {
+    return { error: "Nama dan nama divisi tidak boleh kosong." };
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase
+    .from("division_admins")
+    .update({
+      name,
+      role,
+      description: description ?? "",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slug", slug);
+
+  if (error) {
+    return { error: `Gagal simpan: ${error.message}` };
+  }
+
+  revalidatePath("/dashboard/admin");
+  revalidatePath("/");
+
+  return { success: true };
+}
