@@ -59,8 +59,8 @@ export default function AdminSection() {
 
               <Image
                 alt="Sopan Team"
-                src="/sopan-logo.svg"
-                width={96}
+                src="/sopan-logo.png"
+                width={75}
                 height={96}
                 className="absolute top-1 right-1 z-10"
               />
