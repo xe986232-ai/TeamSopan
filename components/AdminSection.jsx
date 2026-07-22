@@ -70,9 +70,9 @@ export default function AdminSection() {
                   <Image
                     alt="Sopan Team"
                     src="/sopan-logo.svg"
-                    width={32}
-                    height={32}
-                    className="shrink-0 rounded-full bg-white/90 p-1.5 shadow-md"
+                    width={44}
+                    height={44}
+                    className="shrink-0"
                   />
                 </div>
 
