@@ -288,7 +288,7 @@ function FormStage({ division, form, errors, loading, onChangeField, onBack, onS
           <TextField
             id="domicile"
             label="Domisili"
-            placeholder="Mataram, NTB"
+            placeholder="Bandung"
             value={form.domicile}
             onChange={onChangeField("domicile")}
             error={errors.domicile}
@@ -494,12 +494,12 @@ export default function JoinForm() {
   };
 
   return (
-    <div className="fixed inset-0 z-[6000] flex items-center justify-center overflow-y-auto bg-base">
+    <div className="fixed inset-0 z-[6000] overflow-y-auto bg-base">
       {/* gradient glow, sama pola dengan WelcomePreviewSection */}
       <div className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
       <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
 
-      <div className="relative z-10 w-full flex items-center justify-center py-24 px-4">
+      <div className="relative z-10 min-h-full w-full flex flex-col items-center justify-center py-16 px-4 sm:py-24">
         <AnimatePresence mode="wait">
           {stage === "greeting" && (
             <GreetingStage onDone={() => setStage("question")} />
