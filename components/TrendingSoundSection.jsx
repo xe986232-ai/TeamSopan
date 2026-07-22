@@ -1,79 +1,95 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Play, Pause } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 // Ganti `src` dengan file audio asli karya divisi Remix begitu tersedia.
 // Untuk sekarang pakai placeholder — taruh file di public/audio/ lalu
 // update path di bawah (contoh: "/audio/remix-trending-01.mp3").
-const TRENDING_SOUNDS = [
-  {
-    id: "trend-01",
-    title: "Remix Closing Set",
-    creator: "Divisi Remix",
-    src: "/audio/placeholder-01.mp3",
-  },
-  {
-    id: "trend-02",
-    title: "Night Drive Edit",
-    creator: "Divisi Remix",
-    src: "/audio/placeholder-02.mp3",
-  },
-  {
-    id: "trend-03",
-    title: "Showcase Bumper",
-    creator: "Divisi Remix",
-    src: "/audio/placeholder-03.mp3",
-  },
-];
+const TRENDING_SOUND = {
+  id: "trend-01",
+  title: "Remix Closing Set",
+  creator: "Divisi Remix",
+  src: "/audio/placeholder-01.mp3",
+  durationFallback: 20, // dipakai untuk waveform sebelum metadata audio ke-load
+};
+
+const BAR_COUNT = 150;
+const BAR_WIDTH = 2;
+const BAR_GAP = 1;
+const VIEWBOX_WIDTH = BAR_COUNT * (BAR_WIDTH + BAR_GAP);
+const VIEWBOX_HEIGHT = 80;
 
 // Waveform statis untuk tampilan (tidak dianalisis dari file asli).
 // Kalau nanti mau waveform real, bisa diganti pakai Web Audio API
 // (decodeAudioData -> ambil peak amplitude per segmen).
-function generateWaveform(seed = 1, bars = 56) {
+function generateWaveform(seed = 1, bars = BAR_COUNT) {
   const heights = [];
   let value = seed * 137.5;
   for (let i = 0; i < bars; i++) {
     value = (value * 9301 + 49297) % 233280;
     const rand = value / 233280;
-    heights.push(0.15 + rand * 0.85);
+    // Sedikit dibuat "bergelombang" biar tidak acak rata, mirip gaya referensi.
+    const wave = Math.sin(i / 6) * 0.15;
+    heights.push(Math.min(1, Math.max(0.05, 0.35 + rand * 0.55 + wave)));
   }
   return heights;
 }
 
 function formatTime(seconds) {
-  if (!Number.isFinite(seconds)) return "--:--";
+  if (!Number.isFinite(seconds)) return "0:00.0";
   const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
+  const s = seconds % 60;
+  return `${m}:${s.toFixed(1).padStart(4, "0")}`;
 }
 
-function SoundCard({ sound, index, activeId, onPlay }) {
+function WaveformBars({ heights, colorClass }) {
+  return (
+    <svg
+      className="pointer-events-none h-full w-full"
+      viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      {heights.map((h, i) => {
+        const barHeight = h * VIEWBOX_HEIGHT;
+        const x = i * (BAR_WIDTH + BAR_GAP);
+        const y = (VIEWBOX_HEIGHT - barHeight) / 2;
+        return (
+          <rect
+            key={i}
+            x={x}
+            y={y}
+            width={BAR_WIDTH}
+            height={barHeight}
+            rx={1}
+            className={colorClass}
+          />
+        );
+      })}
+    </svg>
+  );
+}
+
+export default function TrendingSoundSection() {
+  const sound = TRENDING_SOUND;
   const audioRef = useRef(null);
-  const barsRef = useRef(null);
+  const trackRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(null);
+  const [duration, setDuration] = useState(sound.durationFallback);
   const [currentTime, setCurrentTime] = useState(0);
-  const waveform = useRef(generateWaveform(index + 1));
+  const [isDragging, setIsDragging] = useState(false);
 
-  const isActive = activeId === sound.id;
-
-  useEffect(() => {
-    if (!isActive && isPlaying) {
-      audioRef.current?.pause();
-      setIsPlaying(false);
-    }
-  }, [isActive, isPlaying]);
+  const waveform = useMemo(() => generateWaveform(1), []);
 
   const handleTimeUpdate = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || !audio.duration) return;
+    if (!audio || !audio.duration || isDragging) return;
     setCurrentTime(audio.currentTime);
     setProgress(audio.currentTime / audio.duration);
-  }, []);
+  }, [isDragging]);
 
   const handleLoadedMetadata = useCallback(() => {
     const audio = audioRef.current;
@@ -94,7 +110,6 @@ function SoundCard({ sound, index, activeId, onPlay }) {
       audio.pause();
       setIsPlaying(false);
     } else {
-      onPlay(sound.id);
       audio.play().catch(() => {
         // Gagal play (misal file belum ada) — biarkan diam, jangan crash UI.
       });
@@ -102,97 +117,51 @@ function SoundCard({ sound, index, activeId, onPlay }) {
     }
   };
 
-  const seekFromClientX = (clientX) => {
-    const audio = audioRef.current;
-    const track = barsRef.current;
-    if (!audio || !track || !duration) return;
-    const rect = track.getBoundingClientRect();
-    const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-    audio.currentTime = ratio * duration;
-    setProgress(ratio);
-    setCurrentTime(audio.currentTime);
-  };
+  const seekFromClientX = useCallback(
+    (clientX) => {
+      const audio = audioRef.current;
+      const track = trackRef.current;
+      if (!audio || !track || !duration) return;
+      const rect = track.getBoundingClientRect();
+      const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+      audio.currentTime = ratio * duration;
+      setProgress(ratio);
+      setCurrentTime(ratio * duration);
+    },
+    [duration]
+  );
 
-  const handleSeekClick = (e) => {
+  const handlePointerDown = (e) => {
+    setIsDragging(true);
     seekFromClientX(e.clientX);
   };
 
-  return (
-    <motion.article
-      initial={{ opacity: 0, y: 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, delay: index * 0.08 }}
-      className="rounded-2xl border border-base-line bg-base-elevated p-4 sm:p-5"
-    >
-      <audio
-        ref={audioRef}
-        src={sound.src}
-        preload="metadata"
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
-        onEnded={handleEnded}
-        className="hidden"
-      />
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMove = (e) => seekFromClientX(e.clientX);
+    const handleUp = () => setIsDragging(false);
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [isDragging, seekFromClientX]);
 
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <h3 className="font-body font-semibold text-sm text-ink truncate">
-            {sound.title}
-          </h3>
-          <p className="text-xs text-ink-muted truncate">{sound.creator}</p>
-        </div>
-        <button
-          type="button"
-          onClick={togglePlay}
-          aria-label={isPlaying ? "Pause" : "Play"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-remix-from to-remix-to text-white transition active:scale-95"
-        >
-          {isPlaying ? (
-            <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
-          ) : (
-            <Play className="h-4 w-4 ml-0.5 fill-current" aria-hidden="true" />
-          )}
-        </button>
-      </div>
-
-      <div
-        ref={barsRef}
-        role="slider"
-        tabIndex={0}
-        aria-label="Seek posisi audio"
-        aria-valuemin={0}
-        aria-valuemax={Math.round(duration || 0)}
-        aria-valuenow={Math.round(currentTime)}
-        aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
-        onClick={handleSeekClick}
-        className="relative flex h-16 items-center gap-[3px] cursor-pointer touch-none select-none"
-      >
-        {waveform.current.map((h, i) => {
-          const barRatio = i / waveform.current.length;
-          const isFilled = barRatio <= progress;
-          return (
-            <div
-              key={i}
-              className={cn(
-                "flex-1 rounded-full transition-colors",
-                isFilled ? "bg-remix-to" : "bg-ink/15"
-              )}
-              style={{ height: `${h * 100}%` }}
-            />
-          );
-        })}
-      </div>
-
-      <div className="mt-2 text-right text-xs tabular-nums text-ink-dim">
-        {formatTime(currentTime)} / {formatTime(duration)}
-      </div>
-    </motion.article>
-  );
-}
-
-export default function TrendingSoundSection() {
-  const [activeId, setActiveId] = useState(null);
+  const handleKeyDown = (e) => {
+    const audio = audioRef.current;
+    if (!audio || !duration) return;
+    const step = duration * 0.02;
+    if (e.key === "ArrowRight") {
+      audio.currentTime = Math.min(duration, audio.currentTime + step);
+      setProgress(audio.currentTime / duration);
+      setCurrentTime(audio.currentTime);
+    } else if (e.key === "ArrowLeft") {
+      audio.currentTime = Math.max(0, audio.currentTime - step);
+      setProgress(audio.currentTime / duration);
+      setCurrentTime(audio.currentTime);
+    }
+  };
 
   return (
     <section id="trending-sound" className="relative py-20 sm:py-24">
@@ -214,17 +183,90 @@ export default function TrendingSoundSection() {
         </p>
       </motion.div>
 
-      <div className="max-w-3xl mx-auto px-6 sm:px-10 grid gap-4 sm:grid-cols-2">
-        {TRENDING_SOUNDS.map((sound, index) => (
-          <SoundCard
-            key={sound.id}
-            sound={sound}
-            index={index}
-            activeId={activeId}
-            onPlay={setActiveId}
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6 }}
+        className="max-w-2xl mx-auto px-6 sm:px-10"
+      >
+        <div className="rounded-2xl border border-base-line bg-base-elevated p-4 sm:p-5">
+          <audio
+            ref={audioRef}
+            src={sound.src}
+            preload="metadata"
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onEnded={handleEnded}
+            className="hidden"
           />
-        ))}
-      </div>
+
+          <div className="mb-3">
+            <h3 className="font-body font-semibold text-sm text-ink truncate">
+              {sound.title}
+            </h3>
+            <p className="text-xs text-ink-muted truncate">{sound.creator}</p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Tombol play/pause — hitam putih monokrom */}
+            <button
+              type="button"
+              onClick={togglePlay}
+              aria-label={isPlaying ? "Pause" : "Play"}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-95 dark:bg-white dark:text-black"
+            >
+              {isPlaying ? (
+                <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
+              ) : (
+                <Play className="h-4 w-4 ml-0.5 fill-current" aria-hidden="true" />
+              )}
+            </button>
+
+            {/* Waveform + progress overlay + playhead, mengikuti referensi */}
+            <div
+              ref={trackRef}
+              role="slider"
+              tabIndex={0}
+              aria-label="Seek posisi audio"
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration || 0)}
+              aria-valuenow={Math.round(currentTime)}
+              aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
+              onPointerDown={handlePointerDown}
+              onKeyDown={handleKeyDown}
+              className="relative overflow-hidden rounded-lg bg-black/[0.06] dark:bg-white/[0.06] px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
+            >
+              <div className="pointer-events-none relative z-10 h-full w-full">
+                {/* Layer waveform belum terdengar (redup) */}
+                <WaveformBars
+                  heights={waveform}
+                  colorClass="fill-black/35 dark:fill-white/35"
+                />
+                {/* Layer waveform sudah terdengar (terang), diclip sesuai progress */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    clipPath: `inset(0px ${(1 - progress) * 100}% 0px 0px)`,
+                  }}
+                >
+                  <WaveformBars heights={waveform} colorClass="fill-[#818cf8]" />
+                </div>
+              </div>
+
+              {/* Playhead */}
+              <span
+                className="pointer-events-none absolute inset-y-1.5 z-20 w-0.5 -translate-x-1/2 rounded-full bg-black dark:bg-white"
+                style={{ left: `${progress * 100}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-2 text-right text-xs tabular-nums text-ink-dim">
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 }
