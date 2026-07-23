@@ -12,10 +12,15 @@ export const dynamic = "force-dynamic";
 
 export default async function PendaftarPage() {
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
+  const { data, error, count, status, statusText } = await supabase
     .from("registrants")
-    .select("*")
+    .select("*", { count: "exact" })
     .order("submitted_at", { ascending: false });
+
+  const secretKeyRaw = process.env.SUPABASE_SECRET_KEY || "";
+  const secretKeyPreview = secretKeyRaw
+    ? `${secretKeyRaw.slice(0, 12)}...(panjang: ${secretKeyRaw.length})`
+    : "KOSONG/UNDEFINED";
 
   const registrants = (data || []).map((r) => ({
     id: r.id,
@@ -45,6 +50,17 @@ export default async function PendaftarPage() {
           {pendingCount} pendaftar menunggu review
         </span>
       </div>
+
+      <pre className="mb-4 text-[10px] bg-yellow-100 text-black p-3 rounded overflow-auto whitespace-pre-wrap">
+DEBUG v2
+data raw length: {data ? data.length : "null"}
+count (exact, dari server): {count === null || count === undefined ? "null" : count}
+http status: {status} {statusText}
+error: {error ? JSON.stringify(error) : "tidak ada error"}
+url env: {process.env.NEXT_PUBLIC_SUPABASE_URL || "KOSONG"}
+secret key preview: {secretKeyPreview}
+data mentah (JSON): {JSON.stringify(data)}
+      </pre>
 
       {error && (
         <p className="mb-4 text-sm text-rose-500">
