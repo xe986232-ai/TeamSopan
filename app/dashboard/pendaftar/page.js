@@ -46,6 +46,10 @@ export default async function PendaftarPage() {
         </span>
       </div>
 
+      <pre className="mb-4 text-[10px] bg-yellow-100 text-black p-3 rounded overflow-auto whitespace-pre-wrap">
+DEBUG → data raw length: {data ? data.length : "null"} | registrants (mapped) length: {registrants.length} | error: {error ? JSON.stringify(error) : "tidak ada error"} | url env: {process.env.NEXT_PUBLIC_SUPABASE_URL || "KOSONG"}
+      </pre>
+
       {error && (
         <p className="mb-4 text-sm text-rose-500">
           Gagal memuat data pendaftar: {error.message}
