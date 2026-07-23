@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Heart, Play, ArrowRight } from "lucide-react";
 
@@ -117,11 +118,23 @@ export default function CreatorTrendingSection() {
                 </p>
               </div>
 
-              {/* like count, pojok bawah — ala kartu "disarankan" */}
-              <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 flex items-center gap-1.5">
-                <Heart className="h-4 w-4 text-pink-400" fill="currentColor" />
-                <span className="font-body font-semibold text-sm text-white">
-                  {formatLikes(work.likes)}
+              {/* like count & logo, pojok bawah — ala kartu "disarankan" */}
+              <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Heart className="h-4 w-4 text-pink-400" fill="currentColor" />
+                  <span className="font-body font-semibold text-sm text-white">
+                    {formatLikes(work.likes)}
+                  </span>
+                </div>
+
+                {/* logo Sopan Team, badge bulat putih kecil pojok kanan bawah */}
+                <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-white/90 shadow-md">
+                  <Image
+                    alt="Sopan Team"
+                    src="/sopan-logo-black.png"
+                    width={12}
+                    height={15}
+                  />
                 </span>
               </div>
             </motion.a>
