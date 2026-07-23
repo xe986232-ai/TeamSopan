@@ -30,6 +30,17 @@ const DIVISION_ROLE_LABEL = {
   leadis: "Member Leadis",
 };
 
+// Setelah diterima admin, nama pendaftar otomatis dikasih akhiran "Sopan"
+// (mis. "Radit" -> "Radit Sopan"). Nama inilah yang kepakai buat animasi
+// welcome & profil member. Cek dulu biar gak dobel kalau pendaftar iseng
+// isi nama yang udah ada "Sopan"-nya di form.
+function withSopanSuffix(fullName) {
+  const trimmed = (fullName || "").trim().replace(/\s+/g, " ");
+  if (!trimmed) return "Sopan";
+  if (/\bsopan$/i.test(trimmed)) return trimmed;
+  return `${trimmed} Sopan`;
+}
+
 export async function deleteRegistrant(id) {
   const supabase = createAdminSupabaseClient();
 
@@ -80,7 +91,12 @@ export async function acceptRegistrant(id) {
     return { error: "Pendaftar ini sudah diterima sebelumnya." };
   }
 
+  // Nama resmi member setelah diterima: otomatis ditambah akhiran "Sopan".
+  const memberFullName = withSopanSuffix(registrant.full_name);
+
   // Cari email yang belum kepakai (jaga-jaga ada nama depan yang sama).
+  // Email tetap pakai nama depan asli (sebelum ditambah "Sopan"), format
+  // emailnya kan udah otomatis "...sopan@teamsopan.com".
   let email = generateMemberEmail(registrant.full_name);
   for (let attempt = 0; attempt < 20; attempt++) {
     const { data: existing } = await supabase
@@ -111,7 +127,7 @@ export async function acceptRegistrant(id) {
   // 2. Simpan profil member.
   const { error: memberError } = await supabase.from("members").insert({
     id: authUser.user.id,
-    full_name: registrant.full_name,
+    full_name: memberFullName,
     email,
     division: registrant.division,
     role: DIVISION_ROLE_LABEL[registrant.division] || "Member",
@@ -153,7 +169,7 @@ export async function acceptRegistrant(id) {
   return {
     success: true,
     credentials: {
-      name: registrant.full_name,
+      name: memberFullName,
       whatsapp: registrant.whatsapp,
       email,
       password,
