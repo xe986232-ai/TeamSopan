@@ -1,13 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { Check, X, Copy, Loader2 } from "lucide-react";
+import { Check, X, Copy, Loader2, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import DivisionBadge from "./DivisionBadge";
 import StatusBadge from "./StatusBadge";
 import AvatarInitials from "./AvatarInitials";
+import RowActionsMenu from "./RowActionsMenu";
+import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { useToast } from "@/components/ui/toast";
-import { acceptRegistrant, rejectRegistrant } from "@/app/dashboard/pendaftar/actions";
+import {
+  acceptRegistrant,
+  rejectRegistrant,
+  deleteRegistrant,
+} from "@/app/dashboard/pendaftar/actions";
 
 function CopyRow({ label, value }) {
   const { toast } = useToast();
@@ -95,6 +101,8 @@ export default function PendaftarList({ initialRegistrants }) {
   const [registrants, setRegistrants] = React.useState(initialRegistrants);
   const [pendingId, setPendingId] = React.useState(null);
   const [credentials, setCredentials] = React.useState(null);
+  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleAccept = async (id) => {
     setPendingId(id);
@@ -125,6 +133,22 @@ export default function PendaftarList({ initialRegistrants }) {
     setRegistrants((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: "ditolak" } : r))
     );
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    const result = await deleteRegistrant(deleteTarget.id);
+    setIsDeleting(false);
+
+    if (result.error) {
+      toast({ variant: "error", title: "Gagal menghapus pendaftar", description: result.error });
+      return;
+    }
+
+    setRegistrants((prev) => prev.filter((r) => r.id !== deleteTarget.id));
+    setDeleteTarget(null);
+    toast({ variant: "success", title: "Pendaftar dihapus" });
   };
 
   return (
@@ -192,6 +216,18 @@ export default function PendaftarList({ initialRegistrants }) {
                 )}
               </div>
             )}
+
+            <RowActionsMenu
+              label={`Aksi lainnya untuk ${r.name}`}
+              items={[
+                {
+                  label: "Hapus pendaftar",
+                  icon: <Trash2 size={14} />,
+                  danger: true,
+                  onClick: () => setDeleteTarget(r),
+                },
+              ]}
+            />
           </div>
         ))}
       </div>
@@ -201,6 +237,19 @@ export default function PendaftarList({ initialRegistrants }) {
           <CredentialsModal
             credentials={credentials}
             onClose={() => setCredentials(null)}
+          />
+        )}
+        {deleteTarget && (
+          <ConfirmDeleteModal
+            title={`Hapus ${deleteTarget.name}?`}
+            description={
+              deleteTarget.status === "diterima"
+                ? "Data pendaftaran ini akan dihapus permanen. Catatan: akun member yang sudah dibuat sebelumnya TIDAK ikut terhapus -- hapus lewat halaman Anggota kalau perlu."
+                : "Data pendaftaran ini akan dihapus permanen dan tidak bisa dikembalikan."
+            }
+            isPending={isDeleting}
+            onConfirm={handleDelete}
+            onCancel={() => setDeleteTarget(null)}
           />
         )}
       </AnimatePresence>

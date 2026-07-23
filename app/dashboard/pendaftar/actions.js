@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import {
   generateMemberEmail,
@@ -8,11 +9,39 @@ import {
   generateActivationToken,
 } from "@/lib/members";
 
+// Ambil domain situs buat bikin link aktivasi lengkap. Utamakan
+// NEXT_PUBLIC_SITE_URL kalau di-set, tapi kalau env var itu kosong/lupa
+// di-set di Vercel, fallback ambil host asli dari request header --
+// supaya link aktivasi TIDAK PERNAH kepotong tanpa domain lagi.
+function getSiteUrl() {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, "");
+  }
+  const h = headers();
+  const host = h.get("host");
+  if (!host) return "";
+  const proto = h.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
 const DIVISION_ROLE_LABEL = {
   remix: "Member Remix",
   creator: "Member Creator",
   leadis: "Member Leadis",
 };
+
+export async function deleteRegistrant(id) {
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase.from("registrants").delete().eq("id", id);
+
+  if (error) {
+    return { error: `Gagal menghapus pendaftar: ${error.message}` };
+  }
+
+  revalidatePath("/dashboard/pendaftar");
+  return { success: true };
+}
 
 export async function rejectRegistrant(id) {
   const supabase = createAdminSupabaseClient();
@@ -119,8 +148,7 @@ export async function acceptRegistrant(id) {
   revalidatePath("/dashboard/pendaftar");
   revalidatePath("/dashboard/anggota");
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
-  const activationLink = `${siteUrl}/masuk?token=${token}`;
+  const activationLink = `${getSiteUrl()}/masuk?token=${token}`;
 
   return {
     success: true,
