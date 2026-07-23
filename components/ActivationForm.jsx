@@ -6,10 +6,13 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { TextField } from "./ui/text-field";
 import { PasswordField } from "./ui/password-field";
+import { ProfileUploadField } from "./ui/profile-upload-field";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/toast";
 import { activateAccount } from "@/app/masuk/actions";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
+import { setWelcomeData } from "@/lib/welcome";
+import { divisionLabel } from "@/lib/division";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 24 },
@@ -17,8 +20,9 @@ const fadeUp = {
 };
 
 // Ditampilkan saat pendaftar buka link aktivasi (/masuk?token=xxx) pertama
-// kali. Mereka set password sendiri di sini, lalu langsung masuk ke
-// dashboard. Setelah dipakai, link ini mati (tidak bisa dipakai ulang).
+// kali. Mereka lengkapi foto profil & set password sendiri di sini, lalu
+// disambut animasi welcome di /preview-welcome sebelum masuk dashboard.
+// Setelah dipakai, link ini mati (tidak bisa dipakai ulang).
 export default function ActivationForm({ token, name, email }) {
   const { toast } = useToast();
   const router = useRouter();
@@ -27,6 +31,19 @@ export default function ActivationForm({ token, name, email }) {
   const [confirm, setConfirm] = React.useState("");
   const [errors, setErrors] = React.useState({});
   const [loading, setLoading] = React.useState(false);
+
+  const [photo, setPhoto] = React.useState(null);
+  const [photoPreview, setPhotoPreview] = React.useState(null);
+
+  const handlePhotoSelect = (file) => {
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handlePhotoRemove = () => {
+    setPhoto(null);
+    setPhotoPreview(null);
+  };
 
   const validate = () => {
     const next = {};
@@ -46,7 +63,12 @@ export default function ActivationForm({ token, name, email }) {
 
     setLoading(true);
     try {
-      const result = await activateAccount(token, password);
+      const formData = new FormData();
+      formData.set("token", token);
+      formData.set("password", password);
+      if (photo) formData.set("photo", photo);
+
+      const result = await activateAccount(formData);
       if (result.error) {
         throw new Error(result.error);
       }
@@ -68,7 +90,14 @@ export default function ActivationForm({ token, name, email }) {
         title: "Akun berhasil diaktifkan!",
         description: "Selamat datang di SOPAN TEAM.",
       });
-      router.push("/dashboard");
+
+      // Oper data asli user (nama, divisi, foto) ke animasi welcome.
+      setWelcomeData({
+        name: result.name || name,
+        division: divisionLabel(result.division),
+        avatarUrl: result.avatarUrl || photoPreview,
+      });
+      router.push("/preview-welcome");
       router.refresh();
     } catch (err) {
       toast({
@@ -97,6 +126,15 @@ export default function ActivationForm({ token, name, email }) {
       </div>
 
       <form onSubmit={handleSubmit} noValidate className="space-y-6">
+        <ProfileUploadField
+          label="Foto profil"
+          previewUrl={photoPreview}
+          fileName={photo?.name}
+          onFileSelect={handlePhotoSelect}
+          onRemove={handlePhotoRemove}
+          disabled={loading}
+        />
+
         <PasswordField
           label="Password baru"
           value={password}

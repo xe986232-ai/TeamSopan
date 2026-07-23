@@ -24,8 +24,14 @@ const EXIT_FADE_MS = 1200;
 const T_INTRO_START = GREETING_REVEAL_MS + GREETING_HOLD_MS + GREETING_EXIT_MS;
 const T_EXIT_START = T_INTRO_START + INTRO_ZOOM_MS + INTRO_HOLD_MS;
 
-const AVATAR_URL =
-  "https://images.unsplash.com/photo-1603871165848-0aa92c869fa1?auto=format&fit=crop&q=80&w=400";
+function initials(name) {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 // Teks pembuka: zoom tipis besar->kecil di level grup, dipadu blur-in tipis per huruf.
 function GreetingText({ text }) {
@@ -59,6 +65,7 @@ function GreetingText({ text }) {
 export default function WelcomePreviewSection({
   name = "Member Sopan",
   division = "Divisi Remix",
+  avatarUrl,
   onFinish,
 }) {
   // tahap: "greeting" -> "intro" -> "exit"
@@ -110,11 +117,17 @@ export default function WelcomePreviewSection({
               className="flex flex-col items-center"
             >
               <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-white/15 shadow-lg mb-6">
-                <img
-                  src={AVATAR_URL}
-                  alt={`Foto ${name}`}
-                  className="w-full h-full object-cover"
-                />
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={`Foto ${name}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-remix-from to-creator-from font-display text-3xl font-extrabold text-white">
+                    {initials(name)}
+                  </div>
+                )}
                 {/* kilau putih, sapuan sekali dari kiri sampai mentok kanan lalu hilang */}
                 <motion.div
                   className="absolute top-0 h-full w-1/4 bg-gradient-to-r from-transparent via-white/80 to-transparent"

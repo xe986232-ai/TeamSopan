@@ -1,5 +1,5 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
-import WelcomePreviewSection from "@/components/WelcomePreviewSection";
+import PreviewWelcomeContent from "./PreviewWelcomeContent";
 
 const navItems = [
   { name: "Tentang", link: "/#tentang" },
@@ -25,7 +25,7 @@ export default function PreviewWelcomePage() {
   return (
     <main className="relative bg-base">
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
-      <WelcomePreviewSection />
+      <PreviewWelcomeContent />
     </main>
   );
 }
