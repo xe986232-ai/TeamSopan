@@ -127,7 +127,10 @@ export default function DashboardSidebar() {
           </Link>
         </div>
 
-        <nav className="flex-1 flex flex-col gap-6 overflow-y-auto pr-1">
+        <nav
+          data-lenis-prevent
+          className="flex-1 flex flex-col gap-6 overflow-y-auto pr-1"
+        >
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="flex flex-col gap-1">
               <span className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40">

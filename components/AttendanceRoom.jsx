@@ -173,7 +173,10 @@ export default function AttendanceRoom({ roomId }) {
         )}
       </AnimatePresence>
 
-      <div className="fixed inset-0 z-[6000] flex flex-col items-center overflow-y-auto bg-base">
+      <div
+        data-lenis-prevent
+        className="fixed inset-0 z-[6000] flex flex-col items-center overflow-y-auto bg-base"
+      >
       {/* gradient glow, warnanya ikut accent divisi */}
       <div
         className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl"
@@ -311,7 +314,10 @@ export default function AttendanceRoom({ roomId }) {
             </span>
           </div>
 
-          <ul className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[45vh] overflow-y-auto px-1 py-1">
+          <ul
+            data-lenis-prevent
+            className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[45vh] overflow-y-auto px-1 py-1"
+          >
             <AnimatePresence initial={false}>
               {checkedIn.map((member) => (
                 <motion.li

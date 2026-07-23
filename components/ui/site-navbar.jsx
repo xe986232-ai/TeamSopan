@@ -144,6 +144,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             style={{ top: `${navHeight}px` }}
+            data-lenis-prevent
             className="sm:hidden fixed inset-x-0 bottom-0 z-[4999] bg-white dark:bg-base overflow-y-auto"
           >
             <div className="flex flex-col px-6 pt-6 pb-10">

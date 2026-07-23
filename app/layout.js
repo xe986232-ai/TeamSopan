@@ -1,6 +1,7 @@
 import { Unbounded, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import SmoothScrollProvider from "@/components/SmoothScrollProvider";
 
 // Kept ONLY for the "SOPAN TEAM" hero title — do not use elsewhere.
 const hero = Unbounded({
@@ -68,7 +69,9 @@ export default function RootLayout({ children }) {
       suppressHydrationWarning
     >
       <body className="font-body antialiased bg-base text-ink">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

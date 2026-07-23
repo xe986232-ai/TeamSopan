@@ -17,7 +17,10 @@ export default function MasukPage() {
         halaman termasuk navbar (z-[5000]), sama seperti halaman /gabung —
         supaya fokus sepenuhnya ke form login tanpa distraksi elemen lain.
       */}
-      <div className="fixed inset-0 z-[6000] flex items-center justify-center overflow-y-auto bg-base">
+      <div
+        data-lenis-prevent
+        className="fixed inset-0 z-[6000] flex items-center justify-center overflow-y-auto bg-base"
+      >
         <div
           className="pointer-events-none absolute -top-20 -left-20 h-72 w-72 rounded-full blur-3xl opacity-30"
           style={{ background: "#B026FF" }}

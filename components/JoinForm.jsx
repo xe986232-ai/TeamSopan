@@ -297,6 +297,7 @@ function TermsStage({ division, onBack, onAgree }) {
         <div
           ref={contentRef}
           onScroll={handleScroll}
+          data-lenis-prevent
           className="max-h-[45vh] overflow-y-auto px-5 py-4 space-y-4"
         >
           {TERMS_SECTIONS.map((section) => (
@@ -609,7 +610,10 @@ export default function JoinForm() {
   };
 
   return (
-    <div className="fixed inset-0 z-[6000] overflow-x-hidden overflow-y-auto bg-base">
+    <div
+      data-lenis-prevent
+      className="fixed inset-0 z-[6000] overflow-x-hidden overflow-y-auto bg-base"
+    >
       {/* gradient glow, sama pola dengan WelcomePreviewSection */}
       <div className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl bg-gradient-to-br from-remix-from via-creator-from to-transparent" />
       <div className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl bg-gradient-to-tr from-leadis-to via-creator-from to-transparent" />
