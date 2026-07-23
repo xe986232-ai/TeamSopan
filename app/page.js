@@ -4,6 +4,7 @@ import Hero from "@/components/Hero";
 import AboutSection from "@/components/AboutSection";
 import DivisionsSection from "@/components/DivisionsSection";
 import TrendingSoundSection from "@/components/TrendingSoundSection";
+import CreatorTrendingSection from "@/components/CreatorTrendingSection";
 import AdminSection from "@/components/AdminSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
@@ -60,6 +61,7 @@ export default function Home() {
       <AboutSection />
       <DivisionsSection />
       <TrendingSoundSection />
+      <CreatorTrendingSection />
       <AdminSection />
       <ShowcaseSection />
       <TestimonialSection />
