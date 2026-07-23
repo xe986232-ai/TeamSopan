@@ -74,21 +74,12 @@ module.exports = {
           "0%": { "background-position": "0%" },
           "100%": { "background-position": "200%" },
         },
-        "ripple": {
-          "0%, 100%": {
-            transform: "translate(-50%, -50%) scale(1)",
-          },
-          "50%": {
-            transform: "translate(-50%, -50%) scale(0.9)",
-          },
-        },
       },
       animation: {
         "aurora": "aurora 60s linear infinite",
         "scroll": "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",
         "rainbow": "rainbow var(--speed, 2s) infinite linear",
-        "ripple": "ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite",
       },
     },
   },
