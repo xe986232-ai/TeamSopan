@@ -13,7 +13,7 @@ export async function getOwnProfile() {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { error: "Kamu belum masuk." };
+    return { unauthenticated: true };
   }
 
   const { data, error } = await supabase
@@ -24,8 +24,17 @@ export async function getOwnProfile() {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (error || !data) {
-    return { error: "Profil tidak ditemukan." };
+  if (error) {
+    // Sudah login, tapi query-nya gagal (mis. kolom belum ada karena migrasi
+    // SQL belum dijalankan). JANGAN dianggap "belum login" — kalau tidak,
+    // user yang sudah login malah ke-redirect balik ke /masuk tanpa tahu
+    // sebabnya.
+    return { error: `Gagal ambil data profil: ${error.message}` };
+  }
+
+  if (!data) {
+    // Login berhasil, tapi baris di tabel members tidak ada (akun aneh/rusak).
+    return { error: "Data member tidak ditemukan di database." };
   }
 
   return { data };
