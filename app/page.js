@@ -8,6 +8,7 @@ import CreatorTrendingSection from "@/components/CreatorTrendingSection";
 import AdminSection from "@/components/AdminSection";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
+import FaqSection from "@/components/FaqSection";
 import Footer from "@/components/Footer";
 import WelcomeGate from "@/components/WelcomeGate";
 
@@ -65,6 +66,7 @@ export default function Home() {
       <AdminSection />
       <ShowcaseSection />
       <TestimonialSection />
+      <FaqSection />
       <Footer />
     </main>
   );
