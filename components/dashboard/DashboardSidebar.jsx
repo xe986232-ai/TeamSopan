@@ -1,7 +1,8 @@
 "use client";
 
+import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   LayoutDashboard,
@@ -16,10 +17,11 @@ import {
   Settings,
   HelpCircle,
   CircleUserRound,
-  LayoutGrid,
+  LogOut,
   ArrowUpRight,
 } from "lucide-react";
 import { useDashboardSidebar } from "./DashboardSidebarContext";
+import { createPublicSupabaseClient } from "@/lib/supabase/client";
 
 // Struktur menu dashboard — dikelompokkan sama seperti referensi desain
 // (grup berlabel kecil, item dengan ikon). Halaman selain "/dashboard"
@@ -100,7 +102,23 @@ function NavItem({ item, active }) {
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { open } = useDashboardSidebar();
+  const [email, setEmail] = React.useState(null);
+
+  React.useEffect(() => {
+    const supabase = createPublicSupabaseClient();
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? null);
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    const supabase = createPublicSupabaseClient();
+    await supabase.auth.signOut();
+    router.push("/masuk");
+    router.refresh();
+  };
 
   return (
     <motion.aside
@@ -147,19 +165,25 @@ export default function DashboardSidebar() {
           ))}
         </nav>
 
-        {/* Profil — menempel di bawah, sama seperti referensi */}
-        <motion.div
-          whileHover={{ x: 4 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.18, ease: SMOOTH_EASE }}
-          className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:text-white cursor-pointer border-t border-white/10 pt-4"
-        >
-          <span className="flex items-center gap-2.5">
-            <CircleUserRound size={17} strokeWidth={2.2} />
-            Profil
-          </span>
-          <LayoutGrid size={15} className="text-white/40" />
-        </motion.div>
+        {/* Profil — menempel di bawah, sama seperti referensi.
+            Nampilin email member yang lagi login + tombol logout. */}
+        <div className="border-t border-white/10 pt-4 space-y-1">
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-white/70">
+            <CircleUserRound size={17} strokeWidth={2.2} className="shrink-0" />
+            <span className="truncate">{email || "Memuat..."}</span>
+          </div>
+          <motion.button
+            type="button"
+            onClick={handleLogout}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.97 }}
+            transition={{ duration: 0.18, ease: SMOOTH_EASE }}
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+          >
+            <LogOut size={17} strokeWidth={2.2} />
+            Keluar
+          </motion.button>
+        </div>
       </div>
     </motion.aside>
   );

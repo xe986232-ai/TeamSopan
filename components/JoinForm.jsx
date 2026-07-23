@@ -9,6 +9,7 @@ import { TextField } from "./ui/text-field";
 import { TextareaField } from "./ui/textarea-field";
 import { Button } from "./ui/button";
 import { useToast } from "./ui/toast";
+import { submitRegistrant } from "@/app/gabung/actions";
 
 const DIVISIONS = [
   {
@@ -590,14 +591,27 @@ export default function JoinForm() {
     setStage("loading");
     setLoading(true);
     try {
-      // TODO: sambungkan ke endpoint pendaftaran (mis. Firebase / API route) di sini.
-      await new Promise((resolve) => setTimeout(resolve, 1400));
+      const result = await submitRegistrant({
+        fullName: form.fullName,
+        age: Number(form.age),
+        domicile: form.domicile,
+        whatsapp: form.whatsapp,
+        division,
+        experience: form.experience,
+        portfolio: form.portfolio,
+        reason: form.reason,
+      });
+
+      if (result.error) {
+        throw new Error(result.error);
+      }
+
       setStage("success");
     } catch (err) {
       toast({
         variant: "error",
         title: "Gagal mengirim pendaftaran",
-        description: "Coba lagi dalam beberapa saat, ya.",
+        description: err.message || "Coba lagi dalam beberapa saat, ya.",
       });
       setStage("form");
     } finally {
