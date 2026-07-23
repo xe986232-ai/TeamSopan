@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { SoftGlowBackground } from "./ui/soft-glow-background";
+import { RainbowButton } from "./ui/rainbow-button";
 
 export default function Hero() {
   return (
@@ -21,20 +22,13 @@ export default function Hero() {
           editor, dan kreator konten perempuan yang mau berkembang bareng.
         </div>
 
-        <div className="flex flex-wrap gap-4 justify-center">
-          <a
-            href="#divisi"
-            className="relative rounded-full w-fit px-7 py-3 text-sm font-semibold text-white bg-ink-solid dark:bg-white dark:text-ink-solid overflow-hidden group"
-          >
-            <span className="relative z-10">Lihat Divisi</span>
-            <span className="absolute inset-0 bg-gradient-to-r from-remix-from via-creator-to to-leadis-to opacity-0 group-hover:opacity-30 transition-opacity" />
-          </a>
-          <a
-            href="#tentang"
-            className="border border-black/10 dark:border-white/10 rounded-full w-fit text-ink px-7 py-3 text-sm font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
-          >
+        <div className="flex flex-col gap-4 w-full max-w-md">
+          <RainbowButton as="a" href="#divisi" className="w-full">
+            Lihat Divisi
+          </RainbowButton>
+          <RainbowButton as="a" href="#tentang" className="w-full">
             Tentang Kami
-          </a>
+          </RainbowButton>
         </div>
       </motion.div>
     </SoftGlowBackground>
