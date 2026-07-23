@@ -7,6 +7,7 @@ import {
   generateMemberEmail,
   generateRandomPassword,
   generateActivationToken,
+  withSopanSuffix,
 } from "@/lib/members";
 
 // Ambil domain situs buat bikin link aktivasi lengkap. Utamakan
@@ -29,17 +30,6 @@ const DIVISION_ROLE_LABEL = {
   creator: "Member Creator",
   leadis: "Member Leadis",
 };
-
-// Setelah diterima admin, nama pendaftar otomatis dikasih akhiran "Sopan"
-// (mis. "Radit" -> "Radit Sopan"). Nama inilah yang kepakai buat animasi
-// welcome & profil member. Cek dulu biar gak dobel kalau pendaftar iseng
-// isi nama yang udah ada "Sopan"-nya di form.
-function withSopanSuffix(fullName) {
-  const trimmed = (fullName || "").trim().replace(/\s+/g, " ");
-  if (!trimmed) return "Sopan";
-  if (/\bsopan$/i.test(trimmed)) return trimmed;
-  return `${trimmed} Sopan`;
-}
 
 export async function deleteRegistrant(id) {
   const supabase = createAdminSupabaseClient();
