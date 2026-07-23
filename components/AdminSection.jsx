@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { createPublicSupabaseClient } from "@/lib/supabase/client";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
 
 // Fallback kalau Supabase belum di-setup / lagi error / foto belum diupload,
 // biar halaman tetap tampil bagus.
@@ -32,14 +32,19 @@ const DEFAULT_ADMINS = [
 
 async function getDivisionAdmins() {
   try {
-    const supabase = createPublicSupabaseClient();
+    // Pakai admin client (secret key, server-only) buat baca data ini, BUKAN
+    // client publik/browser. Data ini memang ditampilkan ke publik, tapi
+    // dibaca dari Server Component (bukan browser), jadi aman -- dan
+    // dengan begini pembacaan tidak lagi bergantung pada policy RLS di
+    // Supabase yang bisa saja belum/salah ter-setup di project live.
+    const supabase = createAdminSupabaseClient();
     const { data, error } = await supabase
       .from("division_admins")
       .select("*")
       .order("slug");
 
     if (error || !data || data.length === 0) {
-      throw error || new Error("empty");
+      throw error || new Error("division_admins kosong / tidak ada data");
     }
 
     // pakai foto default kalau admin belum pernah upload foto
@@ -53,7 +58,10 @@ async function getDivisionAdmins() {
         image_url: admin.image_url || fallback?.image_url,
       };
     });
-  } catch {
+  } catch (err) {
+    // Di-log biar kelihatan di server/Vercel logs kalau ini kejadian lagi --
+    // sebelumnya error ini ditelan diam-diam sehingga sulit didiagnosis.
+    console.error("[AdminSection] Gagal ambil division_admins dari Supabase:", err);
     return DEFAULT_ADMINS;
   }
 }
