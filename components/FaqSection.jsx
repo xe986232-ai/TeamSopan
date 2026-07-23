@@ -67,26 +67,26 @@ export default function FaqSection() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-80px" }}
         transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto px-6 sm:px-10 space-y-3"
+        className="max-w-2xl mx-auto px-6 sm:px-10"
       >
         {FAQ_ITEMS.map((item) => {
           const isOpen = openId === item.id;
           return (
             <div
               key={item.id}
-              className="rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.04] overflow-hidden"
+              className="border-b border-black/10 dark:border-white/10"
             >
               <button
                 type="button"
                 onClick={() => toggle(item.id)}
                 aria-expanded={isOpen}
-                className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
+                className="flex w-full items-center justify-between gap-4 py-5 text-left"
               >
-                <span className="font-display font-semibold text-sm sm:text-base text-ink">
+                <span className="font-display font-bold text-base sm:text-lg text-ink">
                   {item.title}
                 </span>
                 <ChevronDown
-                  className={`h-4 w-4 shrink-0 text-ink-muted transition-transform duration-300 ${
+                  className={`h-5 w-5 shrink-0 text-ink transition-transform duration-300 ${
                     isOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -102,7 +102,7 @@ export default function FaqSection() {
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <p className="px-5 pb-4 text-sm text-ink-muted leading-relaxed">
+                    <p className="pb-5 text-sm text-ink-muted leading-relaxed">
                       {item.content}
                     </p>
                   </motion.div>
