@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
@@ -99,40 +99,24 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
     onTogglePlay();
   }
 
-  const seekFromClientX = useCallback(
-    (clientX) => {
-      const el = trackRef.current;
-      if (!el || !duration) return;
-      const rect = el.getBoundingClientRect();
-      const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
-      const newTime = ratio * duration;
-      if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
-        audioRef.current.currentTime = newTime;
-      }
-      setCurrentTime(newTime);
-    },
-    [duration]
-  );
+  function handleSeekInput(newTime) {
+    setCurrentTime(newTime);
+    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+      audioRef.current.currentTime = newTime;
+    }
+  }
 
-  function handlePointerDown(e) {
+  function handleSeekStart(e) {
     e.stopPropagation();
-    e.preventDefault();
     onFocus();
     setIsDragging(true);
     setShowTooltip(true);
-    seekFromClientX(e.clientX);
-    // Pointer capture: pastikan gerakan jari/kursor tetap "nempel" ke
-    // slider ini walau posisinya keluar dari batas elemen -- tanpa ini,
-    // drag suka putus di tengah jalan (terutama di HP / gerakan cepat).
-    if (e.currentTarget.setPointerCapture) {
-      try {
-        e.currentTarget.setPointerCapture(e.pointerId);
-      } catch {
-        // beberapa browser lama bisa lempar error kalau pointerId sudah
-        // tidak valid -- aman diabaikan, drag tetap jalan lewat listener
-        // di window sebagai fallback.
-      }
-    }
+  }
+
+  function handleSeekEnd(e) {
+    e.stopPropagation();
+    setIsDragging(false);
+    setShowTooltip(false);
   }
 
   function skip(deltaSeconds) {
@@ -142,21 +126,6 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
       audioRef.current.currentTime = newTime;
     }
   }
-
-  useEffect(() => {
-    if (!isDragging) return;
-    const handleMove = (e) => seekFromClientX(e.clientX);
-    const handleUp = () => {
-      setIsDragging(false);
-      setShowTooltip(false);
-    };
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", handleUp);
-    return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", handleUp);
-    };
-  }, [isDragging, seekFromClientX]);
 
   return (
     <motion.div
@@ -241,39 +210,53 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
           </p>
           <p className="font-body text-[9px] sm:text-sm text-white/55 mt-0.5 truncate">{track.creator}</p>
 
-          {/* progress bar */}
+          {/* progress bar -- tampilan visual custom (div putih tipis + dot)
+              tetap sama persis, tapi interaksinya sekarang ditangani oleh
+              <input type="range"> native yang ditumpuk transparan di atas.
+              Native range input sudah pasti didukung browser & touch device
+              apapun tanpa perlu custom pointer-drag logic yang rawan putus
+              di tengah jalan. */}
           <div
-            ref={trackRef}
-            role="slider"
-            tabIndex={0}
+            className="relative mt-2 sm:mt-5 h-3 sm:h-4 flex items-center select-none"
             data-lenis-prevent
-            aria-label={`Seek posisi audio ${track.title}`}
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration || 0)}
-            aria-valuenow={Math.round(currentTime)}
-            onPointerDown={handlePointerDown}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => !isDragging && setShowTooltip(false)}
-            className="relative mt-2 sm:mt-5 h-3 sm:h-4 flex items-center cursor-pointer touch-none select-none"
           >
-            <div className="relative h-[3px] sm:h-1 w-full rounded-full bg-white/20">
+            <div className="relative h-[3px] sm:h-1 w-full rounded-full bg-white/20 pointer-events-none">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-white"
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-white shadow"
+              className="absolute top-1/2 -translate-y-1/2 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-white shadow pointer-events-none"
               style={{ left: `calc(${progress * 100}% - 4px)` }}
             />
             {showTooltip && (
               <span
-                className="absolute -top-6 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-black shadow"
+                className="absolute -top-6 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-black shadow pointer-events-none"
                 style={{ left: `${progress * 100}%` }}
               >
                 {formatTime(currentTime)}
               </span>
             )}
+            <input
+              ref={trackRef}
+              type="range"
+              min={0}
+              max={duration || 0}
+              step="any"
+              value={Math.min(currentTime, duration || 0)}
+              aria-label={`Seek posisi audio ${track.title}`}
+              disabled={!duration}
+              onChange={(e) => handleSeekInput(Number(e.target.value))}
+              onPointerDown={handleSeekStart}
+              onPointerUp={handleSeekEnd}
+              onTouchStart={handleSeekStart}
+              onTouchEnd={handleSeekEnd}
+              onKeyDown={(e) => e.stopPropagation()}
+              className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent opacity-0 disabled:cursor-default"
+            />
           </div>
 
           <div className="mt-1 sm:mt-1.5 flex items-center justify-between text-[9px] sm:text-xs tabular-nums text-white/50">
