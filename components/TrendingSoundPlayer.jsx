@@ -146,20 +146,26 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
       style={{ zIndex: isFocused ? 30 : 20 - Math.abs(delta), transformStyle: "preserve-3d" }}
       className={`relative shrink-0 w-[132px] sm:w-[250px] ${index > 0 ? "-ml-12 sm:ml-0" : ""}`}
     >
-      <div
-        role="button"
-        tabIndex={isFocused ? -1 : 0}
-        aria-label={`Fokuskan kartu ${track.title}`}
-        onClick={() => !isFocused && onFocus()}
-        onKeyDown={(e) => {
-          if (!isFocused && (e.key === "Enter" || e.key === " ")) onFocus();
-        }}
-        className={`overflow-hidden rounded-none shadow-2xl shadow-black/50 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-white/70 ${
-          isFocused ? "cursor-default" : "cursor-pointer"
-        }`}
-      >
-        {/* cover */}
-        <div className="relative h-24 sm:h-48 w-full bg-black/40">
+      <div className="overflow-hidden rounded-none shadow-2xl shadow-black/50 transition-shadow">
+        {/* cover -- SATU-SATUNYA area yang berperan sebagai "tombol fokus".
+            Sebelumnya seluruh card (termasuk tombol play/pause, skip, dan
+            slider progress) dibungkus 1 div role="button" besar -- pola
+            "elemen interaktif di dalam elemen interaktif" ini yang bikin
+            touch event di browser HP jadi nggak konsisten (kadang kepencet
+            kadang nggak). Sekarang tombol/slider berdiri sendiri, nggak ada
+            parent yang ikut "mencuri" tap-nya lagi. */}
+        <div
+          role="button"
+          tabIndex={isFocused ? -1 : 0}
+          aria-label={`Fokuskan kartu ${track.title}`}
+          onClick={() => !isFocused && onFocus()}
+          onKeyDown={(e) => {
+            if (!isFocused && (e.key === "Enter" || e.key === " ")) onFocus();
+          }}
+          className={`relative h-24 sm:h-48 w-full bg-black/40 outline-none focus-visible:ring-2 focus-visible:ring-white/70 ${
+            isFocused ? "cursor-default" : "cursor-pointer"
+          }`}
+        >
           <img
             src={track.cover}
             alt={`Cover ${track.title} - ${track.creator}`}
@@ -184,7 +190,10 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
           </span>
         </div>
 
-        {/* panel info + kontrol */}
+        {/* panel info + kontrol -- sengaja BUKAN anak dari div role="button"
+            di atas lagi. Klik di sini murni ditangani masing-masing kontrol
+            sendiri (tombol play/pause, skip, slider), tanpa ada parent
+            interaktif yang ikut nyaingin. */}
         <div className="px-2.5 pt-2 pb-2.5 sm:px-5 sm:pt-4 sm:pb-5" style={{ background: track.panelColor }}>
           <audio
             ref={audioRef}
