@@ -46,9 +46,15 @@ function getCircularDelta(index, activeIndex, length) {
   return delta;
 }
 
-function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTogglePlay, onFocus }) {
+function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTogglePlay, onPlaybackSync, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
+  // Nomor "permintaan" play/pause terakhir -- dipakai buat nge-drop hasil
+  // play() yang telat/basi (misal user klik play lalu buru-buru pause
+  // sebelum promise-nya resolve). Tanpa ini, play() yang telat resolve bisa
+  // nyalain audio lagi padahal user udah mau pause -- itu penyebab utama
+  // tombol "kadang gabisa di-play / abis di-play gabisa di-pause".
+  const requestIdRef = useRef(0);
 
   const [duration, setDuration] = useState(track.durationFallback);
   const [currentTime, setCurrentTime] = useState(0);
@@ -67,19 +73,26 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
     const audio = audioRef.current;
     if (!audio) return;
 
+    const requestId = ++requestIdRef.current;
+
     if (isPlaying) {
+      if (!audio.paused) return; // sudah main, tidak perlu play() lagi
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch(() => {
-          // audio placeholder mungkin gagal load (offline dll) -- kalau
-          // gagal, progress diam di posisi terakhir (bukan jalan sendiri)
-          // karena progress murni ikut event asli <audio>, bukan clock manual.
+          // audio placeholder mungkin gagal load (offline / autoplay
+          // diblokir dll). Kalau ini masih permintaan terakhir, sinkronkan
+          // balik state ke parent supaya ikon tombol tidak nyangkut di
+          // "Pause" padahal audio sebenarnya diam.
+          if (requestId === requestIdRef.current) {
+            onPlaybackSync(false);
+          }
         });
       }
-    } else {
+    } else if (!audio.paused) {
       audio.pause();
     }
-  }, [isPlaying]);
+  }, [isPlaying, onPlaybackSync]);
 
   function handleTogglePlay(e) {
     e.stopPropagation();
@@ -103,10 +116,23 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
 
   function handlePointerDown(e) {
     e.stopPropagation();
+    e.preventDefault();
     onFocus();
     setIsDragging(true);
     setShowTooltip(true);
     seekFromClientX(e.clientX);
+    // Pointer capture: pastikan gerakan jari/kursor tetap "nempel" ke
+    // slider ini walau posisinya keluar dari batas elemen -- tanpa ini,
+    // drag suka putus di tengah jalan (terutama di HP / gerakan cepat).
+    if (e.currentTarget.setPointerCapture) {
+      try {
+        e.currentTarget.setPointerCapture(e.pointerId);
+      } catch {
+        // beberapa browser lama bisa lempar error kalau pointerId sudah
+        // tidak valid -- aman diabaikan, drag tetap jalan lewat listener
+        // di window sebagai fallback.
+      }
+    }
   }
 
   function skip(deltaSeconds) {
@@ -203,8 +229,10 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
             }}
             onEnded={() => {
               setCurrentTime(0);
-              onTogglePlay();
+              onPlaybackSync(false);
             }}
+            onPlay={() => onPlaybackSync(true)}
+            onPause={() => onPlaybackSync(false)}
             className="hidden"
           />
 
@@ -259,9 +287,9 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
-                skip(-10);
+                skip(-5);
               }}
-              aria-label={`Mundur 10 detik - ${track.title}`}
+              aria-label={`Mundur 5 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
               <SkipBack className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
@@ -285,9 +313,9 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
-                skip(10);
+                skip(5);
               }}
-              aria-label={`Maju 10 detik - ${track.title}`}
+              aria-label={`Maju 5 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
               <SkipForward className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
@@ -338,6 +366,19 @@ export default function TrendingSoundPlayer({ tracks }) {
       setActiveIndex(i);
       setIsPlaying(true);
     }
+  }
+
+  // Disinkronkan langsung dari event asli elemen <audio> (play/pause/ended)
+  // -- bukan cuma dari klik tombol. Ini sumber kebenaran yang sesungguhnya:
+  // kalau browser menolak/menunda play() (autoplay policy, buffering,
+  // dsb), state di sini otomatis ikut kondisi audio yang sebenarnya,
+  // jadi ikon tombol nggak pernah nyangkut beda dari kondisi asli.
+  // Hanya kartu yang lagi fokus yang boleh mempengaruhi state -- kartu
+  // lain seharusnya diam (isPlaying prop-nya sudah false), jadi event
+  // dari kartu itu diabaikan supaya tidak tabrakan.
+  function handlePlaybackSync(i, playing) {
+    if (i !== activeIndex) return;
+    setIsPlaying(playing);
   }
 
   return (
@@ -401,6 +442,7 @@ export default function TrendingSoundPlayer({ tracks }) {
                   isDesktop={isDesktop}
                   isPlaying={i === activeIndex && isPlaying}
                   onTogglePlay={() => handlePlayIndex(i)}
+                  onPlaybackSync={(playing) => handlePlaybackSync(i, playing)}
                   onFocus={() => focusIndex(i)}
                 />
               );
