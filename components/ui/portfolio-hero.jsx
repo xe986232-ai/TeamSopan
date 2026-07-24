@@ -156,7 +156,7 @@ export default function PortfolioHero({
 
   return (
     <section
-      className="relative min-h-[70vh] sm:min-h-screen flex flex-col overflow-hidden transition-colors"
+      className="relative min-h-screen flex flex-col overflow-hidden transition-colors"
       style={{
         backgroundColor: isDark ? "#000000" : "#FAFAFA",
         color: isDark ? "#FFFFFF" : "#1A1A1A",
