@@ -58,11 +58,27 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
   const progress = duration ? currentTime / duration : 0;
   const stage = getStageTransform(delta, isDesktop);
 
-  // Begitu kartu lain di-play, kartu ini otomatis berhenti — cuma satu yang
-  // boleh jalan bersamaan.
+  // Satu-satunya tempat yang benar-benar manggil audio.play() / .pause() --
+  // sebelumnya handleTogglePlay JUGA manggil play()/pause() langsung selain
+  // lewat effect ini, jadi kadang balapan (audio.play() masih pending pas
+  // audio.pause() udah kepanggil duluan) dan tombolnya jadi kerasa macet /
+  // harus dipencet 2x. Sekarang klik cuma ganti state (isActive), effect ini
+  // yang nurut ke state itu -- konsisten, sekali pencet langsung nurut.
   useEffect(() => {
-    if (!isActive) {
-      audioRef.current?.pause();
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isActive) {
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {
+          // audio placeholder mungkin gagal load (offline dll) -- kalau
+          // gagal, progress diam di posisi terakhir (bukan jalan sendiri)
+          // karena progress murni ikut event asli <audio>, bukan clock manual.
+        });
+      }
+    } else {
+      audio.pause();
     }
   }, [isActive]);
 
@@ -70,16 +86,10 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
     e.stopPropagation();
     onFocus();
     if (isActive) {
-      audioRef.current?.pause();
       onPause();
-      return;
+    } else {
+      onPlay(track.id);
     }
-    onPlay(track.id);
-    audioRef.current?.play().catch(() => {
-      // audio placeholder mungkin gagal load (offline dll) -- kalau gagal,
-      // progress diam di posisi terakhir (bukan jalan sendiri) karena
-      // sekarang progress murni ikut event asli <audio>, bukan clock manual.
-    });
   }
 
   const seekFromClientX = useCallback(
