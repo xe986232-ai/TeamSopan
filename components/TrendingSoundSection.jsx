@@ -350,24 +350,23 @@ export default function TrendingSoundSection() {
         </p>
       </motion.div>
 
-      {/* "panggung" gelap — background fixed dark supaya kartu player selalu
-          kontras & konsisten, terlepas dari light/dark mode situs. Nggak
-          ada background gambar lagi, cuma glow gradien tipis sebagai
-          pemanis di belakang kartu. */}
+      {/* Nggak ada panel gelap lagi — section-nya transparan, ngikutin
+          background halaman (light/dark mode otomatis). Cuma ada shadow
+          gradien di belakang kartu sebagai pemanis. */}
       <div className="relative mx-auto max-w-5xl px-0 sm:px-6">
-        <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
-          {/* shadow gradien tipis di belakang kartu — soft glow warna brand
-              (ungu remix -> biru creator), blur besar & opacity rendah biar
-              cuma jadi pemanis, bukan elemen yang menonjol. */}
+        <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] py-14 sm:py-24">
+          {/* shadow gradien di belakang kartu — soft glow warna brand (ungu
+              remix -> biru creator), diperkuat dikit biar lebih kerasa
+              manis, tapi tetap nggak nutupin kartu di depannya. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
             <div
-              className="h-48 w-72 sm:h-80 sm:w-[32rem] rounded-full opacity-40 blur-3xl"
+              className="h-56 w-80 sm:h-96 sm:w-[36rem] rounded-full opacity-60 blur-3xl"
               style={{
                 background:
-                  "radial-gradient(ellipse at center, rgba(176,38,255,0.55), rgba(61,90,254,0.35) 55%, transparent 75%)",
+                  "radial-gradient(ellipse at center, rgba(176,38,255,0.75), rgba(61,90,254,0.5) 55%, transparent 75%)",
               }}
             />
           </div>
@@ -409,7 +408,7 @@ export default function TrendingSoundSection() {
                 aria-label={`Fokuskan ${track.title}`}
                 aria-current={i === activeIndex}
                 className={`h-1.5 rounded-full transition-all ${
-                  i === activeIndex ? "w-6 bg-white" : "w-1.5 bg-white/30 hover:bg-white/50"
+                  i === activeIndex ? "w-6 bg-ink" : "w-1.5 bg-ink/25 hover:bg-ink/40"
                 }`}
               />
             ))}
