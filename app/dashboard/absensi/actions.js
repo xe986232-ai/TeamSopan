@@ -4,6 +4,16 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
 
+// SOPAN TEAM basisnya di Indonesia -- semua jam yang admin isi di form
+// dianggap WIB (Asia/Jakarta, UTC+7). Kalau cuma `new Date(\`${date}T${time}:00\`)`
+// tanpa offset, Node bakal baca string itu pakai timezone SERVER (Vercel
+// default-nya UTC), jadi jam yang diisi admin ketunda ~7 jam pas
+// disimpan. Makanya offset +07:00 di-set eksplisit di sini, gak peduli
+// server-nya jalan di timezone apa.
+function wibDateTime(date, time) {
+  return new Date(`${date}T${time}:00+07:00`);
+}
+
 // Dipanggil dari form "Buat Sesi Absensi Baru" di /dashboard/absensi.
 // Halaman ini sudah dijaga middleware (cuma admin yang bisa akses), jadi
 // server action ini boleh langsung pakai secret key -- tidak perlu cek
@@ -21,8 +31,8 @@ export async function createAttendanceSession({
     return { error: "Tanggal, jam mulai, dan jam selesai wajib diisi." };
   }
 
-  const startsAt = new Date(`${date}T${startTime}:00`);
-  const endsAt = new Date(`${date}T${endTime}:00`);
+  const startsAt = wibDateTime(date, startTime);
+  const endsAt = wibDateTime(date, endTime);
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
     return { error: "Tanggal/jam tidak valid." };
   }
