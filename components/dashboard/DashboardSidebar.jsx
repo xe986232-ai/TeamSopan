@@ -12,6 +12,7 @@ import {
   Disc3,
   Clapperboard,
   Sparkles,
+  Film,
   ShieldCheck,
   Activity,
   Settings,
@@ -43,6 +44,7 @@ const NAV_GROUPS = [
       { name: "Remix", href: "/dashboard/divisi/remix", icon: Disc3 },
       { name: "Creator", href: "/dashboard/divisi/creator", icon: Clapperboard },
       { name: "Leadis", href: "/dashboard/divisi/leadis", icon: Sparkles },
+      { name: "Trending Edit", href: "/dashboard/trending", icon: Film },
     ],
   },
   {

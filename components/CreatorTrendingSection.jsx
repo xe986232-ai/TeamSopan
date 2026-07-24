@@ -1,143 +1,86 @@
-"use client";
+import { ArrowRight } from "lucide-react";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import TrendingWorkCard from "./TrendingWorkCard";
+import CreatorTrendingHeading from "./CreatorTrendingHeading";
 
-import Image from "next/image";
-import { motion } from "framer-motion";
-import { Heart, Play, ArrowRight } from "lucide-react";
-
-// Ganti `link` dengan URL asli (TikTok/YouTube/IG) begitu karya-nya sudah
-// diupload. `likes` cukup diedit manual di sini dulu — kalau nanti mau
-// ditarik otomatis dari API TikTok/IG, tinggal ganti data ini jadi hasil fetch.
-const CREATOR_WORKS = [
+// Fallback kalau Supabase belum di-setup / lagi error, biar homepage tetap
+// tampil bagus persis kayak sebelumnya (gradient + data statis).
+const DEFAULT_WORKS = [
   {
-    id: "work-01",
+    slot: 1,
     title: "Cinematic Transition Pack",
     subtitle: "Alight Motion Edit",
     likes: 5614,
-    link: "https://www.tiktok.com/@sopanteam",
     gradient: "linear-gradient(155deg, #00E5FF, #3D5AFE)",
+    videoUrl: null,
   },
   {
-    id: "work-02",
+    slot: 2,
     title: "Beat Sync Edit",
     subtitle: "Motion Graphic",
     likes: 8098,
-    link: "https://www.tiktok.com/@sopanteam",
     gradient: "linear-gradient(155deg, #3D5AFE, #00E5FF)",
+    videoUrl: null,
   },
   {
-    id: "work-03",
+    slot: 3,
     title: "Animated Text Reel",
     subtitle: "Animation Text",
     likes: 2948,
-    link: "https://www.tiktok.com/@sopanteam",
     gradient: "linear-gradient(155deg, #00C2FF, #2946FF)",
+    videoUrl: null,
   },
   {
-    id: "work-04",
+    slot: 4,
     title: "Color Grading Showcase",
     subtitle: "Video Editing",
     likes: 1204,
-    link: "https://www.tiktok.com/@sopanteam",
     gradient: "linear-gradient(155deg, #2946FF, #00E5FF)",
+    videoUrl: null,
   },
 ];
 
-function formatLikes(n) {
-  if (n >= 1000) {
-    return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}rb`;
+async function getTrendingWorks() {
+  try {
+    // Server Component, bukan browser -- aman pakai admin client (secret
+    // key). Sama seperti pola AdminSection, ini bikin homepage nggak
+    // bergantung ke policy RLS yang bisa aja belum/salah ter-setup di
+    // project live.
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("trending_works")
+      .select("*")
+      .order("slot");
+
+    if (error || !data || data.length === 0) {
+      throw error || new Error("trending_works kosong / tidak ada data");
+    }
+
+    return data.map((row) => ({
+      slot: row.slot,
+      title: row.title,
+      subtitle: row.subtitle,
+      likes: row.likes,
+      gradient: row.gradient,
+      videoUrl: row.video_url || null,
+    }));
+  } catch (err) {
+    console.error("[CreatorTrendingSection] Gagal ambil trending_works dari Supabase:", err);
+    return DEFAULT_WORKS;
   }
-  return `${n}`;
 }
 
-export default function CreatorTrendingSection() {
+export default async function CreatorTrendingSection() {
+  const works = await getTrendingWorks();
+
   return (
     <section id="trending-creator" className="relative py-20 sm:py-24">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.7 }}
-        className="max-w-2xl mx-auto px-6 sm:px-10 mb-10 text-center"
-      >
-        <span className="font-body font-semibold text-sm tracking-[0.3em] uppercase text-ink-muted">
-          Divisi Creator
-        </span>
-        <h2 className="font-display font-bold text-3xl sm:text-4xl mt-4 text-ink">
-          Trending Edit
-        </h2>
-        <p className="mt-3 text-ink-muted">
-          Karya video editing yang lagi rame dilihat dari komunitas SOPAN TEAM.
-        </p>
-      </motion.div>
+      <CreatorTrendingHeading />
 
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto px-6 sm:px-10"
-      >
+      <div className="max-w-2xl mx-auto px-6 sm:px-10">
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          {CREATOR_WORKS.map((work, i) => (
-            <motion.a
-              key={work.id}
-              href={work.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.5, delay: i * 0.08 }}
-              className="group relative block aspect-[3/4] overflow-hidden rounded-2xl border border-black/10 dark:border-white/10"
-            >
-              {/* thumbnail dasar: gradient khas Creator + grain halus */}
-              <div
-                className="absolute inset-0"
-                style={{ background: work.gradient }}
-              />
-              <div className="absolute inset-0 bg-grain opacity-40" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30" />
-
-              {/* tombol play di tengah */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform duration-300 group-hover:scale-110">
-                  <Play
-                    className="h-5 w-5 translate-x-0.5 text-creator-to"
-                    fill="currentColor"
-                  />
-                </span>
-              </div>
-
-              {/* judul karya, pojok atas */}
-              <div className="absolute inset-x-0 top-0 p-3 sm:p-4">
-                <p className="font-display font-bold text-sm sm:text-base text-white leading-tight drop-shadow">
-                  {work.title}
-                </p>
-                <p className="font-body text-xs text-white/80 mt-0.5">
-                  {work.subtitle}
-                </p>
-              </div>
-
-              {/* like count & logo, pojok bawah — ala kartu "disarankan" */}
-              <div className="absolute inset-x-0 bottom-0 p-3 sm:p-4 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <Heart className="h-4 w-4 text-pink-400" fill="currentColor" />
-                  <span className="font-body font-semibold text-sm text-white">
-                    {formatLikes(work.likes)}
-                  </span>
-                </div>
-
-                {/* logo Sopan Team, badge bulat putih kecil pojok kanan bawah */}
-                <span className="shrink-0 flex items-center justify-center h-6 w-6 rounded-full bg-white/90 shadow-md">
-                  <Image
-                    alt="Sopan Team"
-                    src="/sopan-logo-black.png"
-                    width={12}
-                    height={15}
-                  />
-                </span>
-              </div>
-            </motion.a>
+          {works.map((work, i) => (
+            <TrendingWorkCard key={work.slot} work={work} index={i} />
           ))}
         </div>
 
@@ -154,7 +97,7 @@ export default function CreatorTrendingSection() {
             </span>
           </a>
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
