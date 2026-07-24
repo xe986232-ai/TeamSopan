@@ -228,7 +228,7 @@ export default function PortfolioHero({
           di bawahnya; jadi cuma nutupin area nama+logo, pas sampe situ. */}
       <div className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
         <HeroCollageBackground isDark={isDark} />
-        <div className="relative text-center">
+        <div className="relative text-center -translate-y-8 sm:-translate-y-12 md:-translate-y-16 lg:-translate-y-20">
           <div>
             <BlurText
               text={nameTop}
