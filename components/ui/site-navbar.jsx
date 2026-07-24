@@ -8,7 +8,8 @@ import { useTheme } from "next-themes";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
 import { useOutsideClick } from "@/hooks/use-outside-click";
-import { getLogoStyle, DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
+import { DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
+import LogoMark from "@/components/ui/logo-mark";
 
 function initialsOf(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
@@ -48,11 +49,10 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
   const dropdownRef = useRef(null);
   useOutsideClick(dropdownRef, () => setDropdownOpen(false));
 
-  // Style gradient logo utama ("S" di navbar) -- diatur admin dari
-  // /dashboard/pengaturan, disimpan di tabel `site_settings`. Default
-  // "aurora" (warna asli) sambil nunggu data ke-fetch / kalau gagal ambil.
+  // Style gradient logo utama (SVG soundwave di navbar) -- diatur admin
+  // dari /dashboard/pengaturan, disimpan di tabel `site_settings`. Default
+  // "aurora" sambil nunggu data ke-fetch / kalau gagal ambil.
   const [logoStyleId, setLogoStyleId] = useState(DEFAULT_LOGO_STYLE);
-  const logoStyle = getLogoStyle(logoStyleId);
 
   useEffect(() => {
     let active = true;
@@ -177,49 +177,13 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           </button>
 
         <a href="#top" className="flex items-center gap-2.5">
-  <span className="relative h-8 w-8 shrink-0 flex items-center justify-center">
-    <motion.span
-      animate={{
-        borderRadius: [
-          "60% 40% 55% 45% / 50% 60% 40% 50%",
-          "45% 55% 40% 60% / 55% 45% 60% 40%",
-          "55% 45% 60% 40% / 45% 55% 45% 55%",
-          "60% 40% 55% 45% / 50% 60% 40% 50%",
-        ],
-        scale: [1, 1.08, 0.95, 1],
-        background: logoStyle.outer,
-      }}
-      transition={{
-        borderRadius: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-        scale: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-        background: { duration: 0.5, ease: "easeInOut" },
-      }}
-      className="absolute inset-0 blur-md opacity-80"
-    />
-    <motion.span
-      animate={{
-        borderRadius: [
-          "60% 40% 55% 45% / 50% 60% 40% 50%",
-          "45% 55% 40% 60% / 55% 45% 60% 40%",
-          "55% 45% 60% 40% / 45% 55% 45% 55%",
-          "60% 40% 55% 45% / 50% 60% 40% 50%",
-        ],
-        background: logoStyle.inner,
-      }}
-      transition={{
-        borderRadius: { duration: 6, repeat: Infinity, ease: "easeInOut" },
-        background: { duration: 0.5, ease: "easeInOut" },
-      }}
-      className="relative h-full w-full flex items-center justify-center text-white font-black text-sm overflow-hidden"
-    >
-      S
-    </motion.span>
-  </span>
+  <LogoMark styleId={logoStyleId} size={34} className="shrink-0" />
   <span className="font-body font-semibold text-ink text-xs whitespace-nowrap">
     Sopan Team
   </span>
 </a>
         </div>
+
 
         <div className="hidden sm:flex items-center gap-6">
           {navItems.map((item, idx) => (
