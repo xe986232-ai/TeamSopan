@@ -1,5 +1,4 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
-import { AnnouncementBar } from "@/components/ui/announcement-bar";
 import Hero from "@/components/Hero";
 import AboutSection from "@/components/AboutSection";
 import DivisionsSection from "@/components/DivisionsSection";
@@ -54,9 +53,6 @@ export default function Home() {
   return (
     <main id="top" className="relative bg-base">
       <WelcomeGate />
-      <AnnouncementBar href="#divisi">
-        ✨ SOPAN TEAM buka rekrutmen member baru — gabung sekarang
-      </AnnouncementBar>
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
       <Hero />
       <AboutSection />
