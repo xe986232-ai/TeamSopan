@@ -65,6 +65,75 @@ function BlurText({
   );
 }
 
+// Placeholder untuk koleksi gambar acak di background hero — nanti gampang
+// diganti satu-satu (src-nya aja) begitu ada foto/karya asli dari tim.
+// Tiap item punya ukuran, radius (bentuk), rotasi, dan posisi sendiri biar
+// susunannya kelihatan "acak" kayak referensi, bukan grid rapi.
+const COLLAGE_ITEMS = [
+  { src: "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=400&q=80", top: "6%", left: "1%", w: 120, h: 170, rotate: -9, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&q=80", top: "42%", left: "3%", w: 130, h: 130, rotate: 6, radius: 28 },
+  { src: "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=400&q=80", top: "70%", left: "10%", w: 110, h: 160, rotate: -4, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400&q=80", top: "10%", left: "20%", w: 150, h: 110, rotate: 5, radius: 24 },
+  { src: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=400&q=80", top: "55%", left: "23%", w: 120, h: 150, rotate: -7, radius: 30 },
+  { src: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&q=80", top: "2%", left: "38%", w: 100, h: 140, rotate: 8, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1622428051717-dcd9ce313e69?w=400&q=80", top: "78%", left: "36%", w: 140, h: 100, rotate: -6, radius: 22 },
+  { src: "https://images.unsplash.com/photo-1637858868799-7f26a0640eb6?w=400&q=80", top: "30%", left: "44%", w: 130, h: 170, rotate: 4, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1636955779321-819753cd1741?w=400&q=80", top: "5%", left: "58%", w: 120, h: 120, rotate: -8, radius: 26 },
+  { src: "https://images.unsplash.com/photo-1622428051717-dcd9ce313e69?w=400&q=80", top: "60%", left: "58%", w: 150, h: 110, rotate: 7, radius: 24 },
+  { src: "https://images.unsplash.com/photo-1633356122102-3fe601e05bd2?w=400&q=80", top: "35%", left: "68%", w: 110, h: 160, rotate: -5, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1618172193763-c511deb635ca?w=400&q=80", top: "72%", left: "72%", w: 130, h: 130, rotate: 6, radius: 28 },
+  { src: "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=400&q=80", top: "8%", left: "80%", w: 120, h: 170, rotate: -4, radius: 999 },
+  { src: "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=400&q=80", top: "48%", left: "88%", w: 130, h: 100, rotate: 8, radius: 22 },
+];
+
+/**
+ * HeroCollageBackground — susunan foto/karya acak di belakang teks hero,
+ * tiap kartu beda bentuk (persegi/pill), beda ukuran, dan dirotasi dikit
+ * biar kesannya "moodboard" bukan grid kaku. Ditutup gradasi hitam di atas
+ * biar teks nama tetap kebaca jelas.
+ */
+function HeroCollageBackground({ isDark }) {
+  return (
+    <div className="absolute inset-0 z-0 overflow-hidden">
+      {/* Kartu-kartu gambar acak */}
+      <div className="absolute inset-0 opacity-70 sm:opacity-80">
+        {COLLAGE_ITEMS.map((item, i) => (
+          <div
+            key={i}
+            className="absolute hidden sm:block overflow-hidden shadow-2xl"
+            style={{
+              top: item.top,
+              left: item.left,
+              width: item.w,
+              height: item.h,
+              borderRadius: item.radius,
+              transform: `rotate(${item.rotate}deg)`,
+            }}
+          >
+            <Image
+              src={item.src}
+              alt=""
+              fill
+              sizes="200px"
+              className="object-cover"
+            />
+          </div>
+        ))}
+      </div>
+
+      {/* Gradasi hitam menutup gambar biar teks tetap fokus & kebaca */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background: isDark
+            ? "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.75) 45%, rgba(0,0,0,0.55) 100%), linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.3) 30%, rgba(0,0,0,0.3) 70%, rgba(0,0,0,0.75) 100%)"
+            : "radial-gradient(ellipse 70% 60% at 50% 50%, rgba(250,250,250,0.95) 0%, rgba(250,250,250,0.82) 45%, rgba(250,250,250,0.6) 100%), linear-gradient(to bottom, rgba(250,250,250,0.65) 0%, rgba(250,250,250,0.35) 30%, rgba(250,250,250,0.35) 70%, rgba(250,250,250,0.8) 100%)",
+        }}
+      />
+    </div>
+  );
+}
+
 /**
  * PortfolioHero — hero section bergaya "kartu nama digital": nama besar
  * tersusun 2 baris dengan foto/logo yang overlap di tengah, dan tagline
@@ -93,6 +162,9 @@ export default function PortfolioHero({
         color: isDark ? "#FFFFFF" : "#1A1A1A",
       }}
     >
+      {/* Background moodboard acak + gradasi */}
+      <HeroCollageBackground isDark={isDark} />
+
       {/* Hero content */}
       <div className="relative flex-1 flex items-center justify-center px-4 py-16">
         <div className="relative text-center">
