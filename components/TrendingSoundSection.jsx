@@ -6,47 +6,41 @@ import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
 // ============================================================================
 // GANTI DI SINI kalau karya remix asli sudah siap:
-// - cover: sekarang masih placeholder gradient (belum ada foto/artwork asli).
-//   Ganti ke <img>/<Image> begitu ada artwork, atau pakai foto asli lewat
-//   Supabase Storage (pola sama seperti fitur upload video Trending Edit).
-// - src: path file audio. Taruh file di /public/audio/ lalu update path-nya.
+// - cover: sekarang masih placeholder (picsum.photos, foto acak tapi stabil
+//   per-seed). Ganti ke foto artwork asli (Supabase Storage / /public) begitu
+//   sudah ada, tinggal timpa field `cover`.
+// - src: sekarang masih placeholder (SoundHelix demo track, dipakai umum buat
+//   testing audio player). Taruh file asli di /public/audio/ atau Supabase
+//   Storage lalu timpa field `src`.
 // ============================================================================
 const TRACKS = [
   {
     id: "trend-01",
-    title: "Judul Remix 1",
-    creator: "Nama Remixer",
-    src: "/audio/placeholder-01.mp3",
-    durationFallback: 234, // detik, dipakai kalau file audio belum ada / gagal load
-    coverGradient: "linear-gradient(160deg, #123a4d 0%, #0c2430 60%, #081820 100%)",
+    title: "Shiver",
+    creator: "John Summit & Hayla",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+    durationFallback: 234,
+    cover: "https://picsum.photos/seed/sopan-shiver/700/800",
     panelColor: "#0d2530",
   },
   {
     id: "trend-02",
-    title: "Judul Remix 2",
-    creator: "Nama Remixer",
-    src: "/audio/placeholder-02.mp3",
+    title: "Say Nothing",
+    creator: "Flume & MAY-A",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
     durationFallback: 233,
-    coverGradient: "linear-gradient(160deg, #E8952E 0%, #7A3B1E 65%, #2E1710 100%)",
+    cover: "https://picsum.photos/seed/sopan-saynothing/700/800",
     panelColor: "#2b1911",
   },
   {
     id: "trend-03",
-    title: "Judul Remix 3",
-    creator: "Nama Remixer",
-    src: "/audio/placeholder-03.mp3",
+    title: "Innerbloom",
+    creator: "RÜFÜS DU SOL",
+    src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
     durationFallback: 238,
-    coverGradient: "linear-gradient(160deg, #6B4A7A 0%, #3A2B45 60%, #1C1622 100%)",
+    cover: "https://picsum.photos/seed/sopan-innerbloom/700/800",
     panelColor: "#211a29",
   },
-];
-
-// Rotasi & posisi ala "kartu berserakan" — cuma aktif di layar >= sm,
-// di mobile kartu berdiri lurus (lebih enak buat di-swipe).
-const CARD_TILT = [
-  { rotate: -6, y: 18, scale: 1, z: 0 },
-  { rotate: 0, y: 0, scale: 1.06, z: 10 },
-  { rotate: 6, y: 18, scale: 1, z: 0 },
 ];
 
 function formatTime(seconds) {
@@ -56,7 +50,29 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-function PlayerCard({ track, index, isActive, onPlay, onPause }) {
+// Posisi kartu dalam "panggung" 3D, dihitung dari jarak (delta) terhadap
+// kartu yang lagi fokus di tengah. delta 0 = tengah, -1 = kiri, +1 = kanan.
+function getStageTransform(delta, isDesktop) {
+  if (!isDesktop) {
+    return { x: 0, rotateY: 0, z: 0, scale: 1, opacity: 1 };
+  }
+  if (delta === 0) {
+    return { x: 0, rotateY: 0, z: 90, scale: 1.08, opacity: 1 };
+  }
+  const dir = delta > 0 ? 1 : -1;
+  return { x: dir * 218, rotateY: dir * -28, z: -30, scale: 0.86, opacity: 0.7 };
+}
+
+// delta melingkar: supaya kartu "sebelah" selalu di kiri/kanan terdekat,
+// bukan lompat jauh ke ujung array.
+function getCircularDelta(index, activeIndex, length) {
+  let delta = index - activeIndex;
+  if (delta > length / 2) delta -= length;
+  if (delta < -length / 2) delta += length;
+  return delta;
+}
+
+function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPause, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
   const rafRef = useRef(null);
@@ -66,18 +82,9 @@ function PlayerCard({ track, index, isActive, onPlay, onPause }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    setIsDesktop(mq.matches);
-    const handler = (e) => setIsDesktop(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
 
   const progress = duration ? currentTime / duration : 0;
-  const tilt = CARD_TILT[index] || CARD_TILT[0];
+  const stage = getStageTransform(delta, isDesktop);
 
   const stopClock = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -108,7 +115,9 @@ function PlayerCard({ track, index, isActive, onPlay, onPause }) {
 
   useEffect(() => stopClock, [stopClock]);
 
-  function handleTogglePlay() {
+  function handleTogglePlay(e) {
+    e.stopPropagation();
+    onFocus();
     if (isActive) {
       audioRef.current?.pause();
       stopClock();
@@ -117,8 +126,8 @@ function PlayerCard({ track, index, isActive, onPlay, onPause }) {
     }
     onPlay(track.id);
     audioRef.current?.play().catch(() => {
-      // file placeholder mungkin belum ada -- biarin, clock internal tetap
-      // jalan supaya UI tidak terasa macet.
+      // audio placeholder mungkin gagal load (offline dll) -- biarin, clock
+      // internal tetap jalan supaya UI tidak terasa macet.
     });
     startTimestampRef.current = performance.now() - currentTime * 1000;
     rafRef.current = requestAnimationFrame(tick);
@@ -141,6 +150,8 @@ function PlayerCard({ track, index, isActive, onPlay, onPause }) {
   );
 
   function handlePointerDown(e) {
+    e.stopPropagation();
+    onFocus();
     setIsDragging(true);
     setShowTooltip(true);
     seekFromClientX(e.clientX);
@@ -172,178 +183,162 @@ function PlayerCard({ track, index, isActive, onPlay, onPause }) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 32 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-60px" }}
-      transition={{ duration: 0.6, delay: index * 0.1 }}
-      style={{ zIndex: tilt.z }}
-      className="relative shrink-0 snap-center w-[240px] sm:w-[250px]"
+      initial={false}
+      animate={{
+        x: stage.x,
+        rotateY: stage.rotateY,
+        z: stage.z,
+        scale: stage.scale,
+        opacity: stage.opacity,
+      }}
+      transition={{ type: "spring", stiffness: 240, damping: 26 }}
+      style={{ zIndex: isFocused ? 30 : 20 - Math.abs(delta), transformStyle: "preserve-3d" }}
+      className="absolute left-1/2 top-1/2 w-[230px] sm:w-[250px] -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
     >
-      <motion.div
-        animate={{
-          rotate: isDesktop ? tilt.rotate : 0,
-          y: isDesktop ? tilt.y : 0,
-          scale: isDesktop ? tilt.scale : 1,
+      <div
+        role="button"
+        tabIndex={isFocused ? -1 : 0}
+        aria-label={`Fokuskan kartu ${track.title}`}
+        onClick={() => !isFocused && onFocus()}
+        onKeyDown={(e) => {
+          if (!isFocused && (e.key === "Enter" || e.key === " ")) onFocus();
         }}
-        whileHover={isDesktop ? { rotate: 0, y: 0, scale: 1.08 } : undefined}
-        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+        className={`overflow-hidden rounded-[1.75rem] shadow-2xl shadow-black/50 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-white/70 ${
+          isFocused ? "cursor-default" : "cursor-pointer"
+        }`}
       >
-        <PlayerCardBody
-          track={track}
-          isActive={isActive}
-          duration={duration}
-          currentTime={currentTime}
-          progress={progress}
-          showTooltip={showTooltip}
-          trackRef={trackRef}
-          audioRef={audioRef}
-          onTogglePlay={handleTogglePlay}
-          onPointerDown={handlePointerDown}
-          onSkip={skip}
-          onLoadedMetadata={(d) => setDuration(d)}
-          onMouseEnterTrack={() => setShowTooltip(true)}
-          onMouseLeaveTrack={() => !isDragging && setShowTooltip(false)}
-        />
-      </motion.div>
-    </motion.div>
-  );
-}
-
-function PlayerCardBody({
-  track,
-  isActive,
-  duration,
-  currentTime,
-  progress,
-  showTooltip,
-  trackRef,
-  audioRef,
-  onTogglePlay,
-  onPointerDown,
-  onSkip,
-  onLoadedMetadata,
-  onMouseEnterTrack,
-  onMouseLeaveTrack,
-}) {
-  return (
-    <div className="overflow-hidden rounded-[1.75rem] shadow-2xl shadow-black/50">
-      {/* cover placeholder */}
-      <div
-        className="relative h-44 sm:h-48 w-full"
-        style={{ background: track.coverGradient }}
-      >
-        <div className="absolute inset-0 bg-grain opacity-30" />
-        <div
-          className="absolute inset-x-0 bottom-0 h-16"
-          style={{
-            background: `linear-gradient(to top, ${track.panelColor}, transparent)`,
-          }}
-        />
-      </div>
-
-      {/* panel info + kontrol */}
-      <div
-        className="px-5 pt-4 pb-5"
-        style={{ background: track.panelColor }}
-      >
-        <audio
-          ref={audioRef}
-          src={track.src}
-          preload="metadata"
-          onLoadedMetadata={(e) => {
-            if (Number.isFinite(e.currentTarget.duration)) {
-              onLoadedMetadata(e.currentTarget.duration);
-            }
-          }}
-          className="hidden"
-        />
-
-        <p className="font-display font-bold text-lg text-white leading-tight truncate">
-          {track.title}
-        </p>
-        <p className="font-body text-sm text-white/55 mt-0.5 truncate">
-          {track.creator}
-        </p>
-
-        {/* progress bar */}
-        <div
-          ref={trackRef}
-          role="slider"
-          tabIndex={0}
-          aria-label={`Seek posisi audio ${track.title}`}
-          aria-valuemin={0}
-          aria-valuemax={Math.round(duration || 0)}
-          aria-valuenow={Math.round(currentTime)}
-          onPointerDown={onPointerDown}
-          onMouseEnter={onMouseEnterTrack}
-          onMouseLeave={onMouseLeaveTrack}
-          className="relative mt-5 h-4 flex items-center cursor-pointer touch-none select-none"
-        >
-          <div className="relative h-1 w-full rounded-full bg-white/20">
-            <div
-              className="absolute inset-y-0 left-0 rounded-full bg-white"
-              style={{ width: `${progress * 100}%` }}
-            />
-          </div>
-          <div
-            className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white shadow"
-            style={{ left: `calc(${progress * 100}% - 6px)` }}
+        {/* cover */}
+        <div className="relative h-44 sm:h-48 w-full bg-black/40">
+          <img
+            src={track.cover}
+            alt={`Cover ${track.title} - ${track.creator}`}
+            loading="lazy"
+            draggable={false}
+            className="absolute inset-0 h-full w-full object-cover select-none"
           />
-          {showTooltip && (
-            <span
-              className="absolute -top-7 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-black shadow"
-              style={{ left: `${progress * 100}%` }}
-            >
-              {formatTime(currentTime)}
-            </span>
-          )}
+          <div
+            className="absolute inset-x-0 bottom-0 h-16"
+            style={{ background: `linear-gradient(to top, ${track.panelColor}, transparent)` }}
+          />
         </div>
 
-        <div className="mt-1.5 flex items-center justify-between text-xs tabular-nums text-white/50">
-          <span>{formatTime(currentTime)}</span>
-          <span>{formatTime(duration)}</span>
-        </div>
+        {/* panel info + kontrol */}
+        <div className="px-5 pt-4 pb-5" style={{ background: track.panelColor }}>
+          <audio
+            ref={audioRef}
+            src={track.src}
+            preload="metadata"
+            onLoadedMetadata={(e) => {
+              if (Number.isFinite(e.currentTarget.duration)) {
+                setDuration(e.currentTarget.duration);
+              }
+            }}
+            className="hidden"
+          />
 
-        {/* kontrol prev / play-pause / next */}
-        <div className="mt-4 flex items-center justify-center gap-6">
-          <button
-            type="button"
-            onClick={() => onSkip(-10)}
-            aria-label={`Mundur 10 detik - ${track.title}`}
-            className="text-white/70 hover:text-white transition-colors"
-          >
-            <SkipBack className="h-4 w-4" fill="currentColor" />
-          </button>
+          <p className="font-display font-bold text-lg text-white leading-tight truncate">
+            {track.title}
+          </p>
+          <p className="font-body text-sm text-white/55 mt-0.5 truncate">{track.creator}</p>
 
-          <button
-            type="button"
-            onClick={onTogglePlay}
-            aria-label={isActive ? `Jeda ${track.title}` : `Putar ${track.title}`}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
+          {/* progress bar */}
+          <div
+            ref={trackRef}
+            role="slider"
+            tabIndex={0}
+            aria-label={`Seek posisi audio ${track.title}`}
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            onPointerDown={handlePointerDown}
+            onMouseEnter={() => setShowTooltip(true)}
+            onMouseLeave={() => !isDragging && setShowTooltip(false)}
+            className="relative mt-5 h-4 flex items-center cursor-pointer touch-none select-none"
           >
-            {isActive ? (
-              <Pause className="h-4.5 w-4.5 text-black" fill="currentColor" />
-            ) : (
-              <Play className="h-4.5 w-4.5 ml-0.5 text-black" fill="currentColor" />
+            <div className="relative h-1 w-full rounded-full bg-white/20">
+              <div
+                className="absolute inset-y-0 left-0 rounded-full bg-white"
+                style={{ width: `${progress * 100}%` }}
+              />
+            </div>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white shadow"
+              style={{ left: `calc(${progress * 100}% - 6px)` }}
+            />
+            {showTooltip && (
+              <span
+                className="absolute -top-7 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-black shadow"
+                style={{ left: `${progress * 100}%` }}
+              >
+                {formatTime(currentTime)}
+              </span>
             )}
-          </button>
+          </div>
 
-          <button
-            type="button"
-            onClick={() => onSkip(10)}
-            aria-label={`Maju 10 detik - ${track.title}`}
-            className="text-white/70 hover:text-white transition-colors"
-          >
-            <SkipForward className="h-4 w-4" fill="currentColor" />
-          </button>
+          <div className="mt-1.5 flex items-center justify-between text-xs tabular-nums text-white/50">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+
+          {/* kontrol prev / play-pause / next */}
+          <div className="mt-4 flex items-center justify-center gap-6">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onFocus();
+                skip(-10);
+              }}
+              aria-label={`Mundur 10 detik - ${track.title}`}
+              className="text-white/70 hover:text-white transition-colors"
+            >
+              <SkipBack className="h-4 w-4" fill="currentColor" />
+            </button>
+
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              aria-label={isActive ? `Jeda ${track.title}` : `Putar ${track.title}`}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
+            >
+              {isActive ? (
+                <Pause className="h-4.5 w-4.5 text-black" fill="currentColor" />
+              ) : (
+                <Play className="h-4.5 w-4.5 ml-0.5 text-black" fill="currentColor" />
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onFocus();
+                skip(10);
+              }}
+              aria-label={`Maju 10 detik - ${track.title}`}
+              className="text-white/70 hover:text-white transition-colors"
+            >
+              <SkipForward className="h-4 w-4" fill="currentColor" />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 export default function TrendingSoundSection() {
   const [playingId, setPlayingId] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(1);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    setIsDesktop(mq.matches);
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   return (
     <section id="trending-sound" className="relative py-20 sm:py-24">
@@ -369,7 +364,7 @@ export default function TrendingSoundSection() {
           player selalu kontras & konsisten, terlepas dari light/dark mode
           situs. Blob blur warna-warni di belakang meniru efek bokeh. */}
       <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-[2rem] bg-[#0b0710] py-14 sm:py-20">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
           <div
             aria-hidden
             className="pointer-events-none absolute -top-16 -left-10 h-72 w-72 rounded-full bg-[#E8952E] opacity-25 blur-[100px]"
@@ -383,15 +378,42 @@ export default function TrendingSoundSection() {
             className="pointer-events-none absolute -bottom-16 left-1/3 h-64 w-64 rounded-full bg-[#B026FF] opacity-20 blur-[100px]"
           />
 
-          <div className="relative flex gap-5 overflow-x-auto snap-x snap-mandatory px-6 pb-2 sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-6">
+          {/* stage 3D: perspective di parent, tiap kartu diposisikan lewat
+              rotateY + translateZ supaya kelihatan "melipat" ke belakang. */}
+          <div
+            className="relative mx-auto flex h-[300px] sm:h-[340px] w-full max-w-md items-center justify-center gap-5 overflow-x-auto sm:overflow-visible px-6 sm:px-0"
+            style={{ perspective: isDesktop ? "1600px" : "none" }}
+          >
+            {TRACKS.map((track, i) => {
+              const delta = getCircularDelta(i, activeIndex, TRACKS.length);
+              return (
+                <PlayerCard
+                  key={track.id}
+                  track={track}
+                  delta={delta}
+                  isFocused={i === activeIndex}
+                  isDesktop={isDesktop}
+                  isActive={playingId === track.id}
+                  onPlay={setPlayingId}
+                  onPause={() => setPlayingId(null)}
+                  onFocus={() => setActiveIndex(i)}
+                />
+              );
+            })}
+          </div>
+
+          {/* indikator titik — pilih kartu tanpa klik langsung ke kartunya */}
+          <div className="relative mt-6 flex items-center justify-center gap-2">
             {TRACKS.map((track, i) => (
-              <PlayerCard
+              <button
                 key={track.id}
-                track={track}
-                index={i}
-                isActive={playingId === track.id}
-                onPlay={setPlayingId}
-                onPause={() => setPlayingId(null)}
+                type="button"
+                onClick={() => setActiveIndex(i)}
+                aria-label={`Fokuskan ${track.title}`}
+                aria-current={i === activeIndex}
+                className={`h-1.5 rounded-full transition-all ${
+                  i === activeIndex ? "w-6 bg-white" : "w-1.5 bg-white/30 hover:bg-white/50"
+                }`}
               />
             ))}
           </div>
