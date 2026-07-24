@@ -372,18 +372,28 @@ export default function TrendingSoundSection() {
           situs. Blob blur warna-warni di belakang meniru efek bokeh. */}
       <div className="relative mx-auto max-w-5xl px-0 sm:px-6">
         <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
+          {/* background: duplikat cover 3 kartu, disusun flat sejajar rata
+              (tanpa efek 3D), opacity diturunin + di-blur jadi ambient
+              backdrop. Kartu utama di depan (3D carousel) sama sekali nggak
+              disentuh. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute -top-16 -left-10 h-72 w-72 rounded-full bg-[#E8952E] opacity-25 blur-[100px]"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute top-6 -right-10 h-72 w-72 rounded-full bg-[#3D5AFE] opacity-20 blur-[110px]"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-16 left-1/3 h-64 w-64 rounded-full bg-[#B026FF] opacity-20 blur-[100px]"
-          />
+            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-30 blur-2xl sm:blur-3xl"
+          >
+            {TRACKS.map((track) => (
+              <div
+                key={`bg-${track.id}`}
+                className="h-36 w-36 sm:h-64 sm:w-64 shrink-0 overflow-hidden rounded-2xl"
+                style={{ background: track.panelColor }}
+              >
+                <img
+                  src={track.cover}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
 
           {/* stage 3D: perspective di parent, tiap kartu diposisikan lewat
               rotateY + translateZ supaya kelihatan "melipat" ke belakang.
