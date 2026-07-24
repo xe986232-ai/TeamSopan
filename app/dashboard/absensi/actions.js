@@ -12,25 +12,23 @@ export async function createAttendanceSession({
   division,
   date,
   startTime,
-  durationMinutes,
+  endTime,
 }) {
   if (!division || !DIVISIONS_ABSENSI[division]) {
     return { error: "Divisi tidak dikenali." };
   }
-  if (!date || !startTime) {
-    return { error: "Tanggal dan jam mulai wajib diisi." };
-  }
-
-  const duration = Number(durationMinutes);
-  if (!duration || duration <= 0) {
-    return { error: "Durasi sesi tidak valid." };
+  if (!date || !startTime || !endTime) {
+    return { error: "Tanggal, jam mulai, dan jam selesai wajib diisi." };
   }
 
   const startsAt = new Date(`${date}T${startTime}:00`);
-  if (Number.isNaN(startsAt.getTime())) {
+  const endsAt = new Date(`${date}T${endTime}:00`);
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
     return { error: "Tanggal/jam tidak valid." };
   }
-  const endsAt = new Date(startsAt.getTime() + duration * 60000);
+  if (endsAt.getTime() <= startsAt.getTime()) {
+    return { error: "Jam selesai harus lebih besar dari jam mulai." };
+  }
 
   const supabase = createAdminSupabaseClient();
   const roomId = generateRoomId(division);

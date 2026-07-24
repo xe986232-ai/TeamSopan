@@ -8,15 +8,12 @@ import {
   ArrowRight,
   Loader2,
   CalendarPlus,
-  Timer,
 } from "lucide-react";
 import { TextField } from "@/components/ui/text-field";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { DIVISIONS_ABSENSI } from "@/lib/absensi";
 import { createAttendanceSession } from "@/app/dashboard/absensi/actions";
-
-const DURATION_PRESETS = [15, 30, 60, 120];
 
 function todayDateValue() {
   const d = new Date();
@@ -30,12 +27,21 @@ function nowTimeValue() {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+// Default jam selesai = 1 jam setelah sekarang, biar admin nggak wajib
+// isi manual kalau memang mau durasi standar -- tapi tetap bisa diubah
+// bebas ke jam berapa pun.
+function defaultEndTimeValue() {
+  const d = new Date(Date.now() + 60 * 60000);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export default function CreateAttendanceSessionForm() {
   const { toast } = useToast();
   const [division, setDivision] = React.useState("remix");
   const [date, setDate] = React.useState(todayDateValue());
   const [startTime, setStartTime] = React.useState(nowTimeValue());
-  const [duration, setDuration] = React.useState(60);
+  const [endTime, setEndTime] = React.useState(defaultEndTimeValue());
   const [isPending, setIsPending] = React.useState(false);
   const [created, setCreated] = React.useState(null);
   const [copied, setCopied] = React.useState(false);
@@ -49,7 +55,7 @@ export default function CreateAttendanceSessionForm() {
       division,
       date,
       startTime,
-      durationMinutes: duration,
+      endTime,
     });
 
     setIsPending(false);
@@ -93,7 +99,7 @@ export default function CreateAttendanceSessionForm() {
             Buat Sesi Absensi Baru
           </p>
           <p className="text-xs text-black/45 mt-0.5">
-            Pilih divisi, tentukan tanggal & jam mulai, serta durasi sesi.
+            Pilih divisi, lalu tentukan jam mulai dan jam selesai sesi.
             Link absensi digenerate otomatis buat dibagikan ke anggota.
           </p>
         </div>
@@ -166,39 +172,18 @@ export default function CreateAttendanceSessionForm() {
             required
           />
           <TextField
-            id="durasiSesi"
-            type="number"
-            label="Durasi (menit)"
-            min={5}
-            step={5}
-            value={duration}
-            onChange={(e) => setDuration(e.target.value)}
+            id="jamSelesaiSesi"
+            type="time"
+            label="Jam selesai"
+            value={endTime}
+            onChange={(e) => setEndTime(e.target.value)}
             required
           />
         </div>
-
-        <div>
-          <p className="flex items-center gap-1.5 text-xs font-medium text-black/60 mb-2">
-            <Timer size={13} className="text-black/40" />
-            Durasi cepat
-          </p>
-          <div className="flex flex-wrap items-center gap-2">
-            {DURATION_PRESETS.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setDuration(p)}
-                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
-                  Number(duration) === p
-                    ? "bg-[#1677F5] text-white"
-                    : "bg-black/[0.04] text-black/50 hover:bg-black/[0.08]"
-                }`}
-              >
-                {p >= 60 ? `${p / 60} jam` : `${p} menit`}
-              </button>
-            ))}
-          </div>
-        </div>
+        <p className="text-xs text-black/40 -mt-2">
+          Absensi otomatis terbuka begitu jam mulai tiba, dan tertutup
+          begitu jam selesai lewat.
+        </p>
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending ? (

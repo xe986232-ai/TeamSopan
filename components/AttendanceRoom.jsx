@@ -344,7 +344,7 @@ function AttendanceRoomInner({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: SMOOTH_EASE }}
-            className="w-full mt-4 rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm p-5"
+            className="w-full mt-4"
           >
             <div className="flex items-center justify-center gap-2 mb-5 text-ink">
               <Users size={16} className="text-ink-muted" />
@@ -355,7 +355,7 @@ function AttendanceRoomInner({
 
             <ul
               data-lenis-prevent
-              className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[40vh] overflow-y-auto px-1 py-1"
+              className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[45vh] overflow-y-auto px-1 py-1"
             >
               <AnimatePresence initial={false}>
                 {records.map((member) => (
