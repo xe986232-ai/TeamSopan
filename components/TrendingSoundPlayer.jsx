@@ -218,6 +218,7 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
             ref={trackRef}
             role="slider"
             tabIndex={0}
+            data-lenis-prevent
             aria-label={`Seek posisi audio ${track.title}`}
             aria-valuemin={0}
             aria-valuemax={Math.round(duration || 0)}
@@ -253,7 +254,7 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
           </div>
 
           {/* kontrol prev / play-pause / next */}
-          <div className="mt-1.5 sm:mt-4 flex items-center justify-center gap-2.5 sm:gap-6">
+          <div data-lenis-prevent className="mt-1.5 sm:mt-4 flex items-center justify-center gap-2.5 sm:gap-6">
             <button
               type="button"
               onClick={(e) => {
