@@ -63,6 +63,109 @@ button:focus-visible {
   border-radius: 4px;
 }
 
+/* Glitch entrance untuk logo di Hero (components/ui/portfolio-hero.jsx).
+   Sengaja ditunda ~1s (animation-delay) supaya main belakangan, sesudah
+   teks nama "SOPAN TEAM" selesai muncul, dan durasinya dibikin longgar
+   (~1.1s) biar nggak berkesan buru-buru. */
+.hero-glitch-in {
+  animation: hero-glitch-in 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 1s;
+}
+
+@keyframes hero-glitch-in {
+  0% {
+    opacity: 0;
+    transform: translate(0, -18%) scale(0.92);
+    clip-path: inset(0 0 100% 0);
+  }
+  8% {
+    opacity: 1;
+    transform: translate(-6px, 0) skewX(8deg);
+    clip-path: inset(8% 0 42% 0);
+  }
+  16% {
+    transform: translate(5px, 0) skewX(-6deg);
+    clip-path: inset(58% 0 4% 0);
+  }
+  24% {
+    transform: translate(-4px, 0);
+    clip-path: inset(18% 0 52% 0);
+    opacity: 0.9;
+  }
+  33% {
+    transform: translate(3px, 0) skewX(4deg);
+    clip-path: inset(0 0 28% 0);
+  }
+  42% {
+    transform: translate(-2px, 0);
+    clip-path: inset(40% 0 8% 0);
+    opacity: 1;
+  }
+  52% {
+    transform: translate(0, 0);
+    clip-path: inset(0 0 0 0);
+  }
+  62% {
+    opacity: 0.9;
+    transform: translate(2px, 0);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-1px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.hero-glitch-ghost {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background-size: 70% 70%;
+  background-position: center;
+  background-repeat: no-repeat;
+  opacity: 0;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.hero-glitch-in .hero-glitch-ghost-cyan {
+  filter: hue-rotate(180deg) saturate(3);
+  animation: hero-glitch-ghost-cyan 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 1s;
+}
+
+.hero-glitch-in .hero-glitch-ghost-magenta {
+  filter: hue-rotate(-60deg) saturate(3);
+  animation: hero-glitch-ghost-magenta 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: 1s;
+}
+
+@keyframes hero-glitch-ghost-cyan {
+  0%, 48% {
+    opacity: 0.55;
+    transform: translate(5px, -3px);
+  }
+  55%, 100% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes hero-glitch-ghost-magenta {
+  0%, 48% {
+    opacity: 0.55;
+    transform: translate(-5px, 3px);
+  }
+  55%, 100% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

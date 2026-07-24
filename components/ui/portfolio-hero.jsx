@@ -65,6 +65,67 @@ function BlurText({
   );
 }
 
+/**
+ * GlitchAvatar — logo/avatar muncul belakangan (setelah teks nama selesai
+ * animasi), pakai efek "glitch masuk": jitter posisi + potongan clip-path
+ * yang lompat-lompat + sedikit color-split (ghost cyan/magenta), lalu
+ * settle rapi ke posisi normal. Durasi dibuat agak longgar (~1.1s) supaya
+ * nggak berkesan buru-buru, dan trigger-nya nunggu elemen kelihatan di
+ * viewport dulu (sama seperti BlurText).
+ */
+function GlitchAvatar({ avatarSrc }) {
+  const [inView, setInView] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`relative w-[60px] h-[100px] sm:w-[85px] sm:h-[140px] md:w-[105px] md:h-[170px] lg:w-[120px] lg:h-[195px] ${
+        inView ? "hero-glitch-in" : "opacity-0"
+      }`}
+    >
+      <div className="w-full h-full rounded-full overflow-hidden shadow-2xl bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
+        <Image
+          src={avatarSrc}
+          alt="Logo Sopan Team"
+          width={120}
+          height={195}
+          className="w-[70%] h-[70%] object-contain"
+        />
+      </div>
+      {/* Ghost layer color-split — kesan "glitch" khas RGB shift */}
+      <span
+        aria-hidden
+        className="hero-glitch-ghost hero-glitch-ghost-cyan"
+        style={{ backgroundImage: `url(${avatarSrc})` }}
+      />
+      <span
+        aria-hidden
+        className="hero-glitch-ghost hero-glitch-ghost-magenta"
+        style={{ backgroundImage: `url(${avatarSrc})` }}
+      />
+    </div>
+  );
+}
+
 // Placeholder untuk koleksi gambar di background hero — nanti gampang diganti
 // satu-satu (src-nya aja) begitu ada foto/karya asli dari tim. Disusun
 // berjajar rapi (bukan nyebar acak) persis kayak referensi: satu baris,
@@ -162,11 +223,11 @@ export default function PortfolioHero({
         color: isDark ? "#FFFFFF" : "#1A1A1A",
       }}
     >
-      {/* Background moodboard acak + gradasi */}
-      <HeroCollageBackground isDark={isDark} />
-
-      {/* Hero content */}
-      <div className="relative flex-1 flex items-center justify-center px-4 py-16">
+      {/* Hero content — background moodboard dipasang scoped di sini aja
+          (bukan di seluruh section) supaya nggak melorot nutupin tagline
+          di bawahnya; jadi cuma nutupin area nama+logo, pas sampe situ. */}
+      <div className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
+        <HeroCollageBackground isDark={isDark} />
         <div className="relative text-center">
           <div>
             <BlurText
@@ -189,17 +250,9 @@ export default function PortfolioHero({
             />
           </div>
 
-          {/* Avatar / logo overlap */}
+          {/* Avatar / logo overlap — masuk belakangan dengan animasi glitch */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-            <div className="w-[60px] h-[100px] sm:w-[85px] sm:h-[140px] md:w-[105px] md:h-[170px] lg:w-[120px] lg:h-[195px] rounded-full overflow-hidden shadow-2xl bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
-              <Image
-                src={avatarSrc}
-                alt="Logo Sopan Team"
-                width={120}
-                height={195}
-                className="w-[70%] h-[70%] object-contain"
-              />
-            </div>
+            <GlitchAvatar avatarSrc={avatarSrc} />
           </div>
         </div>
       </div>
