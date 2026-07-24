@@ -2,26 +2,28 @@
 
 import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { LOGO_STYLE_LIST, getLogoStyle } from "@/lib/logo-styles";
+import { LOGO_STYLE_LIST, LOGO_SHAPE_LIST, getLogoStyle } from "@/lib/logo-styles";
 import LogoMark from "@/components/ui/logo-mark";
 import { updateLogoStyle } from "./actions";
 
-export default function LogoStylePicker({ currentStyle }) {
-  const [selected, setSelected] = useState(currentStyle);
-  const [saved, setSaved] = useState(currentStyle);
+export default function LogoStylePicker({ currentStyle, currentShape }) {
+  const [selectedStyle, setSelectedStyle] = useState(currentStyle);
+  const [selectedShape, setSelectedShape] = useState(currentShape);
+  const [saved, setSaved] = useState({ style: currentStyle, shape: currentShape });
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
-  const hasChanges = selected !== saved;
+  const hasChanges =
+    selectedStyle !== saved.style || selectedShape !== saved.shape;
 
   function handleSave() {
     setError("");
     startTransition(async () => {
-      const result = await updateLogoStyle(selected);
+      const result = await updateLogoStyle(selectedStyle, selectedShape);
       if (result?.error) {
         setError(result.error);
       } else {
-        setSaved(selected);
+        setSaved({ style: selectedStyle, shape: selectedShape });
       }
     });
   }
@@ -32,29 +34,64 @@ export default function LogoStylePicker({ currentStyle }) {
         <div>
           <p className="font-body font-semibold text-sm text-[#111827]">Logo Utama</p>
           <p className="text-xs text-black/45 mt-0.5">
-            Pilih warna gradient untuk logo soundwave di navbar semua halaman publik.
+            Pilih bentuk & warna gradient untuk logo di navbar semua halaman publik --
+            {" "}{LOGO_SHAPE_LIST.length} bentuk x {LOGO_STYLE_LIST.length} warna = {LOGO_SHAPE_LIST.length * LOGO_STYLE_LIST.length} kombinasi.
           </p>
         </div>
       </div>
 
       {/* preview besar di tengah -- biar admin lihat dulu sebelum simpan.
-          Background gelap tipis di belakang biar garis gradient-nya kelihatan
-          jelas walau di halaman terang. */}
+          Background gelap tipis di belakang biar gradient-nya (garis atau
+          orb) kelihatan jelas walau di halaman terang. */}
       <div className="flex items-center justify-center py-6">
         <div className="flex items-center justify-center h-20 w-20 rounded-2xl bg-[#0B0F1A]">
-          <LogoMark styleId={selected} size={56} />
+          <LogoMark styleId={selectedStyle} shape={selectedShape} size={56} />
         </div>
       </div>
 
-      {/* pilihan 5 style */}
+      {/* pilihan bentuk: Orb (lama) / Soundwave (baru) */}
+      <p className="text-xs font-semibold text-black/50 mb-2">Bentuk</p>
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        {LOGO_SHAPE_LIST.map((shape) => {
+          const isSelected = selectedShape === shape.id;
+          return (
+            <button
+              key={shape.id}
+              type="button"
+              onClick={() => setSelectedShape(shape.id)}
+              className={`relative flex items-center gap-3 rounded-xl border p-3 text-left transition-colors ${
+                isSelected
+                  ? "border-[#1677F5] bg-[#1677F5]/5"
+                  : "border-black/[0.08] hover:border-black/20"
+              }`}
+            >
+              {isSelected && (
+                <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#1677F5] text-white">
+                  <Check size={10} strokeWidth={3} />
+                </span>
+              )}
+              <div className="flex items-center justify-center h-11 w-11 shrink-0 rounded-lg bg-[#0B0F1A]">
+                <LogoMark styleId={selectedStyle} shape={shape.id} size={30} />
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold text-[#111827]">{shape.label}</p>
+                <p className="text-[10px] text-black/40 leading-tight">{shape.description}</p>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* pilihan 5 warna, dirender pakai bentuk yang lagi dipilih di atas */}
+      <p className="text-xs font-semibold text-black/50 mb-2">Warna</p>
       <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
         {LOGO_STYLE_LIST.map((style) => {
-          const isSelected = selected === style.id;
+          const isSelected = selectedStyle === style.id;
           return (
             <button
               key={style.id}
               type="button"
-              onClick={() => setSelected(style.id)}
+              onClick={() => setSelectedStyle(style.id)}
               className={`relative flex flex-col items-center gap-2 rounded-xl border p-3 transition-colors ${
                 isSelected
                   ? "border-[#1677F5] bg-[#1677F5]/5"
@@ -67,7 +104,7 @@ export default function LogoStylePicker({ currentStyle }) {
                 </span>
               )}
               <div className="flex items-center justify-center h-11 w-11 rounded-lg bg-[#0B0F1A]">
-                <LogoMark styleId={style.id} size={30} />
+                <LogoMark styleId={style.id} shape={selectedShape} size={30} />
               </div>
               <span className="text-[11px] font-semibold text-[#111827]">{style.label}</span>
               <span className="text-[10px] text-black/40 text-center leading-tight">
@@ -92,7 +129,9 @@ export default function LogoStylePicker({ currentStyle }) {
         </button>
         {!hasChanges && !isPending && (
           <span className="text-xs text-black/40">
-            {saved ? `Sedang aktif: ${getLogoStyle(saved).label}` : ""}
+            {saved.style
+              ? `Sedang aktif: ${getLogoStyle(saved.style).label} (${saved.shape === "orb" ? "Orb" : "Soundwave"})`
+              : ""}
           </span>
         )}
       </div>

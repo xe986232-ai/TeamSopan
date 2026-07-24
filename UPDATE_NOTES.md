@@ -1,3 +1,64 @@
+# Update: Pilihan bentuk logo (Orb + Soundwave) & Banner Pengumuman dari database
+
+Dua perubahan di update ini:
+
+**1. Logo punya 2 bentuk sekarang, bukan cuma warna.** Sebelumnya logo
+cuma bisa ganti warna (5 preset), bentuknya tetap SVG soundwave (garis).
+Sekarang bentuk "orb" (blob bulat + huruf "S", desain original/lama)
+dikembalikan sebagai pilihan juga, jadi total ada 2 bentuk x 5 warna =
+**10 kombinasi**, semua diatur dari dashboard. Default tetap Soundwave +
+Aurora (sama seperti sebelumnya), jadi situs yang sudah live tidak
+berubah tampilannya sampai admin sengaja ganti.
+
+**2. Banner pengumuman baru** — bar tipis di atas navbar pada semua
+halaman publik. Teks, link, dan toggle aktif/nonaktif-nya disimpan di
+database (bukan hardcode), diedit dari dashboard yang sama.
+
+## Yang perlu kamu lakukan
+
+### 1. Jalankan migration SQL baru
+
+Buka **Supabase Dashboard > SQL Editor > New query**, jalankan isi file
+`supabase/migration_logo_shape_and_banner.sql` (setelah
+`migration_site_settings.sql`). File ini nambah kolom ke tabel
+`site_settings` yang sudah ada: `logo_shape`, `banner_enabled`,
+`banner_text`, `banner_link`. Tidak ada tabel baru, tidak ada storage
+bucket baru, tidak ada environment variable baru.
+
+## Cara pakai
+
+Buka **`/dashboard/pengaturan`**:
+
+- **Logo Utama**: pilih bentuk (Orb / Soundwave) lalu pilih salah satu
+  dari 5 warna di bawahnya — preview besar di atas langsung update.
+  Klik **Simpan pilihan**.
+- **Banner Pengumuman**: isi teks pengumuman, link tujuan (opsional,
+  boleh path internal seperti `/gabung` atau URL penuh), lalu nyalakan
+  toggle di kanan atas kartu. Ada preview persis seperti yang akan
+  tampil di navbar publik. Klik **Simpan pilihan**. Kalau toggle
+  dimatikan, banner langsung hilang dari semua halaman publik walau
+  teksnya masih tersimpan (tidak perlu dihapus, tinggal nyalakan lagi
+  kalau perlu).
+
+## File yang berubah/ditambah
+
+- `lib/logo-styles.js` — tambah `LOGO_SHAPES` (orb/soundwave) +
+  `getOrbGradients()` buat turunin CSS radial-gradient orb dari 2 warna
+  yang sama dipakai soundwave.
+- `components/ui/logo-mark.jsx` — render orb (blob + motion, desain
+  original) atau soundwave (SVG garis) tergantung prop `shape`.
+- `components/ui/announcement-banner.jsx` — komponen banner publik,
+  dipasang di `components/ui/site-navbar.jsx` (di dalam wrapper sticky,
+  di atas baris navbar, jadi ikut nempel pas discroll).
+- `app/dashboard/pengaturan/LogoStylePicker.jsx` — sekarang ada 2 grid:
+  pilih bentuk, lalu pilih warna.
+- `app/dashboard/pengaturan/AnnouncementBannerEditor.jsx` — komponen
+  baru buat editor banner.
+- `app/dashboard/pengaturan/actions.js` — `updateLogoStyle()` sekarang
+  terima 2 argumen (warna + bentuk), tambah `updateAnnouncementBanner()`.
+
+---
+
 # Update: Trending Sound sekarang render dari database
 
 Sebelumnya kartu "Trending Sound" (Divisi Remix, di homepage) datanya

@@ -2,8 +2,9 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import LogoStylePicker from "./LogoStylePicker";
+import AnnouncementBannerEditor from "./AnnouncementBannerEditor";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
-import { DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
+import { DEFAULT_LOGO_STYLE, DEFAULT_LOGO_SHAPE } from "@/lib/logo-styles";
 
 export const dynamic = "force-dynamic";
 
@@ -22,27 +23,42 @@ const SETTINGS_TOGGLES = [
   { label: "Mode pemeliharaan", desc: "Tampilkan halaman maintenance ke pengunjung situs.", checked: false },
 ];
 
-async function getLogoStyleSetting() {
+const DEFAULT_SITE_SETTINGS = {
+  logoStyle: DEFAULT_LOGO_STYLE,
+  logoShape: DEFAULT_LOGO_SHAPE,
+  bannerEnabled: false,
+  bannerText: "",
+  bannerLink: "",
+};
+
+async function getSiteSettings() {
   try {
     const supabase = createAdminSupabaseClient();
     const { data, error } = await supabase
       .from("site_settings")
-      .select("logo_style")
+      .select("logo_style, logo_shape, banner_enabled, banner_text, banner_link")
       .eq("id", 1)
       .maybeSingle();
 
     if (error || !data) {
       throw error || new Error("site_settings kosong / tidak ada data");
     }
-    return data.logo_style || DEFAULT_LOGO_STYLE;
+
+    return {
+      logoStyle: data.logo_style || DEFAULT_LOGO_STYLE,
+      logoShape: data.logo_shape || DEFAULT_LOGO_SHAPE,
+      bannerEnabled: !!data.banner_enabled,
+      bannerText: data.banner_text || "",
+      bannerLink: data.banner_link || "",
+    };
   } catch (err) {
     console.error("[dashboard/pengaturan] Gagal ambil site_settings:", err);
-    return DEFAULT_LOGO_STYLE;
+    return DEFAULT_SITE_SETTINGS;
   }
 }
 
 export default async function PengaturanPage() {
-  const logoStyle = await getLogoStyleSetting();
+  const settings = await getSiteSettings();
 
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
@@ -52,7 +68,16 @@ export default async function PengaturanPage() {
         searchPlaceholder="Cari pengaturan..."
       />
 
-      <LogoStylePicker currentStyle={logoStyle} />
+      <LogoStylePicker
+        currentStyle={settings.logoStyle}
+        currentShape={settings.logoShape}
+      />
+
+      <AnnouncementBannerEditor
+        currentEnabled={settings.bannerEnabled}
+        currentText={settings.bannerText}
+        currentLink={settings.bannerLink}
+      />
 
       <div className="rounded-2xl border border-black/[0.06] p-5 mb-4 flex flex-col gap-4">
         {SETTINGS_FIELDS.map((field) => (

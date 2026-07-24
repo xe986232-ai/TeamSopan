@@ -8,8 +8,9 @@ import { useTheme } from "next-themes";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
 import { useOutsideClick } from "@/hooks/use-outside-click";
-import { DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
+import { DEFAULT_LOGO_STYLE, DEFAULT_LOGO_SHAPE } from "@/lib/logo-styles";
 import LogoMark from "@/components/ui/logo-mark";
+import AnnouncementBanner from "@/components/ui/announcement-banner";
 
 function initialsOf(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
@@ -49,10 +50,12 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
   const dropdownRef = useRef(null);
   useOutsideClick(dropdownRef, () => setDropdownOpen(false));
 
-  // Style gradient logo utama (SVG soundwave di navbar) -- diatur admin
-  // dari /dashboard/pengaturan, disimpan di tabel `site_settings`. Default
-  // "aurora" sambil nunggu data ke-fetch / kalau gagal ambil.
+  // Style + bentuk logo utama, dan banner pengumuman -- semua diatur admin
+  // dari /dashboard/pengaturan, disimpan di tabel `site_settings`.
+  // Default aman dipakai sambil nunggu data ke-fetch / kalau gagal ambil.
   const [logoStyleId, setLogoStyleId] = useState(DEFAULT_LOGO_STYLE);
+  const [logoShapeId, setLogoShapeId] = useState(DEFAULT_LOGO_SHAPE);
+  const [banner, setBanner] = useState({ enabled: false, text: "", link: "" });
 
   useEffect(() => {
     let active = true;
@@ -60,7 +63,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
 
     supabase
       .from("site_settings")
-      .select("logo_style")
+      .select("logo_style, logo_shape, banner_enabled, banner_text, banner_link")
       .eq("id", 1)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -69,7 +72,14 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           console.error("[SiteNavbar] Gagal ambil site_settings:", error);
           return;
         }
-        if (data?.logo_style) setLogoStyleId(data.logo_style);
+        if (!data) return;
+        if (data.logo_style) setLogoStyleId(data.logo_style);
+        if (data.logo_shape) setLogoShapeId(data.logo_shape);
+        setBanner({
+          enabled: !!data.banner_enabled,
+          text: data.banner_text || "",
+          link: data.banner_link || "",
+        });
       });
 
     return () => {
@@ -165,6 +175,11 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           className
         )}
       >
+      <AnnouncementBanner
+        enabled={banner.enabled}
+        text={banner.text}
+        link={banner.link}
+      />
       <div className="border-b border-black/5 dark:border-white/10 bg-white/30 dark:bg-black/30 backdrop-blur-xl backdrop-saturate-150 shadow-sm">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-4 sm:px-6 py-3">
         <div className="flex items-center gap-3">
@@ -177,7 +192,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           </button>
 
         <a href="#top" className="flex items-center gap-2.5">
-  <LogoMark styleId={logoStyleId} size={34} className="shrink-0" />
+  <LogoMark styleId={logoStyleId} shape={logoShapeId} size={34} className="shrink-0" />
   <span className="font-body font-semibold text-ink text-xs whitespace-nowrap">
     Sopan Team
   </span>
