@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
@@ -54,7 +54,7 @@ function getCircularDelta(index, activeIndex, length) {
 
 // Kartu carousel -- MURNI VISUAL + 1 tombol fokus/play. Nggak ada <audio>,
 // nggak ada progress bar, nggak ada state playback di sini sama sekali.
-function PlayerCard({ track, index, delta, isFocused, isPlaying, isDesktop, onTap }) {
+function PlayerCard({ track, index, delta, isFocused, isPlaying, isDesktop, showIndicator, onTap }) {
   const stage = getStageTransform(delta, isDesktop);
 
   return (
@@ -102,20 +102,32 @@ function PlayerCard({ track, index, delta, isFocused, isPlaying, isDesktop, onTa
               className="h-[8px] w-auto sm:h-[12px]"
             />
           </span>
-          {/* indikator play/pause -- cuma tampil di kartu yang lagi fokus,
-              murni visual (bukan target tap terpisah, tap-nya ditangani sama
-              <button> pembungkus di atas) */}
-          {isFocused && (
-            <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
-                {isPlaying ? (
-                  <Pause className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 text-black" fill="currentColor" />
-                ) : (
-                  <Play className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 ml-0.5 text-black" fill="currentColor" />
-                )}
-              </span>
-            </span>
-          )}
+          {/* indikator play/pause -- cuma tampil sesaat di kartu yang lagi
+              fokus, tepat setelah kartunya di-tap (lihat triggerIndicator di
+              komponen induk). Auto-fade out sendiri beberapa detik kemudian,
+              dan muncul lagi kalau kartunya di-tap ulang. Murni visual --
+              bukan target tap terpisah, tap-nya tetap ditangani sama
+              <button> pembungkus di atas. */}
+          <AnimatePresence>
+            {isFocused && showIndicator && (
+              <motion.span
+                key="play-indicator"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                className="pointer-events-none absolute inset-0 flex items-center justify-center"
+              >
+                <span className="flex h-9 w-9 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white/90 shadow-lg">
+                  {isPlaying ? (
+                    <Pause className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 text-black" fill="currentColor" />
+                  ) : (
+                    <Play className="h-3.5 w-3.5 sm:h-4.5 sm:w-4.5 ml-0.5 text-black" fill="currentColor" />
+                  )}
+                </span>
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* title/creator saja -- nggak ada kontrol di sini lagi */}
@@ -234,9 +246,28 @@ export default function TrendingSoundPlayer({ tracks }) {
   const [currentTime, setCurrentTime] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  // Indikator play/pause di atas kartu fokus: cuma numpang lewat beberapa
+  // detik tiap kali kartunya di-tap, lalu fade out sendiri.
+  const [showIndicator, setShowIndicator] = useState(false);
 
   const audioRef = useRef(null);
   const trackRef = useRef(null);
+  const indicatorTimerRef = useRef(null);
+
+  // Munculkan indikator, reset timer fade-out-nya tiap kali kartu di-tap
+  // (baik toggle play/pause di kartu yang sama, maupun pindah fokus ke
+  // kartu lain).
+  const triggerIndicator = useCallback(() => {
+    setShowIndicator(true);
+    if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
+    indicatorTimerRef.current = setTimeout(() => setShowIndicator(false), 2200);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (indicatorTimerRef.current) clearTimeout(indicatorTimerRef.current);
+    };
+  }, []);
 
   const activeTrack = tracks[activeIndex];
 
@@ -278,6 +309,7 @@ export default function TrendingSoundPlayer({ tracks }) {
   // Tap kartu / tombol play: kartu yang sama -> toggle play/pause. Kartu
   // beda -> pindah fokus SEKALIGUS langsung main.
   function handlePlayIndex(i) {
+    triggerIndicator();
     if (i === activeIndex) {
       setIsPlaying((p) => !p);
       return;
@@ -381,6 +413,7 @@ export default function TrendingSoundPlayer({ tracks }) {
                   isFocused={i === activeIndex}
                   isPlaying={i === activeIndex && isPlaying}
                   isDesktop={isDesktop}
+                  showIndicator={i === activeIndex && showIndicator}
                   onTap={() => handlePlayIndex(i)}
                 />
               );
