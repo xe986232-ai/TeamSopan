@@ -46,7 +46,7 @@ function getCircularDelta(index, activeIndex, length) {
   return delta;
 }
 
-function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPlay, onPause, onFocus }) {
+function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTogglePlay, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
 
@@ -58,17 +58,16 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
   const progress = duration ? currentTime / duration : 0;
   const stage = getStageTransform(delta, isDesktop);
 
-  // Satu-satunya tempat yang benar-benar manggil audio.play() / .pause() --
-  // sebelumnya handleTogglePlay JUGA manggil play()/pause() langsung selain
-  // lewat effect ini, jadi kadang balapan (audio.play() masih pending pas
-  // audio.pause() udah kepanggil duluan) dan tombolnya jadi kerasa macet /
-  // harus dipencet 2x. Sekarang klik cuma ganti state (isActive), effect ini
-  // yang nurut ke state itu -- konsisten, sekali pencet langsung nurut.
+  // Satu-satunya tempat yang benar-benar manggil audio.play() / .pause().
+  // "Kartu yang lagi diputar" sekarang SAMA PERSIS dengan "kartu yang lagi
+  // fokus/terpilih" -- cuma ada 1 sumber state (isPlaying, dikelola di
+  // parent), jadi nggak mungkin ada 2 kartu mikir dirinya sendiri yang
+  // "aktif" di saat bersamaan. Effect ini tinggal nurut ke isPlaying.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
-    if (isActive) {
+    if (isPlaying) {
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch(() => {
@@ -80,16 +79,11 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
     } else {
       audio.pause();
     }
-  }, [isActive]);
+  }, [isPlaying]);
 
   function handleTogglePlay(e) {
     e.stopPropagation();
-    onFocus();
-    if (isActive) {
-      onPause();
-    } else {
-      onPlay(track.id);
-    }
+    onTogglePlay();
   }
 
   const seekFromClientX = useCallback(
@@ -209,7 +203,7 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
             }}
             onEnded={() => {
               setCurrentTime(0);
-              onPause();
+              onTogglePlay();
             }}
             className="hidden"
           />
@@ -276,10 +270,10 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
             <button
               type="button"
               onClick={handleTogglePlay}
-              aria-label={isActive ? `Jeda ${track.title}` : `Putar ${track.title}`}
+              aria-label={isPlaying ? `Jeda ${track.title}` : `Putar ${track.title}`}
               className="flex h-7 w-7 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
             >
-              {isActive ? (
+              {isPlaying ? (
                 <Pause className="h-3 w-3 sm:h-4.5 sm:w-4.5 text-black" fill="currentColor" />
               ) : (
                 <Play className="h-3 w-3 sm:h-4.5 sm:w-4.5 ml-0.5 text-black" fill="currentColor" />
@@ -306,8 +300,13 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
 }
 
 export default function TrendingSoundPlayer({ tracks }) {
-  const [playingId, setPlayingId] = useState(null);
+  // "Kartu yang lagi diputar" digabung jadi satu sama "kartu yang lagi
+  // fokus" -- cuma ada 1 flag boolean (isPlaying) buat activeIndex yang
+  // sekarang, BUKAN id per-kartu kayak sebelumnya. Jadi nggak mungkin ada
+  // 2 kartu yang mikir dirinya "aktif" secara bersamaan / tabrakan logic:
+  // pindah fokus ke kartu lain otomatis mematikan audio kartu sebelumnya.
   const [activeIndex, setActiveIndex] = useState(Math.min(1, tracks.length - 1));
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
@@ -317,6 +316,29 @@ export default function TrendingSoundPlayer({ tracks }) {
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
   }, []);
+
+  // Pindah fokus ke kartu lain (klik kartu / titik indikator / geser) --
+  // kalau kartu tujuannya beda dari yang sekarang fokus, audio yang lagi
+  // jalan otomatis berhenti. Kalau kartu yang sama diklik ulang (misal
+  // buat drag progress bar / skip), status main tidak diganggu.
+  function focusIndex(i) {
+    if (i !== activeIndex) {
+      setIsPlaying(false);
+    }
+    setActiveIndex(i);
+  }
+
+  // Tombol play/pause: kartu yang dipencet play-nya otomatis jadi yang
+  // fokus DAN yang main -- kartu lain otomatis berhenti (activeIndex-nya
+  // berubah, jadi bukan lagi "yang main").
+  function handlePlayIndex(i) {
+    if (i === activeIndex && isPlaying) {
+      setIsPlaying(false);
+    } else {
+      setActiveIndex(i);
+      setIsPlaying(true);
+    }
+  }
 
   return (
     <section id="trending-sound" className="relative py-20 sm:py-24">
@@ -377,10 +399,9 @@ export default function TrendingSoundPlayer({ tracks }) {
                   delta={delta}
                   isFocused={i === activeIndex}
                   isDesktop={isDesktop}
-                  isActive={playingId === track.id}
-                  onPlay={setPlayingId}
-                  onPause={() => setPlayingId(null)}
-                  onFocus={() => setActiveIndex(i)}
+                  isPlaying={i === activeIndex && isPlaying}
+                  onTogglePlay={() => handlePlayIndex(i)}
+                  onFocus={() => focusIndex(i)}
                 />
               );
             })}
@@ -392,7 +413,7 @@ export default function TrendingSoundPlayer({ tracks }) {
               <button
                 key={track.id}
                 type="button"
-                onClick={() => setActiveIndex(i)}
+                onClick={() => focusIndex(i)}
                 aria-label={`Fokuskan ${track.title}`}
                 aria-current={i === activeIndex}
                 className={`h-1.5 rounded-full transition-all ${
