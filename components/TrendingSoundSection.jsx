@@ -1,185 +1,167 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback, useMemo } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import Image from "next/image";
-import { Play, Pause, Youtube, ExternalLink } from "lucide-react";
+import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
-// Ganti `src` dengan file audio asli karya divisi Remix begitu tersedia.
-// Untuk sekarang pakai placeholder — taruh file di public/audio/ lalu
-// update path di bawah (contoh: "/audio/remix-trending-01.mp3").
-// `link` & `platform` = tujuan tombol "dengerin full version" (tiktok | youtube).
-const TRENDING_SOUND = {
-  id: "trend-01",
-  title: "Remix Closing Set",
-  creator: "Divisi Remix",
-  src: "/audio/placeholder-01.mp3",
-  durationFallback: 20,
-  link: "https://www.tiktok.com/@sopanteam",
-  platform: "tiktok", // "tiktok" | "youtube"
-};
+// ============================================================================
+// GANTI DI SINI kalau karya remix asli sudah siap:
+// - cover: sekarang masih placeholder gradient (belum ada foto/artwork asli).
+//   Ganti ke <img>/<Image> begitu ada artwork, atau pakai foto asli lewat
+//   Supabase Storage (pola sama seperti fitur upload video Trending Edit).
+// - src: path file audio. Taruh file di /public/audio/ lalu update path-nya.
+// ============================================================================
+const TRACKS = [
+  {
+    id: "trend-01",
+    title: "Judul Remix 1",
+    creator: "Nama Remixer",
+    src: "/audio/placeholder-01.mp3",
+    durationFallback: 234, // detik, dipakai kalau file audio belum ada / gagal load
+    coverGradient: "linear-gradient(160deg, #123a4d 0%, #0c2430 60%, #081820 100%)",
+    panelColor: "#0d2530",
+  },
+  {
+    id: "trend-02",
+    title: "Judul Remix 2",
+    creator: "Nama Remixer",
+    src: "/audio/placeholder-02.mp3",
+    durationFallback: 233,
+    coverGradient: "linear-gradient(160deg, #E8952E 0%, #7A3B1E 65%, #2E1710 100%)",
+    panelColor: "#2b1911",
+  },
+  {
+    id: "trend-03",
+    title: "Judul Remix 3",
+    creator: "Nama Remixer",
+    src: "/audio/placeholder-03.mp3",
+    durationFallback: 238,
+    coverGradient: "linear-gradient(160deg, #6B4A7A 0%, #3A2B45 60%, #1C1622 100%)",
+    panelColor: "#211a29",
+  },
+];
 
-const BAR_COUNT = 150;
-const BAR_WIDTH = 2;
-const BAR_GAP = 1;
-const VIEWBOX_WIDTH = BAR_COUNT * (BAR_WIDTH + BAR_GAP);
-const VIEWBOX_HEIGHT = 80;
-
-// Waveform statis untuk tampilan (tidak dianalisis dari file asli).
-// Kalau nanti mau waveform real, bisa diganti pakai Web Audio API
-// (decodeAudioData -> ambil peak amplitude per segmen).
-function generateWaveform(seed = 1, bars = BAR_COUNT) {
-  const heights = [];
-  let value = seed * 137.5;
-  for (let i = 0; i < bars; i++) {
-    value = (value * 9301 + 49297) % 233280;
-    const rand = value / 233280;
-    const wave = Math.sin(i / 6) * 0.15;
-    heights.push(Math.min(1, Math.max(0.05, 0.35 + rand * 0.55 + wave)));
-  }
-  return heights;
-}
+// Rotasi & posisi ala "kartu berserakan" — cuma aktif di layar >= sm,
+// di mobile kartu berdiri lurus (lebih enak buat di-swipe).
+const CARD_TILT = [
+  { rotate: -6, y: 18, scale: 1, z: 0 },
+  { rotate: 0, y: 0, scale: 1.06, z: 10 },
+  { rotate: 6, y: 18, scale: 1, z: 0 },
+];
 
 function formatTime(seconds) {
-  if (!Number.isFinite(seconds)) return "0:00.0";
+  if (!Number.isFinite(seconds) || seconds < 0) return "0:00";
   const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toFixed(1).padStart(4, "0")}`;
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-// Ikon TikTok yang disederhanakan (bukan reproduksi logo resmi) —
-// dipakai supaya tombol CTA tetap jelas platformnya tanpa memakai aset pihak ketiga.
-function TikTokGlyph({ className }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden="true">
-      <path d="M16.6 3c.42 2.2 1.94 3.86 4.2 4.14v3.02a7.2 7.2 0 0 1-4.2-1.36v6.93a6.27 6.27 0 1 1-6.27-6.27c.22 0 .43.01.64.04v3.1a3.16 3.16 0 1 0 2.2 3.01V3h3.43Z" />
-    </svg>
-  );
-}
-
-function WaveformBars({ heights, colorClass }) {
-  return (
-    <svg
-      className="pointer-events-none h-full w-full"
-      viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      {heights.map((h, i) => {
-        const barHeight = h * VIEWBOX_HEIGHT;
-        const x = i * (BAR_WIDTH + BAR_GAP);
-        const y = (VIEWBOX_HEIGHT - barHeight) / 2;
-        return (
-          <rect
-            key={i}
-            x={x}
-            y={y}
-            width={BAR_WIDTH}
-            height={barHeight}
-            rx={1}
-            className={colorClass}
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
-export default function TrendingSoundSection() {
-  const sound = TRENDING_SOUND;
+function PlayerCard({ track, index, isActive, onPlay, onPause }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
   const rafRef = useRef(null);
-  const startTimestampRef = useRef(0); // performance.now() saat play dimulai, dikurangi offset waktu berjalan
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [duration, setDuration] = useState(sound.durationFallback);
+  const startTimestampRef = useRef(0);
+
+  const [duration, setDuration] = useState(track.durationFallback);
   const [currentTime, setCurrentTime] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  const waveform = useMemo(() => generateWaveform(1), []);
-
-  const handleLoadedMetadata = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || !Number.isFinite(audio.duration)) return;
-    setDuration(audio.duration);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    setIsDesktop(mq.matches);
+    const handler = (e) => setIsDesktop(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
+
+  const progress = duration ? currentTime / duration : 0;
+  const tilt = CARD_TILT[index] || CARD_TILT[0];
 
   const stopClock = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
   }, []);
 
-  const finishPlayback = useCallback(() => {
-    stopClock();
-    setIsPlaying(false);
-    setProgress(0);
-    setCurrentTime(0);
-    startTimestampRef.current = 0;
-  }, [stopClock]);
-
-  // Clock internal — tidak bergantung ke event `timeupdate` dari elemen
-  // <audio>, supaya waveform tetap "hidup" walau file audio belum ada
-  // (misal masih placeholder). Kalau file audio asli sudah terpasang,
-  // ini tetap akurat karena disinkronkan ke performance.now() saat play.
   const tick = useCallback(() => {
-    if (!duration) return;
     const elapsed = (performance.now() - startTimestampRef.current) / 1000;
     if (elapsed >= duration) {
-      finishPlayback();
+      setCurrentTime(0);
+      startTimestampRef.current = 0;
+      stopClock();
+      onPause();
       return;
     }
     setCurrentTime(elapsed);
-    setProgress(elapsed / duration);
     rafRef.current = requestAnimationFrame(tick);
-  }, [duration, finishPlayback]);
+  }, [duration, onPause, stopClock]);
 
-  const togglePlay = () => {
-    const audio = audioRef.current;
-    if (isPlaying) {
-      audio?.pause();
+  // Begitu kartu lain di-play, kartu ini otomatis berhenti — cuma satu yang
+  // boleh jalan bersamaan.
+  useEffect(() => {
+    if (!isActive) {
+      audioRef.current?.pause();
       stopClock();
-      setIsPlaying(false);
-      return;
     }
-    audio?.play().catch(() => {
-      // Gagal play (misal file belum ada) — biarkan diam, clock internal
-      // tetap jalan supaya UI tidak terasa "macet".
-    });
-    startTimestampRef.current = performance.now() - currentTime * 1000;
-    setIsPlaying(true);
-    rafRef.current = requestAnimationFrame(tick);
-  };
+  }, [isActive, stopClock]);
 
   useEffect(() => stopClock, [stopClock]);
 
+  function handleTogglePlay() {
+    if (isActive) {
+      audioRef.current?.pause();
+      stopClock();
+      onPause();
+      return;
+    }
+    onPlay(track.id);
+    audioRef.current?.play().catch(() => {
+      // file placeholder mungkin belum ada -- biarin, clock internal tetap
+      // jalan supaya UI tidak terasa macet.
+    });
+    startTimestampRef.current = performance.now() - currentTime * 1000;
+    rafRef.current = requestAnimationFrame(tick);
+  }
+
   const seekFromClientX = useCallback(
     (clientX) => {
-      const audio = audioRef.current;
-      const track = trackRef.current;
-      if (!track || !duration) return;
-      const rect = track.getBoundingClientRect();
+      const el = trackRef.current;
+      if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
       const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
       const newTime = ratio * duration;
-      if (audio && Number.isFinite(audio.duration)) {
-        audio.currentTime = newTime;
+      if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+        audioRef.current.currentTime = newTime;
       }
       startTimestampRef.current = performance.now() - newTime * 1000;
-      setProgress(ratio);
       setCurrentTime(newTime);
     },
     [duration]
   );
 
-  const handlePointerDown = (e) => {
+  function handlePointerDown(e) {
     setIsDragging(true);
+    setShowTooltip(true);
     seekFromClientX(e.clientX);
-  };
+  }
+
+  function skip(deltaSeconds) {
+    const newTime = Math.min(Math.max(currentTime + deltaSeconds, 0), duration);
+    setCurrentTime(newTime);
+    startTimestampRef.current = performance.now() - newTime * 1000;
+    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+      audioRef.current.currentTime = newTime;
+    }
+  }
 
   useEffect(() => {
     if (!isDragging) return;
     const handleMove = (e) => seekFromClientX(e.clientX);
-    const handleUp = () => setIsDragging(false);
+    const handleUp = () => {
+      setIsDragging(false);
+      setShowTooltip(false);
+    };
     window.addEventListener("pointermove", handleMove);
     window.addEventListener("pointerup", handleUp);
     return () => {
@@ -188,24 +170,180 @@ export default function TrendingSoundSection() {
     };
   }, [isDragging, seekFromClientX]);
 
-  const handleKeyDown = (e) => {
-    if (!duration) return;
-    const step = duration * 0.02;
-    if (e.key === "ArrowRight") {
-      const newTime = Math.min(duration, currentTime + step);
-      startTimestampRef.current = performance.now() - newTime * 1000;
-      setProgress(newTime / duration);
-      setCurrentTime(newTime);
-    } else if (e.key === "ArrowLeft") {
-      const newTime = Math.max(0, currentTime - step);
-      startTimestampRef.current = performance.now() - newTime * 1000;
-      setProgress(newTime / duration);
-      setCurrentTime(newTime);
-    }
-  };
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 32 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-60px" }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
+      style={{ zIndex: tilt.z }}
+      className="relative shrink-0 snap-center w-[240px] sm:w-[250px]"
+    >
+      <motion.div
+        animate={{
+          rotate: isDesktop ? tilt.rotate : 0,
+          y: isDesktop ? tilt.y : 0,
+          scale: isDesktop ? tilt.scale : 1,
+        }}
+        whileHover={isDesktop ? { rotate: 0, y: 0, scale: 1.08 } : undefined}
+        transition={{ type: "spring", stiffness: 260, damping: 22 }}
+      >
+        <PlayerCardBody
+          track={track}
+          isActive={isActive}
+          duration={duration}
+          currentTime={currentTime}
+          progress={progress}
+          showTooltip={showTooltip}
+          trackRef={trackRef}
+          audioRef={audioRef}
+          onTogglePlay={handleTogglePlay}
+          onPointerDown={handlePointerDown}
+          onSkip={skip}
+          onLoadedMetadata={(d) => setDuration(d)}
+          onMouseEnterTrack={() => setShowTooltip(true)}
+          onMouseLeaveTrack={() => !isDragging && setShowTooltip(false)}
+        />
+      </motion.div>
+    </motion.div>
+  );
+}
 
-  const PlatformIcon = sound.platform === "youtube" ? Youtube : TikTokGlyph;
-  const platformLabel = sound.platform === "youtube" ? "YouTube" : "TikTok";
+function PlayerCardBody({
+  track,
+  isActive,
+  duration,
+  currentTime,
+  progress,
+  showTooltip,
+  trackRef,
+  audioRef,
+  onTogglePlay,
+  onPointerDown,
+  onSkip,
+  onLoadedMetadata,
+  onMouseEnterTrack,
+  onMouseLeaveTrack,
+}) {
+  return (
+    <div className="overflow-hidden rounded-[1.75rem] shadow-2xl shadow-black/50">
+      {/* cover placeholder */}
+      <div
+        className="relative h-44 sm:h-48 w-full"
+        style={{ background: track.coverGradient }}
+      >
+        <div className="absolute inset-0 bg-grain opacity-30" />
+        <div
+          className="absolute inset-x-0 bottom-0 h-16"
+          style={{
+            background: `linear-gradient(to top, ${track.panelColor}, transparent)`,
+          }}
+        />
+      </div>
+
+      {/* panel info + kontrol */}
+      <div
+        className="px-5 pt-4 pb-5"
+        style={{ background: track.panelColor }}
+      >
+        <audio
+          ref={audioRef}
+          src={track.src}
+          preload="metadata"
+          onLoadedMetadata={(e) => {
+            if (Number.isFinite(e.currentTarget.duration)) {
+              onLoadedMetadata(e.currentTarget.duration);
+            }
+          }}
+          className="hidden"
+        />
+
+        <p className="font-display font-bold text-lg text-white leading-tight truncate">
+          {track.title}
+        </p>
+        <p className="font-body text-sm text-white/55 mt-0.5 truncate">
+          {track.creator}
+        </p>
+
+        {/* progress bar */}
+        <div
+          ref={trackRef}
+          role="slider"
+          tabIndex={0}
+          aria-label={`Seek posisi audio ${track.title}`}
+          aria-valuemin={0}
+          aria-valuemax={Math.round(duration || 0)}
+          aria-valuenow={Math.round(currentTime)}
+          onPointerDown={onPointerDown}
+          onMouseEnter={onMouseEnterTrack}
+          onMouseLeave={onMouseLeaveTrack}
+          className="relative mt-5 h-4 flex items-center cursor-pointer touch-none select-none"
+        >
+          <div className="relative h-1 w-full rounded-full bg-white/20">
+            <div
+              className="absolute inset-y-0 left-0 rounded-full bg-white"
+              style={{ width: `${progress * 100}%` }}
+            />
+          </div>
+          <div
+            className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white shadow"
+            style={{ left: `calc(${progress * 100}% - 6px)` }}
+          />
+          {showTooltip && (
+            <span
+              className="absolute -top-7 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-black shadow"
+              style={{ left: `${progress * 100}%` }}
+            >
+              {formatTime(currentTime)}
+            </span>
+          )}
+        </div>
+
+        <div className="mt-1.5 flex items-center justify-between text-xs tabular-nums text-white/50">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+
+        {/* kontrol prev / play-pause / next */}
+        <div className="mt-4 flex items-center justify-center gap-6">
+          <button
+            type="button"
+            onClick={() => onSkip(-10)}
+            aria-label={`Mundur 10 detik - ${track.title}`}
+            className="text-white/70 hover:text-white transition-colors"
+          >
+            <SkipBack className="h-4 w-4" fill="currentColor" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onTogglePlay}
+            aria-label={isActive ? `Jeda ${track.title}` : `Putar ${track.title}`}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
+          >
+            {isActive ? (
+              <Pause className="h-4.5 w-4.5 text-black" fill="currentColor" />
+            ) : (
+              <Play className="h-4.5 w-4.5 ml-0.5 text-black" fill="currentColor" />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSkip(10)}
+            aria-label={`Maju 10 detik - ${track.title}`}
+            className="text-white/70 hover:text-white transition-colors"
+          >
+            <SkipForward className="h-4 w-4" fill="currentColor" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function TrendingSoundSection() {
+  const [playingId, setPlayingId] = useState(null);
 
   return (
     <section id="trending-sound" className="relative py-20 sm:py-24">
@@ -227,115 +365,38 @@ export default function TrendingSoundSection() {
         </p>
       </motion.div>
 
-      {/* Tidak dibungkus card besar — elemen berdiri sendiri di atas background section */}
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-80px" }}
-        transition={{ duration: 0.6 }}
-        className="max-w-2xl mx-auto px-6 sm:px-10"
-      >
-        {/* Header: avatar kecil + nama artist, "Divisi Remix" pink di bawahnya, CTA di kanan */}
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white overflow-hidden">
-              <Image
-                src="/sopan-logo-black.png"
-                alt={sound.creator}
-                width={20}
-                height={26}
-                className="object-contain"
-              />
-            </span>
-            <div>
-              <p className="font-body font-semibold text-sm text-ink leading-tight">
-                {sound.creator}
-              </p>
-              <p className="font-accent text-xs font-semibold leading-tight mt-0.5 tracking-wide text-remix-to">
-                Divisi Remix
-              </p>
-            </div>
-          </div>
-
-          <a
-            href={sound.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group relative isolate shrink-0 inline-flex items-center gap-1.5 rounded-full p-[1.5px] transition"
-            style={{ background: "linear-gradient(135deg, #B026FF, #FF2E92)" }}
-          >
-            <span className="flex items-center gap-1.5 rounded-full bg-base px-3 py-1.5 text-xs font-semibold text-ink transition group-hover:bg-transparent group-hover:text-white">
-              <PlatformIcon
-                className="h-3.5 w-3.5 text-remix-to transition group-hover:text-white"
-                aria-hidden="true"
-              />
-              <span className="hidden sm:inline">Dengar di</span> {platformLabel}
-              <ExternalLink
-                className="h-3 w-3 text-ink-muted transition group-hover:text-white/80"
-                aria-hidden="true"
-              />
-            </span>
-          </a>
-        </div>
-
-        <audio
-          ref={audioRef}
-          src={sound.src}
-          preload="metadata"
-          onLoadedMetadata={handleLoadedMetadata}
-          className="hidden"
-        />
-
-        <div className="flex items-center gap-3">
-          {/* Tombol play/pause — hitam putih monokrom */}
-          <button
-            type="button"
-            onClick={togglePlay}
-            aria-label={isPlaying ? "Pause" : "Play"}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-black text-white transition active:scale-95 dark:bg-white dark:text-black"
-          >
-            {isPlaying ? (
-              <Pause className="h-4 w-4 fill-current" aria-hidden="true" />
-            ) : (
-              <Play className="h-4 w-4 ml-0.5 fill-current" aria-hidden="true" />
-            )}
-          </button>
-
-          {/* Waveform + progress overlay + playhead */}
+      {/* "panggung" gelap — background-nya sengaja fixed dark supaya kartu
+          player selalu kontras & konsisten, terlepas dari light/dark mode
+          situs. Blob blur warna-warni di belakang meniru efek bokeh. */}
+      <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
+        <div className="relative overflow-hidden rounded-[2rem] bg-[#0b0710] py-14 sm:py-20">
           <div
-            ref={trackRef}
-            role="slider"
-            tabIndex={0}
-            aria-label="Seek posisi audio"
-            aria-valuemin={0}
-            aria-valuemax={Math.round(duration || 0)}
-            aria-valuenow={Math.round(currentTime)}
-            aria-valuetext={`${formatTime(currentTime)} dari ${formatTime(duration)}`}
-            onPointerDown={handlePointerDown}
-            onKeyDown={handleKeyDown}
-            className="relative overflow-hidden px-1 py-1.5 h-20 md:h-24 flex-1 cursor-pointer touch-none select-none"
-          >
-            <div className="pointer-events-none relative z-10 h-full w-full">
-              <WaveformBars
-                heights={waveform}
-                colorClass="fill-black/35 dark:fill-white/35"
+            aria-hidden
+            className="pointer-events-none absolute -top-16 -left-10 h-72 w-72 rounded-full bg-[#E8952E] opacity-25 blur-[100px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute top-6 -right-10 h-72 w-72 rounded-full bg-[#3D5AFE] opacity-20 blur-[110px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -bottom-16 left-1/3 h-64 w-64 rounded-full bg-[#B026FF] opacity-20 blur-[100px]"
+          />
+
+          <div className="relative flex gap-5 overflow-x-auto snap-x snap-mandatory px-6 pb-2 sm:justify-center sm:overflow-visible sm:px-0 sm:pb-0 sm:gap-6">
+            {TRACKS.map((track, i) => (
+              <PlayerCard
+                key={track.id}
+                track={track}
+                index={i}
+                isActive={playingId === track.id}
+                onPlay={setPlayingId}
+                onPause={() => setPlayingId(null)}
               />
-              <div
-                className="absolute inset-0"
-                style={{
-                  clipPath: `inset(0px ${(1 - progress) * 100}% 0px 0px)`,
-                }}
-              >
-                <WaveformBars heights={waveform} colorClass="fill-[#818cf8]" />
-              </div>
-            </div>
+            ))}
           </div>
         </div>
-
-        <div className="mt-2 text-right text-xs tabular-nums text-ink-dim">
-          {formatTime(currentTime)} / {formatTime(duration)}
-        </div>
-      </motion.div>
+      </div>
     </section>
   );
 }
