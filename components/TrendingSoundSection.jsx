@@ -378,7 +378,7 @@ export default function TrendingSoundSection() {
               disentuh. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-30 blur-md sm:blur-lg"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-60 blur-sm"
           >
             {TRACKS.map((track) => (
               <div
@@ -437,19 +437,6 @@ export default function TrendingSoundSection() {
               />
             ))}
           </div>
-
-          {/* fade tepi atas & bawah — pakai warna `base` (sama kayak
-              background halaman) supaya panel nyatu mulus ke background
-              di belakangnya, otomatis ikut light/dark mode tanpa logic
-              tambahan. */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 z-30 h-14 sm:h-24 bg-gradient-to-b from-base to-transparent"
-          />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-14 sm:h-24 bg-gradient-to-t from-base to-transparent"
-          />
         </div>
       </div>
     </section>
