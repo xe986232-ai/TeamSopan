@@ -197,7 +197,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
       }}
       transition={{ type: "spring", stiffness: 240, damping: 26 }}
       style={{ zIndex: isFocused ? 30 : 20 - Math.abs(delta), transformStyle: "preserve-3d" }}
-      className="absolute left-1/2 top-1/2 w-[132px] sm:w-[250px] -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+      className="relative shrink-0 w-[132px] sm:w-[250px]"
     >
       <div
         role="button"
@@ -367,8 +367,8 @@ export default function TrendingSoundSection() {
       {/* "panggung" gelap — background-nya sengaja fixed dark supaya kartu
           player selalu kontras & konsisten, terlepas dari light/dark mode
           situs. Blob blur warna-warni di belakang meniru efek bokeh. */}
-      <div className="relative mx-auto max-w-5xl px-4 sm:px-6">
-        <div className="relative overflow-hidden rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
+      <div className="relative mx-auto max-w-5xl px-0 sm:px-6">
+        <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
           <div
             aria-hidden
             className="pointer-events-none absolute -top-16 -left-10 h-72 w-72 rounded-full bg-[#E8952E] opacity-25 blur-[100px]"
@@ -383,9 +383,11 @@ export default function TrendingSoundSection() {
           />
 
           {/* stage 3D: perspective di parent, tiap kartu diposisikan lewat
-              rotateY + translateZ supaya kelihatan "melipat" ke belakang. */}
+              rotateY + translateZ supaya kelihatan "melipat" ke belakang.
+              Tinggi container ngikutin konten (bukan angka fix) supaya kartu
+              selalu center vertikal, di semua ukuran layar. */}
           <div
-            className="relative mx-auto flex h-[190px] sm:h-[340px] w-full max-w-md items-center justify-center overflow-visible px-4 sm:px-0 sm:gap-6"
+            className="relative mx-auto flex w-full max-w-md items-center justify-center overflow-visible gap-1 sm:gap-6"
             style={{ perspective: isDesktop ? "1600px" : "900px" }}
           >
             {TRACKS.map((track, i) => {
