@@ -212,12 +212,10 @@ function AttendanceRoomInner({
         className="fixed inset-0 z-[6000] flex flex-col items-center overflow-y-auto bg-base"
       >
         <div
-          className="pointer-events-none absolute -top-1/4 -left-1/4 w-[70vw] h-[70vw] rounded-full opacity-20 blur-3xl"
-          style={{ background: division.accentFrom }}
-        />
-        <div
-          className="pointer-events-none absolute -bottom-1/4 -right-1/4 w-[60vw] h-[60vw] rounded-full opacity-15 blur-3xl"
-          style={{ background: division.accentTo }}
+          className="pointer-events-none absolute -top-1/3 left-1/2 -translate-x-1/2 w-[85vw] h-[60vw] rounded-full opacity-[0.12] blur-3xl"
+          style={{
+            background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
+          }}
         />
 
         <Link
@@ -251,7 +249,7 @@ function AttendanceRoomInner({
               TEAM. Jangan sampai kelewatan, ya!
             </p>
 
-            <div className="flex items-center gap-1.5 mt-1 text-xs font-semibold text-ink-muted">
+            <div className="flex items-center gap-1.5 mt-1 rounded-full bg-black/[0.04] dark:bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-ink-muted">
               <Clock size={13} />
               {countdownLabel}
             </div>
@@ -274,17 +272,17 @@ function AttendanceRoomInner({
                 >
                   <div className="relative">
                     <motion.div
-                      animate={status === "aktif" ? { scale: [1, 1.06, 1] } : {}}
-                      transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                      animate={status === "aktif" ? { scale: [1, 1.03, 1] } : {}}
+                      transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
                     >
                       <button
                         type="button"
                         onClick={handleAbsen}
                         disabled={!canCheckIn}
-                        className="h-32 w-32 rounded-full flex flex-col items-center justify-center gap-1 text-white font-display font-bold shadow-xl transition-transform active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="h-32 w-32 rounded-full flex flex-col items-center justify-center gap-1 text-white font-display font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
                         style={{
                           background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-                          boxShadow: `0 12px 40px -8px ${division.accentTo}88`,
+                          boxShadow: `0 10px 32px -10px ${division.accentTo}70`,
                         }}
                       >
                         <Sparkles size={22} />
@@ -346,7 +344,7 @@ function AttendanceRoomInner({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: SMOOTH_EASE }}
-            className="w-full mt-4"
+            className="w-full mt-4 rounded-3xl border border-black/[0.06] dark:border-white/[0.08] bg-white/60 dark:bg-white/[0.03] backdrop-blur-sm p-5"
           >
             <div className="flex items-center justify-center gap-2 mb-5 text-ink">
               <Users size={16} className="text-ink-muted" />
@@ -357,7 +355,7 @@ function AttendanceRoomInner({
 
             <ul
               data-lenis-prevent
-              className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[45vh] overflow-y-auto px-1 py-1"
+              className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[40vh] overflow-y-auto px-1 py-1"
             >
               <AnimatePresence initial={false}>
                 {records.map((member) => (

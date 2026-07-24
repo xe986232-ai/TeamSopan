@@ -2,7 +2,14 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Copy, Check, ArrowRight, Loader2 } from "lucide-react";
+import {
+  Copy,
+  Check,
+  ArrowRight,
+  Loader2,
+  CalendarPlus,
+  Timer,
+} from "lucide-react";
 import { TextField } from "@/components/ui/text-field";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -77,44 +84,67 @@ export default function CreateAttendanceSessionForm() {
 
   return (
     <div className="rounded-2xl border border-black/[0.06] p-5 mb-8">
-      <p className="font-display font-bold text-sm text-[#111827] mb-1">
-        Buat Sesi Absensi Baru
-      </p>
-      <p className="text-xs text-black/45 mb-4">
-        Pilih divisi, tentukan tanggal & jam mulai, serta durasi sesi.
-        Link absensi bakal digenerate otomatis buat dibagikan ke anggota.
-      </p>
+      <div className="flex items-start gap-3 mb-5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#1677F5]/10 text-[#1677F5]">
+          <CalendarPlus size={17} />
+        </span>
+        <div>
+          <p className="font-display font-bold text-sm text-[#111827]">
+            Buat Sesi Absensi Baru
+          </p>
+          <p className="text-xs text-black/45 mt-0.5">
+            Pilih divisi, tentukan tanggal & jam mulai, serta durasi sesi.
+            Link absensi digenerate otomatis buat dibagikan ke anggota.
+          </p>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <p className="text-xs font-medium text-black/60 mb-2">Divisi</p>
           <div className="grid grid-cols-3 gap-2">
-            {Object.values(DIVISIONS_ABSENSI).map((d) => (
-              <button
-                key={d.id}
-                type="button"
-                onClick={() => setDivision(d.id)}
-                className={`rounded-xl border p-3 text-left transition-colors ${
-                  division === d.id
-                    ? "border-black/20"
-                    : "border-black/[0.08] hover:border-black/15"
-                }`}
-                style={{
-                  background:
-                    division === d.id
-                      ? `linear-gradient(135deg, ${d.accentFrom}18, ${d.accentTo}18)`
-                      : undefined,
-                }}
-              >
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-full mb-1.5"
-                  style={{
-                    background: `linear-gradient(135deg, ${d.accentFrom}, ${d.accentTo})`,
-                  }}
-                />
-                <p className="text-xs font-semibold text-[#111827]">{d.name}</p>
-              </button>
-            ))}
+            {Object.values(DIVISIONS_ABSENSI).map((d) => {
+              const isActive = division === d.id;
+              return (
+                <button
+                  key={d.id}
+                  type="button"
+                  onClick={() => setDivision(d.id)}
+                  aria-pressed={isActive}
+                  className={`relative overflow-hidden rounded-xl border p-3 pl-4 text-left transition-all ${
+                    isActive
+                      ? "border-black/15 bg-black/[0.03]"
+                      : "border-black/[0.08] hover:border-black/15 hover:bg-black/[0.02]"
+                  }`}
+                >
+                  <span
+                    className="absolute inset-y-2.5 left-1.5 w-[3px] rounded-full transition-opacity"
+                    style={{
+                      background: `linear-gradient(180deg, ${d.accentFrom}, ${d.accentTo})`,
+                      opacity: isActive ? 1 : 0,
+                    }}
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <span
+                      className="inline-block h-2 w-2 shrink-0 rounded-full"
+                      style={{
+                        background: `linear-gradient(135deg, ${d.accentFrom}, ${d.accentTo})`,
+                      }}
+                    />
+                    <p className="text-xs font-semibold text-[#111827] truncate">
+                      {d.name}
+                    </p>
+                  </span>
+                  {isActive && (
+                    <Check
+                      size={13}
+                      className="absolute top-2.5 right-2.5 text-[#1677F5]"
+                      strokeWidth={2.5}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -147,21 +177,27 @@ export default function CreateAttendanceSessionForm() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {DURATION_PRESETS.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => setDuration(p)}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                Number(duration) === p
-                  ? "bg-black/10 text-black/80"
-                  : "bg-black/[0.04] text-black/50 hover:bg-black/[0.08]"
-              }`}
-            >
-              {p >= 60 ? `${p / 60} jam` : `${p} menit`}
-            </button>
-          ))}
+        <div>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-black/60 mb-2">
+            <Timer size={13} className="text-black/40" />
+            Durasi cepat
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            {DURATION_PRESETS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setDuration(p)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  Number(duration) === p
+                    ? "bg-[#1677F5] text-white"
+                    : "bg-black/[0.04] text-black/50 hover:bg-black/[0.08]"
+                }`}
+              >
+                {p >= 60 ? `${p / 60} jam` : `${p} menit`}
+              </button>
+            ))}
+          </div>
         </div>
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
@@ -175,6 +211,12 @@ export default function CreateAttendanceSessionForm() {
 
       {created && (
         <div className="mt-5 rounded-2xl border border-black/[0.08] bg-black/[0.02] p-4">
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 mb-2.5">
+            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-emerald-100">
+              <Check size={10} strokeWidth={3} />
+            </span>
+            Sesi berhasil dibuat
+          </p>
           <p className="text-xs text-black/50 mb-2">
             Link sesi absensi divisi{" "}
             <span className="font-semibold text-[#111827]">
