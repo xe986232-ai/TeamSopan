@@ -378,12 +378,12 @@ export default function TrendingSoundSection() {
               disentuh. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-60 blur-sm"
+            className="pointer-events-none absolute inset-0 flex opacity-60 blur-sm"
           >
             {TRACKS.map((track) => (
               <div
                 key={`bg-${track.id}`}
-                className="h-36 w-36 sm:h-64 sm:w-64 shrink-0 overflow-hidden rounded-2xl"
+                className="h-full flex-1 overflow-hidden"
                 style={{ background: track.panelColor }}
               >
                 <img
