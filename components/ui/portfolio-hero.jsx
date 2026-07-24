@@ -217,7 +217,7 @@ export default function PortfolioHero({
 
   return (
     <section
-      className="relative min-h-screen flex flex-col overflow-hidden transition-colors"
+      className="relative min-h-[80vh] sm:min-h-[85vh] md:min-h-[90vh] flex flex-col overflow-hidden transition-colors"
       style={{
         backgroundColor: isDark ? "#000000" : "#FAFAFA",
         color: isDark ? "#FFFFFF" : "#1A1A1A",
@@ -228,7 +228,7 @@ export default function PortfolioHero({
           di bawahnya; jadi cuma nutupin area nama+logo, pas sampe situ. */}
       <div className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
         <HeroCollageBackground isDark={isDark} />
-        <div className="relative text-center -translate-y-8 sm:-translate-y-12 md:-translate-y-16 lg:-translate-y-20">
+        <div className="relative text-center">
           <div>
             <BlurText
               text={nameTop}
@@ -258,7 +258,7 @@ export default function PortfolioHero({
       </div>
 
       {/* Tagline */}
-      <div className="relative pb-16 sm:pb-20 md:pb-24 px-6">
+      <div className="relative pb-10 sm:pb-14 md:pb-16 px-6">
         <div className="flex justify-center">
           <BlurText
             text={tagline}
