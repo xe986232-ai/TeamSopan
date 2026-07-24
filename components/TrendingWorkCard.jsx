@@ -21,13 +21,19 @@ function formatLikes(n) {
 //    diputar (jadi berasa "gradient memudar, video keliatan").
 // 3. Dark gradient buat kontras teks - tetap ada terus (baik pas thumbnail
 //    maupun pas video jalan) biar judul/like tetep kebaca di atas video.
-// 4. Judul, subtitle, like count, logo Sopan Team, tombol play/pause -
-//    SEMUA INI OVERLAY PERMANEN, tidak pernah hilang/fade, baik lagi
-//    nampilin gradient atau lagi muter video. Cuma ikon tombol tengah yang
-//    ganti antara Play <-> Pause.
+// 4. Judul, subtitle, like count, logo Sopan Team - overlay permanen, tidak
+//    pernah hilang/fade. Tombol play/pause di tengah beda sendiri: tetap
+//    ada terus selama video BELUM/SUDAH BERHENTI diputar, tapi pas video
+//    lagi jalan tombolnya numpang lewat sebentar lalu fade out sendiri
+//    (balik muncul begitu di-pause / video selesai).
 export default function TrendingWorkCard({ work, index }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  // Tombol play/pause: SELALU keliatan kalau video lagi nggak muter (dari
+  // awal sebagai thumbnail, atau abis di-pause/selesai). Cuma pas video
+  // beneran jalan, tombolnya numpang lewat sebentar terus fade out sendiri.
+  const [buttonVisible, setButtonVisible] = useState(true);
   const videoRef = useRef(null);
+  const hideTimerRef = useRef(null);
   const hasVideo = Boolean(work.videoUrl);
 
   useEffect(() => {
@@ -43,6 +49,24 @@ export default function TrendingWorkCard({ work, index }) {
     } else {
       video.pause();
     }
+  }, [isPlaying]);
+
+  // Aturan tombol: kalau video jalan -> tampil dulu, lalu fade out setelah
+  // beberapa detik. Kalau video BERHENTI (paused/selesai) -> langsung
+  // tampil lagi dan nggak di-timer sama sekali (tetap ada terus).
+  useEffect(() => {
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+
+    if (isPlaying) {
+      setButtonVisible(true);
+      hideTimerRef.current = setTimeout(() => setButtonVisible(false), 2200);
+    } else {
+      setButtonVisible(true);
+    }
+
+    return () => {
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
   }, [isPlaying]);
 
   function handleTogglePlay() {
@@ -90,21 +114,30 @@ export default function TrendingWorkCard({ work, index }) {
       {/* dark gradient buat kontras teks — permanen, di atas video maupun gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-black/30" />
 
-      {/* tombol play/pause di tengah — overlay permanen, cuma ikonnya yang ganti */}
+      {/* tombol play/pause di tengah — tetap ada terus selama video nggak
+          lagi jalan. Pas video jalan, tombol numpang lewat sebentar lalu
+          fade out (lihat effect buttonVisible di atas), dan langsung balik
+          keliatan begitu video di-pause / selesai. */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <button
-          type="button"
-          onClick={handleTogglePlay}
-          aria-label={isPlaying ? `Jeda ${work.title}` : `Putar ${work.title}`}
-          disabled={!hasVideo}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform duration-300 enabled:group-hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed"
+        <motion.div
+          animate={{ opacity: buttonVisible ? 1 : 0 }}
+          transition={{ duration: 0.35, ease: "easeInOut" }}
+          style={{ pointerEvents: buttonVisible ? "auto" : "none" }}
         >
-          {isPlaying ? (
-            <Pause className="h-5 w-5 text-creator-to" fill="currentColor" />
-          ) : (
-            <Play className="h-5 w-5 translate-x-0.5 text-creator-to" fill="currentColor" />
-          )}
-        </button>
+          <button
+            type="button"
+            onClick={handleTogglePlay}
+            aria-label={isPlaying ? `Jeda ${work.title}` : `Putar ${work.title}`}
+            disabled={!hasVideo}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white/90 shadow-lg transition-transform duration-300 enabled:group-hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isPlaying ? (
+              <Pause className="h-5 w-5 text-creator-to" fill="currentColor" />
+            ) : (
+              <Play className="h-5 w-5 translate-x-0.5 text-creator-to" fill="currentColor" />
+            )}
+          </button>
+        </motion.div>
       </div>
 
       {/* judul karya, pojok atas — overlay permanen */}
