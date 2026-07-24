@@ -17,6 +17,10 @@ export default function TrendingSoundSlotCard({ sound }) {
 
   const [coverUrl, setCoverUrl] = useState(sound.cover_url || null);
   const [audioUrl, setAudioUrl] = useState(sound.audio_url || null);
+  // panel_color sekarang diekstrak otomatis dari cover yang di-upload (lihat
+  // actions.js -> uploadSoundCover). State ini biar preview di kartu admin
+  // langsung ikut ganti warna begitu upload selesai, tanpa nunggu reload.
+  const [panelColor, setPanelColor] = useState(sound.panel_color || "#111827");
   const [coverError, setCoverError] = useState("");
   const [audioError, setAudioError] = useState("");
 
@@ -51,6 +55,7 @@ export default function TrendingSoundSlotCard({ sound }) {
         setCoverError(result.error);
       } else if (result?.coverUrl) {
         setCoverUrl(result.coverUrl);
+        if (result.panelColor) setPanelColor(result.panelColor);
       }
     });
 
@@ -137,7 +142,7 @@ export default function TrendingSoundSlotCard({ sound }) {
       {/* preview cover */}
       <div
         className="relative aspect-[3/4] w-full flex items-center justify-center"
-        style={{ background: sound.panel_color || "#111827" }}
+        style={{ background: panelColor }}
       >
         {coverUrl ? (
           <img

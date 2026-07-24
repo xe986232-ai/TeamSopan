@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { extractDominantColor } from "@/lib/dominant-color";
 
 const MAX_COVER_SIZE = 10 * 1024 * 1024; // 10MB, samain sama file_size_limit bucket cover
 const MAX_AUDIO_SIZE = 30 * 1024 * 1024; // 30MB, samain sama file_size_limit bucket audio
@@ -27,6 +28,13 @@ export async function uploadSoundCover(formData) {
   const path = `slot-${slot}-${Date.now()}.${ext}`;
 
   const arrayBuffer = await file.arrayBuffer();
+
+  // Ambil warna dominan dari gambar SEBELUM upload, biar bisa disimpan
+  // bareng cover_url dalam satu kali update ke database. Kalau gagal
+  // (format aneh, dll), fallback ke warna default -- upload cover tetap
+  // harus jalan walau ekstraksi warnanya gagal.
+  const panelColor = await extractDominantColor(Buffer.from(arrayBuffer));
+
   const { error: uploadError } = await supabase.storage
     .from("trending-sound-covers")
     .upload(path, arrayBuffer, { contentType: file.type, upsert: false });
@@ -41,7 +49,11 @@ export async function uploadSoundCover(formData) {
 
   const { error: updateError } = await supabase
     .from("trending_sounds")
-    .update({ cover_url: publicUrlData.publicUrl, updated_at: new Date().toISOString() })
+    .update({
+      cover_url: publicUrlData.publicUrl,
+      panel_color: panelColor,
+      updated_at: new Date().toISOString(),
+    })
     .eq("slot", slot);
 
   if (updateError) {
@@ -51,7 +63,7 @@ export async function uploadSoundCover(formData) {
   revalidatePath("/dashboard/trending-sound");
   revalidatePath("/");
 
-  return { success: true, coverUrl: publicUrlData.publicUrl };
+  return { success: true, coverUrl: publicUrlData.publicUrl, panelColor };
 }
 
 export async function uploadSoundAudio(formData) {

@@ -350,13 +350,17 @@ export default function TrendingSoundPlayer({ tracks }) {
 
       <div className="relative mx-auto max-w-5xl px-0 sm:px-6">
         <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] py-14 sm:py-24">
+          {/* glow di belakang carousel -- warnanya ikut panelColor lagu yang
+              lagi fokus/main (activeTrack), bukan fixed ungu-biru lagi.
+              Transisi background di-animate pakai motion.div biar pindah
+              warna antar lagu halus (fade), bukan "kaget" langsung ganti. */}
           <div aria-hidden className="pointer-events-none absolute inset-0 flex items-center justify-center">
-            <div
+            <motion.div
               className="h-56 w-80 sm:h-96 sm:w-[36rem] rounded-full opacity-60 blur-3xl"
-              style={{
-                background:
-                  "radial-gradient(ellipse at center, rgba(176,38,255,0.75), rgba(61,90,254,0.5) 55%, transparent 75%)",
+              animate={{
+                background: `radial-gradient(ellipse at center, ${activeTrack.panelColor}b3, ${activeTrack.panelColor}59 55%, transparent 75%)`,
               }}
+              transition={{ duration: 0.6, ease: "easeInOut" }}
             />
           </div>
 
