@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
 
 // Data kartu (title, creator, cover, audio, panelColor) sekarang datang dari
@@ -166,6 +167,17 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
             className="absolute inset-x-0 bottom-0 h-16"
             style={{ background: `linear-gradient(to top, ${track.panelColor}, transparent)` }}
           />
+          {/* logo Sopan Team, pojok kanan atas — sama kayak badge di kartu
+              Trending Edit, cuma dipindah ke atas dan dibikin lebih kecil */}
+          <span className="absolute top-1.5 right-1.5 sm:top-2.5 sm:right-2.5 shrink-0 flex items-center justify-center h-4 w-4 sm:h-6 sm:w-6 rounded-full bg-white/90 shadow-md">
+            <Image
+              alt="Sopan Team"
+              src="/sopan-logo-black.png"
+              width={12}
+              height={15}
+              className="h-[8px] w-auto sm:h-[12px]"
+            />
+          </span>
         </div>
 
         {/* panel info + kontrol */}
