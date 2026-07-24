@@ -53,14 +53,18 @@ function formatTime(seconds) {
 // Posisi kartu dalam "panggung" 3D, dihitung dari jarak (delta) terhadap
 // kartu yang lagi fokus di tengah. delta 0 = tengah, -1 = kiri, +1 = kanan.
 function getStageTransform(delta, isDesktop) {
-  if (!isDesktop) {
-    return { x: 0, rotateY: 0, z: 0, scale: 1, opacity: 1 };
-  }
   if (delta === 0) {
-    return { x: 0, rotateY: 0, z: 90, scale: 1.08, opacity: 1 };
+    return { x: 0, rotateY: 0, z: isDesktop ? 90 : 36, scale: isDesktop ? 1.08 : 1.04, opacity: 1 };
   }
   const dir = delta > 0 ? 1 : -1;
-  return { x: dir * 218, rotateY: dir * -28, z: -30, scale: 0.86, opacity: 0.7 };
+  // dir positif (kartu kanan) diputar rotateY positif -> sisi dalam (kiri
+  // kartu) maju ke arah penonton, sisi luar mundur. dir negatif (kartu kiri)
+  // kebalikannya. Efeknya kartu "melipat masuk" ke tengah, bukan membuka.
+  const offsetX = isDesktop ? 218 : 76;
+  const rotateY = dir * (isDesktop ? 28 : 26);
+  const z = isDesktop ? -30 : -18;
+  const scale = isDesktop ? 0.86 : 0.78;
+  return { x: dir * offsetX, rotateY, z, scale, opacity: isDesktop ? 0.7 : 0.6 };
 }
 
 // delta melingkar: supaya kartu "sebelah" selalu di kiri/kanan terdekat,
@@ -193,7 +197,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
       }}
       transition={{ type: "spring", stiffness: 240, damping: 26 }}
       style={{ zIndex: isFocused ? 30 : 20 - Math.abs(delta), transformStyle: "preserve-3d" }}
-      className="absolute left-1/2 top-1/2 w-[230px] sm:w-[250px] -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
+      className="absolute left-1/2 top-1/2 w-[132px] sm:w-[250px] -translate-x-1/2 -translate-y-1/2 sm:static sm:translate-x-0 sm:translate-y-0"
     >
       <div
         role="button"
@@ -208,7 +212,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
         }`}
       >
         {/* cover */}
-        <div className="relative h-44 sm:h-48 w-full bg-black/40">
+        <div className="relative h-24 sm:h-48 w-full bg-black/40">
           <img
             src={track.cover}
             alt={`Cover ${track.title} - ${track.creator}`}
@@ -223,7 +227,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
         </div>
 
         {/* panel info + kontrol */}
-        <div className="px-5 pt-4 pb-5" style={{ background: track.panelColor }}>
+        <div className="px-2.5 pt-2 pb-2.5 sm:px-5 sm:pt-4 sm:pb-5" style={{ background: track.panelColor }}>
           <audio
             ref={audioRef}
             src={track.src}
@@ -236,10 +240,10 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
             className="hidden"
           />
 
-          <p className="font-display font-bold text-lg text-white leading-tight truncate">
+          <p className="font-display font-bold text-[11px] sm:text-lg text-white leading-tight truncate">
             {track.title}
           </p>
-          <p className="font-body text-sm text-white/55 mt-0.5 truncate">{track.creator}</p>
+          <p className="font-body text-[9px] sm:text-sm text-white/55 mt-0.5 truncate">{track.creator}</p>
 
           {/* progress bar */}
           <div
@@ -253,21 +257,21 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
             onPointerDown={handlePointerDown}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => !isDragging && setShowTooltip(false)}
-            className="relative mt-5 h-4 flex items-center cursor-pointer touch-none select-none"
+            className="relative mt-2 sm:mt-5 h-3 sm:h-4 flex items-center cursor-pointer touch-none select-none"
           >
-            <div className="relative h-1 w-full rounded-full bg-white/20">
+            <div className="relative h-[3px] sm:h-1 w-full rounded-full bg-white/20">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-white"
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-white shadow"
-              style={{ left: `calc(${progress * 100}% - 6px)` }}
+              className="absolute top-1/2 -translate-y-1/2 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-white shadow"
+              style={{ left: `calc(${progress * 100}% - 4px)` }}
             />
             {showTooltip && (
               <span
-                className="absolute -top-7 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[11px] font-semibold text-black shadow"
+                className="absolute -top-6 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-black shadow"
                 style={{ left: `${progress * 100}%` }}
               >
                 {formatTime(currentTime)}
@@ -275,13 +279,13 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
             )}
           </div>
 
-          <div className="mt-1.5 flex items-center justify-between text-xs tabular-nums text-white/50">
+          <div className="mt-1 sm:mt-1.5 flex items-center justify-between text-[9px] sm:text-xs tabular-nums text-white/50">
             <span>{formatTime(currentTime)}</span>
             <span>{formatTime(duration)}</span>
           </div>
 
           {/* kontrol prev / play-pause / next */}
-          <div className="mt-4 flex items-center justify-center gap-6">
+          <div className="mt-1.5 sm:mt-4 flex items-center justify-center gap-2.5 sm:gap-6">
             <button
               type="button"
               onClick={(e) => {
@@ -292,19 +296,19 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
               aria-label={`Mundur 10 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
-              <SkipBack className="h-4 w-4" fill="currentColor" />
+              <SkipBack className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
             </button>
 
             <button
               type="button"
               onClick={handleTogglePlay}
               aria-label={isActive ? `Jeda ${track.title}` : `Putar ${track.title}`}
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
+              className="flex h-7 w-7 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-white shadow-lg transition-transform active:scale-95"
             >
               {isActive ? (
-                <Pause className="h-4.5 w-4.5 text-black" fill="currentColor" />
+                <Pause className="h-3 w-3 sm:h-4.5 sm:w-4.5 text-black" fill="currentColor" />
               ) : (
-                <Play className="h-4.5 w-4.5 ml-0.5 text-black" fill="currentColor" />
+                <Play className="h-3 w-3 sm:h-4.5 sm:w-4.5 ml-0.5 text-black" fill="currentColor" />
               )}
             </button>
 
@@ -318,7 +322,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
               aria-label={`Maju 10 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
-              <SkipForward className="h-4 w-4" fill="currentColor" />
+              <SkipForward className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
             </button>
           </div>
         </div>
@@ -381,8 +385,8 @@ export default function TrendingSoundSection() {
           {/* stage 3D: perspective di parent, tiap kartu diposisikan lewat
               rotateY + translateZ supaya kelihatan "melipat" ke belakang. */}
           <div
-            className="relative mx-auto flex h-[300px] sm:h-[340px] w-full max-w-md items-center justify-center gap-5 overflow-x-auto sm:overflow-visible px-6 sm:px-0"
-            style={{ perspective: isDesktop ? "1600px" : "none" }}
+            className="relative mx-auto flex h-[190px] sm:h-[340px] w-full max-w-md items-center justify-center overflow-visible px-4 sm:px-0 sm:gap-6"
+            style={{ perspective: isDesktop ? "1600px" : "900px" }}
           >
             {TRACKS.map((track, i) => {
               const delta = getCircularDelta(i, activeIndex, TRACKS.length);
