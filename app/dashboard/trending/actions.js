@@ -59,6 +59,36 @@ export async function uploadTrendingVideo(formData) {
   return { success: true, videoUrl: publicUrlData.publicUrl };
 }
 
+export async function updateTrendingInfo(formData) {
+  const slot = Number(formData.get("slot"));
+  const title = formData.get("title")?.toString().trim();
+  const subtitle = formData.get("subtitle")?.toString().trim();
+
+  if (!slot || !title) {
+    return { error: "Judul tidak boleh kosong." };
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase
+    .from("trending_works")
+    .update({
+      title,
+      subtitle: subtitle ?? "",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("slot", slot);
+
+  if (error) {
+    return { error: `Gagal simpan: ${error.message}` };
+  }
+
+  revalidatePath("/dashboard/trending");
+  revalidatePath("/");
+
+  return { success: true };
+}
+
 export async function removeTrendingVideo(slot) {
   if (!slot) return { error: "Slot tidak valid." };
 
