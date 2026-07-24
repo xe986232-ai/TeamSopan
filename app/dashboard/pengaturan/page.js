@@ -1,6 +1,11 @@
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
+import LogoStylePicker from "./LogoStylePicker";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
   title: "Pengaturan | Dashboard SOPAN TEAM",
@@ -17,7 +22,28 @@ const SETTINGS_TOGGLES = [
   { label: "Mode pemeliharaan", desc: "Tampilkan halaman maintenance ke pengunjung situs.", checked: false },
 ];
 
-export default function PengaturanPage() {
+async function getLogoStyleSetting() {
+  try {
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("logo_style")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error || !data) {
+      throw error || new Error("site_settings kosong / tidak ada data");
+    }
+    return data.logo_style || DEFAULT_LOGO_STYLE;
+  } catch (err) {
+    console.error("[dashboard/pengaturan] Gagal ambil site_settings:", err);
+    return DEFAULT_LOGO_STYLE;
+  }
+}
+
+export default async function PengaturanPage() {
+  const logoStyle = await getLogoStyleSetting();
+
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
       <DashboardTopbar
@@ -25,6 +51,8 @@ export default function PengaturanPage() {
         subtitle="Atur informasi umum dan preferensi situs SOPAN TEAM."
         searchPlaceholder="Cari pengaturan..."
       />
+
+      <LogoStylePicker currentStyle={logoStyle} />
 
       <div className="rounded-2xl border border-black/[0.06] p-5 mb-4 flex flex-col gap-4">
         {SETTINGS_FIELDS.map((field) => (

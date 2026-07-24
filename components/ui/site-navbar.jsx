@@ -8,6 +8,7 @@ import { useTheme } from "next-themes";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
 import { useOutsideClick } from "@/hooks/use-outside-click";
+import { getLogoStyle, DEFAULT_LOGO_STYLE } from "@/lib/logo-styles";
 
 function initialsOf(name) {
   return (name || "?").trim().charAt(0).toUpperCase();
@@ -46,6 +47,35 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
   useOutsideClick(dropdownRef, () => setDropdownOpen(false));
+
+  // Style gradient logo utama ("S" di navbar) -- diatur admin dari
+  // /dashboard/pengaturan, disimpan di tabel `site_settings`. Default
+  // "aurora" (warna asli) sambil nunggu data ke-fetch / kalau gagal ambil.
+  const [logoStyleId, setLogoStyleId] = useState(DEFAULT_LOGO_STYLE);
+  const logoStyle = getLogoStyle(logoStyleId);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createPublicSupabaseClient();
+
+    supabase
+      .from("site_settings")
+      .select("logo_style")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[SiteNavbar] Gagal ambil site_settings:", error);
+          return;
+        }
+        if (data?.logo_style) setLogoStyleId(data.logo_style);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -157,13 +187,14 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           "60% 40% 55% 45% / 50% 60% 40% 50%",
         ],
         scale: [1, 1.08, 0.95, 1],
+        background: logoStyle.outer,
       }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      transition={{
+        borderRadius: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+        scale: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+        background: { duration: 0.5, ease: "easeInOut" },
+      }}
       className="absolute inset-0 blur-md opacity-80"
-      style={{
-        background:
-          "radial-gradient(circle at 30% 30%, #7C3AED, #EC4899 45%, #22D3EE 100%)",
-      }}
     />
     <motion.span
       animate={{
@@ -173,13 +204,13 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           "55% 45% 60% 40% / 45% 55% 45% 55%",
           "60% 40% 55% 45% / 50% 60% 40% 50%",
         ],
+        background: logoStyle.inner,
       }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      transition={{
+        borderRadius: { duration: 6, repeat: Infinity, ease: "easeInOut" },
+        background: { duration: 0.5, ease: "easeInOut" },
+      }}
       className="relative h-full w-full flex items-center justify-center text-white font-black text-sm overflow-hidden"
-      style={{
-        background:
-          "radial-gradient(circle at 30% 30%, #A855F7, #F472B6 50%, #38BDF8 100%)",
-      }}
     >
       S
     </motion.span>
