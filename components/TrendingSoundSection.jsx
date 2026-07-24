@@ -378,7 +378,7 @@ export default function TrendingSoundSection() {
               disentuh. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-30 blur-2xl sm:blur-3xl"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-4 sm:gap-10 opacity-30 blur-md sm:blur-lg"
           >
             {TRACKS.map((track) => (
               <div
