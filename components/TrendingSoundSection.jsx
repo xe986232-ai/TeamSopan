@@ -82,8 +82,6 @@ function getCircularDelta(index, activeIndex, length) {
 function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPlay, onPause, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
-  const rafRef = useRef(null);
-  const startTimestampRef = useRef(0);
 
   const [duration, setDuration] = useState(track.durationFallback);
   const [currentTime, setCurrentTime] = useState(0);
@@ -93,51 +91,28 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
   const progress = duration ? currentTime / duration : 0;
   const stage = getStageTransform(delta, isDesktop);
 
-  const stopClock = useCallback(() => {
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    rafRef.current = null;
-  }, []);
-
-  const tick = useCallback(() => {
-    const elapsed = (performance.now() - startTimestampRef.current) / 1000;
-    if (elapsed >= duration) {
-      setCurrentTime(0);
-      startTimestampRef.current = 0;
-      stopClock();
-      onPause();
-      return;
-    }
-    setCurrentTime(elapsed);
-    rafRef.current = requestAnimationFrame(tick);
-  }, [duration, onPause, stopClock]);
-
   // Begitu kartu lain di-play, kartu ini otomatis berhenti — cuma satu yang
   // boleh jalan bersamaan.
   useEffect(() => {
     if (!isActive) {
       audioRef.current?.pause();
-      stopClock();
     }
-  }, [isActive, stopClock]);
-
-  useEffect(() => stopClock, [stopClock]);
+  }, [isActive]);
 
   function handleTogglePlay(e) {
     e.stopPropagation();
     onFocus();
     if (isActive) {
       audioRef.current?.pause();
-      stopClock();
       onPause();
       return;
     }
     onPlay(track.id);
     audioRef.current?.play().catch(() => {
-      // audio placeholder mungkin gagal load (offline dll) -- biarin, clock
-      // internal tetap jalan supaya UI tidak terasa macet.
+      // audio placeholder mungkin gagal load (offline dll) -- kalau gagal,
+      // progress diam di posisi terakhir (bukan jalan sendiri) karena
+      // sekarang progress murni ikut event asli <audio>, bukan clock manual.
     });
-    startTimestampRef.current = performance.now() - currentTime * 1000;
-    rafRef.current = requestAnimationFrame(tick);
   }
 
   const seekFromClientX = useCallback(
@@ -150,7 +125,6 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
       if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
         audioRef.current.currentTime = newTime;
       }
-      startTimestampRef.current = performance.now() - newTime * 1000;
       setCurrentTime(newTime);
     },
     [duration]
@@ -167,7 +141,6 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
   function skip(deltaSeconds) {
     const newTime = Math.min(Math.max(currentTime + deltaSeconds, 0), duration);
     setCurrentTime(newTime);
-    startTimestampRef.current = performance.now() - newTime * 1000;
     if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
       audioRef.current.currentTime = newTime;
     }
@@ -239,6 +212,16 @@ function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPla
               if (Number.isFinite(e.currentTarget.duration)) {
                 setDuration(e.currentTarget.duration);
               }
+            }}
+            onTimeUpdate={(e) => {
+              // Kalau lagi di-drag manual di progress bar, jangan ketimpa
+              // sama posisi asli audio -- biar nggak "lompat balik" pas jari
+              // masih nempel di slider.
+              if (!isDragging) setCurrentTime(e.currentTarget.currentTime);
+            }}
+            onEnded={() => {
+              setCurrentTime(0);
+              onPause();
             }}
             className="hidden"
           />
@@ -367,32 +350,26 @@ export default function TrendingSoundSection() {
         </p>
       </motion.div>
 
-      {/* "panggung" gelap — background-nya sengaja fixed dark supaya kartu
-          player selalu kontras & konsisten, terlepas dari light/dark mode
-          situs. Blob blur warna-warni di belakang meniru efek bokeh. */}
+      {/* "panggung" gelap — background fixed dark supaya kartu player selalu
+          kontras & konsisten, terlepas dari light/dark mode situs. Nggak
+          ada background gambar lagi, cuma glow gradien tipis sebagai
+          pemanis di belakang kartu. */}
       <div className="relative mx-auto max-w-5xl px-0 sm:px-6">
         <div className="relative overflow-hidden rounded-none sm:rounded-[2rem] bg-[#0b0710] py-14 sm:py-24">
-          {/* background: duplikat cover 3 kartu, disusun flat sejajar rata
-              (tanpa efek 3D), opacity diturunin + di-blur jadi ambient
-              backdrop. Kartu utama di depan (3D carousel) sama sekali nggak
-              disentuh. */}
+          {/* shadow gradien tipis di belakang kartu — soft glow warna brand
+              (ungu remix -> biru creator), blur besar & opacity rendah biar
+              cuma jadi pemanis, bukan elemen yang menonjol. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 flex opacity-60 blur-sm"
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
           >
-            {TRACKS.map((track) => (
-              <div
-                key={`bg-${track.id}`}
-                className="h-full flex-1 overflow-hidden"
-                style={{ background: track.panelColor }}
-              >
-                <img
-                  src={track.cover}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              </div>
-            ))}
+            <div
+              className="h-48 w-72 sm:h-80 sm:w-[32rem] rounded-full opacity-40 blur-3xl"
+              style={{
+                background:
+                  "radial-gradient(ellipse at center, rgba(176,38,255,0.55), rgba(61,90,254,0.35) 55%, transparent 75%)",
+              }}
+            />
           </div>
 
           {/* stage 3D: perspective di parent, tiap kartu diposisikan lewat
