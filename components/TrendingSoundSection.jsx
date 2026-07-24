@@ -54,17 +54,20 @@ function formatTime(seconds) {
 // kartu yang lagi fokus di tengah. delta 0 = tengah, -1 = kiri, +1 = kanan.
 function getStageTransform(delta, isDesktop) {
   if (delta === 0) {
-    return { x: 0, rotateY: 0, z: isDesktop ? 90 : 36, scale: isDesktop ? 1.08 : 1.04, opacity: 1 };
+    return { x: 0, rotateY: 0, z: isDesktop ? 90 : 30, scale: isDesktop ? 1.08 : 1.14, opacity: 1 };
   }
   const dir = delta > 0 ? 1 : -1;
   // dir positif (kartu kanan) diputar rotateY positif -> sisi dalam (kiri
   // kartu) maju ke arah penonton, sisi luar mundur. dir negatif (kartu kiri)
   // kebalikannya. Efeknya kartu "melipat masuk" ke tengah, bukan membuka.
-  const offsetX = isDesktop ? 218 : 76;
-  const rotateY = dir * (isDesktop ? 28 : 26);
-  const z = isDesktop ? -30 : -18;
-  const scale = isDesktop ? 0.86 : 0.78;
-  return { x: dir * offsetX, rotateY, z, scale, opacity: isDesktop ? 0.7 : 0.6 };
+  // Di mobile jaraknya udah didekatkan lewat negative margin di layout
+  // (lihat wrapper kartu), jadi di sini nggak perlu translateX tambahan lagi
+  // -- kalau ditambah, jaraknya malah dobel / jauhan.
+  const offsetX = isDesktop ? 218 : 0;
+  const rotateY = dir * (isDesktop ? 28 : 22);
+  const z = isDesktop ? -30 : -14;
+  const scale = isDesktop ? 0.86 : 0.8;
+  return { x: dir * offsetX, rotateY, z, scale, opacity: isDesktop ? 0.7 : 0.55 };
 }
 
 // delta melingkar: supaya kartu "sebelah" selalu di kiri/kanan terdekat,
@@ -76,7 +79,7 @@ function getCircularDelta(index, activeIndex, length) {
   return delta;
 }
 
-function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPause, onFocus }) {
+function PlayerCard({ track, index, delta, isActive, isFocused, isDesktop, onPlay, onPause, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
   const rafRef = useRef(null);
@@ -197,7 +200,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
       }}
       transition={{ type: "spring", stiffness: 240, damping: 26 }}
       style={{ zIndex: isFocused ? 30 : 20 - Math.abs(delta), transformStyle: "preserve-3d" }}
-      className="relative shrink-0 w-[132px] sm:w-[250px]"
+      className={`relative shrink-0 w-[132px] sm:w-[250px] ${index > 0 ? "-ml-12 sm:ml-0" : ""}`}
     >
       <div
         role="button"
@@ -207,7 +210,7 @@ function PlayerCard({ track, delta, isActive, isFocused, isDesktop, onPlay, onPa
         onKeyDown={(e) => {
           if (!isFocused && (e.key === "Enter" || e.key === " ")) onFocus();
         }}
-        className={`overflow-hidden rounded-[1.75rem] shadow-2xl shadow-black/50 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-white/70 ${
+        className={`overflow-hidden rounded-none shadow-2xl shadow-black/50 outline-none transition-shadow focus-visible:ring-2 focus-visible:ring-white/70 ${
           isFocused ? "cursor-default" : "cursor-pointer"
         }`}
       >
@@ -396,6 +399,7 @@ export default function TrendingSoundSection() {
                 <PlayerCard
                   key={track.id}
                   track={track}
+                  index={i}
                   delta={delta}
                   isFocused={i === activeIndex}
                   isDesktop={isDesktop}
