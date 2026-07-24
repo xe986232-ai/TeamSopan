@@ -1,3 +1,66 @@
+# Update: Trending Sound sekarang render dari database
+
+Sebelumnya kartu "Trending Sound" (Divisi Remix, di homepage) datanya
+hardcode langsung di `components/TrendingSoundSection.jsx` (judul, nama
+kreator, cover, dan file audio). Sekarang datanya disimpan di Supabase
+(tabel `trending_sounds`) dan bisa diedit dari dashboard, mirip pola
+"Trending Edit" (Divisi Creator) yang sudah ada duluan.
+
+## Yang perlu kamu lakukan
+
+### 1. Jalankan migration SQL baru
+
+Buka **Supabase Dashboard > SQL Editor > New query**, jalankan isi file
+`supabase/migration_trending_sounds.sql` (setelah `setup.sql`). File ini
+bikin tabel `trending_sounds` (3 slot, terisi data placeholder yang sama
+seperti tampilan sebelumnya) + 2 storage bucket baru: `trending-sound-covers`
+(gambar cover, max 10MB/file) dan `trending-sound-audio` (file audio, max
+30MB/file).
+
+Tidak ada environment variable baru — masih pakai 3 variable Supabase yang
+sudah ada.
+
+## Cara pakai
+
+Buka **`/dashboard/trending-sound`** (menu baru di grup "Divisi", sidebar
+dashboard). Di sana kamu bisa, per slot (1-3):
+- Edit **text atas** (judul lagu) dan **text bawah** (nama kreator/artist)
+- Upload/ganti **cover** (gambar)
+- Upload/ganti **audio** (file lagu yang diputar pas tombol play dipencet)
+
+Perubahan langsung tampil di homepage begitu disimpan/diupload (tidak perlu
+redeploy).
+
+## File-file baru / yang berubah
+
+- `supabase/migration_trending_sounds.sql` — skema tabel `trending_sounds`
+  + 2 storage bucket baru
+- `components/TrendingSoundSection.jsx` — sekarang Server Component, ambil
+  data dari Supabase (fallback ke data placeholder kalau tabel belum ada /
+  Supabase error), lalu kirim ke `TrendingSoundPlayer` lewat prop `tracks`
+- `components/TrendingSoundPlayer.jsx` — file baru, isinya persis logic
+  interaktif (`"use client"`) yang sebelumnya ada di `TrendingSoundSection.jsx`
+  (stage 3D, audio player, dll), sekarang terima `tracks` dari prop, bukan
+  konstanta hardcode
+- `app/dashboard/trending-sound/page.js` — halaman dashboard baru
+- `app/dashboard/trending-sound/TrendingSoundSlotCard.jsx` — kartu admin per
+  slot (upload cover/audio + edit teks)
+- `app/dashboard/trending-sound/actions.js` — server action upload cover,
+  upload audio, edit teks, hapus cover/audio
+- `components/dashboard/DashboardSidebar.jsx` — tambahan menu "Trending
+  Sound" di grup Divisi
+
+## Batasan yang perlu kamu tahu
+
+- Kalau tabel `trending_sounds` belum di-migration atau Supabase lagi
+  error, homepage & dashboard tetap tampil pakai data placeholder (sama
+  seperti tampilan sebelum update ini) — tidak akan crash/blank.
+- Durasi audio yang tampil di player homepage selalu ngikutin metadata
+  asli file yang diupload (bukan angka hardcode lagi), jadi pastikan file
+  audio yang diupload valid.
+
+---
+
 # Update: Alur Pendaftaran → Seleksi → Akun Member
 
 Ringkasan perubahan yang baru ditambahkan ke project ini.
