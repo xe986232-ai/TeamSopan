@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Menu, X, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useOutsideClick } from "@/hooks/use-outside-click";
 
 /**
  * BlurText — animasi reveal per kata/huruf dengan efek blur + fade + slide,
@@ -68,41 +67,23 @@ function BlurText({
 
 /**
  * PortfolioHero — hero section bergaya "kartu nama digital": nama besar
- * tersusun 2 baris dengan foto/logo yang overlap di tengah, tagline di
- * bawah, menu dropdown minimal di kiri atas, dan toggle tema di kanan atas.
- *
- * Dipakai berdiri sendiri (tidak menggantikan Hero.jsx utama) — cocok untuk
- * halaman profil divisi atau landing alternatif yang butuh nuansa lebih
- * personal/portfolio-like.
+ * tersusun 2 baris dengan foto/logo yang overlap di tengah, dan tagline
+ * di bawah. Hanya visual hero — tidak membawa nav/menu sendiri, dipakai
+ * di bawah <SiteNavbar /> yang sudah ada.
  */
 export default function PortfolioHero({
   nameTop = "SOPAN",
   nameBottom = "TEAM",
   tagline = "Tiga divisi, satu wadah untuk berkarya bareng.",
   avatarSrc = "/sopan-logo-black.png",
-  menuItems = [
-    { label: "BERANDA", href: "#top", highlight: true },
-    { label: "TENTANG", href: "#tentang" },
-    { label: "DIVISI", href: "#divisi" },
-    { label: "KARYA", href: "#karya" },
-    { label: "KETENTUAN", href: "/ketentuan" },
-    { label: "PRIVASI", href: "/privasi" },
-  ],
   accentColor = "#C3E41D",
 }) {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef(null);
-  const buttonRef = useRef(null);
 
   useEffect(() => setMounted(true), []);
 
-  useOutsideClick(menuRef, () => setIsMenuOpen(false));
-
   const isDark = mounted ? resolvedTheme === "dark" : true;
-
-  const toggleTheme = () => setTheme(isDark ? "light" : "dark");
 
   return (
     <section
@@ -112,92 +93,6 @@ export default function PortfolioHero({
         color: isDark ? "#FFFFFF" : "#1A1A1A",
       }}
     >
-      {/* Header */}
-      <header className="relative z-40 px-6 py-6">
-        <nav className="flex items-center justify-between max-w-screen-2xl mx-auto">
-          {/* Menu button + dropdown */}
-          <div className="relative">
-            <button
-              ref={buttonRef}
-              type="button"
-              className="p-2 transition-colors duration-300 text-neutral-500 hover:text-black dark:hover:text-white"
-              aria-label={isMenuOpen ? "Tutup menu" : "Buka menu"}
-              aria-expanded={isMenuOpen}
-              onClick={() => setIsMenuOpen((v) => !v)}
-            >
-              {isMenuOpen ? (
-                <X className="w-7 h-7 sm:w-8 sm:h-8" strokeWidth={2} />
-              ) : (
-                <Menu className="w-7 h-7 sm:w-8 sm:h-8" strokeWidth={2} />
-              )}
-            </button>
-
-            {isMenuOpen && (
-              <div
-                ref={menuRef}
-                className="absolute top-full left-0 w-[200px] md:w-[240px] shadow-2xl mt-2 ml-1 p-4 rounded-lg z-50"
-                style={{ backgroundColor: isDark ? "#0A0A0A" : "#FAFAFA" }}
-              >
-                {menuItems.map((item) => (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    className="block text-base md:text-lg font-bold tracking-tight py-1.5 px-2 cursor-pointer transition-colors duration-300"
-                    style={{
-                      color: item.highlight
-                        ? accentColor
-                        : isDark
-                        ? "#FFFFFF"
-                        : "#1A1A1A",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = accentColor;
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = item.highlight
-                        ? accentColor
-                        : isDark
-                        ? "#FFFFFF"
-                        : "#1A1A1A";
-                    }}
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    {item.label}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Mark / signature */}
-          <div
-            className="text-3xl sm:text-4xl italic"
-            style={{ fontFamily: "'Brush Script MT', 'Lucida Handwriting', cursive" }}
-          >
-            S
-          </div>
-
-          {/* Theme toggle */}
-          <button
-            type="button"
-            onClick={toggleTheme}
-            className="relative w-14 h-7 sm:w-16 sm:h-8 rounded-full hover:opacity-80 transition-opacity"
-            style={{ backgroundColor: isDark ? "#262626" : "#E5E5E5" }}
-            aria-label="Ganti tema"
-          >
-            <div
-              className="absolute top-1 left-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full transition-transform duration-300"
-              style={{
-                backgroundColor: isDark ? "#FFFFFF" : "#1A1A1A",
-                transform: isDark
-                  ? "translateX(1.75rem)"
-                  : "translateX(0)",
-              }}
-            />
-          </button>
-        </nav>
-      </header>
-
       {/* Hero content */}
       <div className="relative flex-1 flex items-center justify-center px-4 py-16">
         <div className="relative text-center">
