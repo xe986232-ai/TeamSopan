@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Play, Pause, SkipBack, SkipForward } from "lucide-react";
@@ -46,15 +46,9 @@ function getCircularDelta(index, activeIndex, length) {
   return delta;
 }
 
-function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTogglePlay, onPlaybackSync, onFocus }) {
+function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTogglePlay, onFocus }) {
   const audioRef = useRef(null);
   const trackRef = useRef(null);
-  // Nomor "permintaan" play/pause terakhir -- dipakai buat nge-drop hasil
-  // play() yang telat/basi (misal user klik play lalu buru-buru pause
-  // sebelum promise-nya resolve). Tanpa ini, play() yang telat resolve bisa
-  // nyalain audio lagi padahal user udah mau pause -- itu penyebab utama
-  // tombol "kadang gabisa di-play / abis di-play gabisa di-pause".
-  const requestIdRef = useRef(0);
 
   const [duration, setDuration] = useState(track.durationFallback);
   const [currentTime, setCurrentTime] = useState(0);
@@ -73,50 +67,46 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
     const audio = audioRef.current;
     if (!audio) return;
 
-    const requestId = ++requestIdRef.current;
-
     if (isPlaying) {
-      if (!audio.paused) return; // sudah main, tidak perlu play() lagi
       const playPromise = audio.play();
       if (playPromise && typeof playPromise.catch === "function") {
         playPromise.catch(() => {
-          // audio placeholder mungkin gagal load (offline / autoplay
-          // diblokir dll). Kalau ini masih permintaan terakhir, sinkronkan
-          // balik state ke parent supaya ikon tombol tidak nyangkut di
-          // "Pause" padahal audio sebenarnya diam.
-          if (requestId === requestIdRef.current) {
-            onPlaybackSync(false);
-          }
+          // audio placeholder mungkin gagal load (offline dll) -- kalau
+          // gagal, progress diam di posisi terakhir (bukan jalan sendiri)
+          // karena progress murni ikut event asli <audio>, bukan clock manual.
         });
       }
-    } else if (!audio.paused) {
+    } else {
       audio.pause();
     }
-  }, [isPlaying, onPlaybackSync]);
+  }, [isPlaying]);
 
   function handleTogglePlay(e) {
     e.stopPropagation();
     onTogglePlay();
   }
 
-  function handleSeekInput(newTime) {
-    setCurrentTime(newTime);
-    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
-      audioRef.current.currentTime = newTime;
-    }
-  }
+  const seekFromClientX = useCallback(
+    (clientX) => {
+      const el = trackRef.current;
+      if (!el || !duration) return;
+      const rect = el.getBoundingClientRect();
+      const ratio = Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+      const newTime = ratio * duration;
+      if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+        audioRef.current.currentTime = newTime;
+      }
+      setCurrentTime(newTime);
+    },
+    [duration]
+  );
 
-  function handleSeekStart(e) {
+  function handlePointerDown(e) {
     e.stopPropagation();
     onFocus();
     setIsDragging(true);
     setShowTooltip(true);
-  }
-
-  function handleSeekEnd(e) {
-    e.stopPropagation();
-    setIsDragging(false);
-    setShowTooltip(false);
+    seekFromClientX(e.clientX);
   }
 
   function skip(deltaSeconds) {
@@ -126,6 +116,21 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
       audioRef.current.currentTime = newTime;
     }
   }
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const handleMove = (e) => seekFromClientX(e.clientX);
+    const handleUp = () => {
+      setIsDragging(false);
+      setShowTooltip(false);
+    };
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp);
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [isDragging, seekFromClientX]);
 
   return (
     <motion.div
@@ -198,10 +203,8 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
             }}
             onEnded={() => {
               setCurrentTime(0);
-              onPlaybackSync(false);
+              onTogglePlay();
             }}
-            onPlay={() => onPlaybackSync(true)}
-            onPause={() => onPlaybackSync(false)}
             className="hidden"
           />
 
@@ -210,53 +213,38 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
           </p>
           <p className="font-body text-[9px] sm:text-sm text-white/55 mt-0.5 truncate">{track.creator}</p>
 
-          {/* progress bar -- tampilan visual custom (div putih tipis + dot)
-              tetap sama persis, tapi interaksinya sekarang ditangani oleh
-              <input type="range"> native yang ditumpuk transparan di atas.
-              Native range input sudah pasti didukung browser & touch device
-              apapun tanpa perlu custom pointer-drag logic yang rawan putus
-              di tengah jalan. */}
+          {/* progress bar */}
           <div
-            className="relative mt-2 sm:mt-5 h-3 sm:h-4 flex items-center select-none"
-            data-lenis-prevent
+            ref={trackRef}
+            role="slider"
+            tabIndex={0}
+            aria-label={`Seek posisi audio ${track.title}`}
+            aria-valuemin={0}
+            aria-valuemax={Math.round(duration || 0)}
+            aria-valuenow={Math.round(currentTime)}
+            onPointerDown={handlePointerDown}
             onMouseEnter={() => setShowTooltip(true)}
             onMouseLeave={() => !isDragging && setShowTooltip(false)}
+            className="relative mt-2 sm:mt-5 h-3 sm:h-4 flex items-center cursor-pointer touch-none select-none"
           >
-            <div className="relative h-[3px] sm:h-1 w-full rounded-full bg-white/20 pointer-events-none">
+            <div className="relative h-[3px] sm:h-1 w-full rounded-full bg-white/20">
               <div
                 className="absolute inset-y-0 left-0 rounded-full bg-white"
                 style={{ width: `${progress * 100}%` }}
               />
             </div>
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-white shadow pointer-events-none"
+              className="absolute top-1/2 -translate-y-1/2 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-white shadow"
               style={{ left: `calc(${progress * 100}% - 4px)` }}
             />
             {showTooltip && (
               <span
-                className="absolute -top-6 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-black shadow pointer-events-none"
+                className="absolute -top-6 -translate-x-1/2 rounded-md bg-white px-1.5 py-0.5 text-[10px] sm:text-[11px] font-semibold text-black shadow"
                 style={{ left: `${progress * 100}%` }}
               >
                 {formatTime(currentTime)}
               </span>
             )}
-            <input
-              ref={trackRef}
-              type="range"
-              min={0}
-              max={duration || 0}
-              step="any"
-              value={Math.min(currentTime, duration || 0)}
-              aria-label={`Seek posisi audio ${track.title}`}
-              disabled={!duration}
-              onChange={(e) => handleSeekInput(Number(e.target.value))}
-              onPointerDown={handleSeekStart}
-              onPointerUp={handleSeekEnd}
-              onTouchStart={handleSeekStart}
-              onTouchEnd={handleSeekEnd}
-              onKeyDown={(e) => e.stopPropagation()}
-              className="absolute inset-0 h-full w-full cursor-pointer appearance-none bg-transparent opacity-0 disabled:cursor-default"
-            />
           </div>
 
           <div className="mt-1 sm:mt-1.5 flex items-center justify-between text-[9px] sm:text-xs tabular-nums text-white/50">
@@ -265,15 +253,15 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
           </div>
 
           {/* kontrol prev / play-pause / next */}
-          <div data-lenis-prevent className="mt-1.5 sm:mt-4 flex items-center justify-center gap-2.5 sm:gap-6">
+          <div className="mt-1.5 sm:mt-4 flex items-center justify-center gap-2.5 sm:gap-6">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
-                skip(-5);
+                skip(-10);
               }}
-              aria-label={`Mundur 5 detik - ${track.title}`}
+              aria-label={`Mundur 10 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
               <SkipBack className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
@@ -297,9 +285,9 @@ function PlayerCard({ track, index, delta, isPlaying, isFocused, isDesktop, onTo
               onClick={(e) => {
                 e.stopPropagation();
                 onFocus();
-                skip(5);
+                skip(10);
               }}
-              aria-label={`Maju 5 detik - ${track.title}`}
+              aria-label={`Maju 10 detik - ${track.title}`}
               className="text-white/70 hover:text-white transition-colors"
             >
               <SkipForward className="h-2.5 w-2.5 sm:h-4 sm:w-4" fill="currentColor" />
@@ -350,19 +338,6 @@ export default function TrendingSoundPlayer({ tracks }) {
       setActiveIndex(i);
       setIsPlaying(true);
     }
-  }
-
-  // Disinkronkan langsung dari event asli elemen <audio> (play/pause/ended)
-  // -- bukan cuma dari klik tombol. Ini sumber kebenaran yang sesungguhnya:
-  // kalau browser menolak/menunda play() (autoplay policy, buffering,
-  // dsb), state di sini otomatis ikut kondisi audio yang sebenarnya,
-  // jadi ikon tombol nggak pernah nyangkut beda dari kondisi asli.
-  // Hanya kartu yang lagi fokus yang boleh mempengaruhi state -- kartu
-  // lain seharusnya diam (isPlaying prop-nya sudah false), jadi event
-  // dari kartu itu diabaikan supaya tidak tabrakan.
-  function handlePlaybackSync(i, playing) {
-    if (i !== activeIndex) return;
-    setIsPlaying(playing);
   }
 
   return (
@@ -426,7 +401,6 @@ export default function TrendingSoundPlayer({ tracks }) {
                   isDesktop={isDesktop}
                   isPlaying={i === activeIndex && isPlaying}
                   onTogglePlay={() => handlePlayIndex(i)}
-                  onPlaybackSync={(playing) => handlePlaybackSync(i, playing)}
                   onFocus={() => focusIndex(i)}
                 />
               );
