@@ -25,7 +25,7 @@ const nextConfig = {
     // di /var/task cuma ada remotion/index.js, bikin webpack Remotion
     // gagal resolve "./Root" saat runtime di Vercel.
     outputFileTracingIncludes: {
-      "/api/render-tiktok-video/route": ["./remotion/**/*"],
+      "/api/render-tiktok-video": ["./remotion/**/*"],
     },
   },
   images: {
