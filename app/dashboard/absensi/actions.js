@@ -4,14 +4,26 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
 
-// SOPAN TEAM basisnya di Indonesia -- semua jam yang admin isi di form
-// dianggap WIB (Asia/Jakarta, UTC+7). Kalau cuma `new Date(\`${date}T${time}:00\`)`
-// tanpa offset, Node bakal baca string itu pakai timezone SERVER (Vercel
-// default-nya UTC), jadi jam yang diisi admin ketunda ~7 jam pas
-// disimpan. Makanya offset +07:00 di-set eksplisit di sini, gak peduli
-// server-nya jalan di timezone apa.
-function wibDateTime(date, time) {
-  return new Date(`${date}T${time}:00+07:00`);
+// Jam yang diketik admin di form (mis. "07:00") disimpan APA ADANYA
+// sebagai jam dinding (wall clock) -- BUKAN dipatok ke 1 zona waktu
+// tertentu (dulu selalu dianggap WIB, jadi anggota di WITA/WIT baru
+// bisa absen 1-2 jam "telat" dari jam yang diketik admin).
+//
+// Triknya: string tanggal+jam ditulis dengan akhiran "Z" (seolah-olah
+// UTC) pas dibikin jadi Date, supaya Node TIDAK menerapkan offset
+// timezone apa pun -- angka yang diketik admin (07, 00, dst) tersimpan
+// utuh di kolom `timestamptz`, gak peduli server jalan di timezone apa
+// (Vercel default-nya UTC, tapi ini sengaja dibuat gak bergantung ke
+// itu).
+//
+// Pas dibaca balik, sisi tampilan (lib/absensi.js -> toLocalWallClock,
+// dan lib/timezone.js buat validasi server) baca ulang angka2 itu lewat
+// getUTC*() lalu direkonstruksi pakai timezone device masing2 orang.
+// Hasilnya: "07:00" yang diketik admin kebaca "07:00" juga di jam siapa
+// pun yang buka linknya -- WIB, WITA, WIT, atau zona manapun -- gak ada
+// yang telat nunggu digeser offset.
+function wallClockDateTime(date, time) {
+  return new Date(`${date}T${time}:00Z`);
 }
 
 // Dipanggil dari form "Buat Sesi Absensi Baru" di /dashboard/absensi.
@@ -31,8 +43,8 @@ export async function createAttendanceSession({
     return { error: "Tanggal, jam mulai, dan jam selesai wajib diisi." };
   }
 
-  const startsAt = wibDateTime(date, startTime);
-  const endsAt = wibDateTime(date, endTime);
+  const startsAt = wallClockDateTime(date, startTime);
+  const endsAt = wallClockDateTime(date, endTime);
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
     return { error: "Tanggal/jam tidak valid." };
   }

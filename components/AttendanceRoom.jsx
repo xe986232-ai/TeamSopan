@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Users, Sparkles, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { ToastProvider, useToast } from "./ui/toast";
-import { formatCountdown, timeAgoLabel } from "@/lib/absensi";
+import { formatCountdown, timeAgoLabel, toLocalWallClock } from "@/lib/absensi";
 import { checkInToSession } from "@/app/absensi/[roomId]/actions";
 
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
@@ -115,12 +115,16 @@ function AttendanceRoomInner({
     return () => clearTimeout(timer);
   }, []);
 
+  // Pakai toLocalWallClock, BUKAN new Date(session.starts_at) langsung --
+  // supaya "07:00" yang diset admin kebaca 07:00 di jam HP member ini,
+  // apa pun zona waktunya (WIB/WITA/WIT/dll), bukan digeser ke 1 momen
+  // absolut yang sama buat semua orang.
   const startsAt = React.useMemo(
-    () => new Date(session.starts_at).getTime(),
+    () => toLocalWallClock(session.starts_at).getTime(),
     [session]
   );
   const endsAt = React.useMemo(
-    () => new Date(session.ends_at).getTime(),
+    () => toLocalWallClock(session.ends_at).getTime(),
     [session]
   );
 
@@ -135,7 +139,12 @@ function AttendanceRoomInner({
 
   const handleAbsen = async () => {
     setIsSubmitting(true);
-    const result = await checkInToSession(roomId);
+    // Server gak otomatis tau device ini ada di zona waktu mana --
+    // dikirim eksplisit biar validasi jam sesi di server konsisten
+    // sama status yang udah ditampilkan di layar (lihat lib/timezone.js).
+    const timeZone =
+      Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+    const result = await checkInToSession(roomId, timeZone);
     setIsSubmitting(false);
 
     if (result.unauthenticated) {

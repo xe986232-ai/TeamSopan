@@ -5,7 +5,7 @@ import { Users, Copy, Check, Trash2 } from "lucide-react";
 import DivisionBadge from "./DivisionBadge";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import { useToast } from "@/components/ui/toast";
-import { getSessionStatus } from "@/lib/absensi";
+import { getSessionStatus, toLocalWallClock } from "@/lib/absensi";
 import { deleteAttendanceSession } from "@/app/dashboard/absensi/actions";
 
 const STATUS_LABEL = {
@@ -14,8 +14,12 @@ const STATUS_LABEL = {
   berakhir: { label: "Berakhir", className: "bg-black/[0.04] text-black/40" },
 };
 
+// toLocalWallClock() balikin Date yang dibikin dari komponen jam dinding
+// tersimpan (bukan momen absolut) -- jadi toLocaleString() di sini bakal
+// nampilin PERSIS jam yang diketik admin, bukan digeser sesuai timezone
+// browser admin sekarang.
 function formatDateTime(iso) {
-  return new Date(iso).toLocaleString("id-ID", {
+  return toLocalWallClock(iso).toLocaleString("id-ID", {
     day: "2-digit",
     month: "short",
     year: "numeric",

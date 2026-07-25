@@ -5,6 +5,11 @@ import {
   createServerSupabaseClient,
   createAdminSupabaseClient,
 } from "@/lib/supabase/server";
+import {
+  zonedWallClockToUtcMs,
+  wallClockComponentsFromIso,
+  FALLBACK_TIME_ZONE,
+} from "@/lib/timezone";
 
 // Absen di sesi `roomId`. Alur keamanan sama seperti pola lain di project
 // ini (mis. app/profil/actions.js): PERTAMA cek siapa yang lagi login
@@ -16,7 +21,7 @@ import {
 // Nama yang tercatat SELALU diambil dari data member yang login (bukan
 // input manual dari form) -- sesuai permintaan supaya tidak ada lagi
 // input nama bebas di halaman absensi.
-export async function checkInToSession(roomId) {
+export async function checkInToSession(roomId, clientTimeZone) {
   const sessionClient = createServerSupabaseClient();
   const {
     data: { user },
@@ -46,9 +51,36 @@ export async function checkInToSession(roomId) {
     return { error: "Sesi absensi tidak ditemukan atau sudah tidak aktif." };
   }
 
+  // Jam sesi (starts_at/ends_at) tersimpan sebagai jam dinding apa
+  // adanya (lihat komentar di app/dashboard/absensi/actions.js), jadi
+  // buat dibandingkan adil ke Date.now() (yang absolut), kita hitung
+  // ulang jadi instant UTC SESUAI zona waktu device yang lagi absen --
+  // bukan patokan 1 zona waktu tetap kayak dulu (WIB). Kalau browser
+  // gagal ngasih timezone-nya (jarang, tapi jaga-jaga), fallback ke WIB
+  // supaya tetap ada validasi yang masuk akal.
+  const timeZone = clientTimeZone || FALLBACK_TIME_ZONE;
+  const startComponents = wallClockComponentsFromIso(session.starts_at);
+  const endComponents = wallClockComponentsFromIso(session.ends_at);
+
   const now = Date.now();
-  const startsAt = new Date(session.starts_at).getTime();
-  const endsAt = new Date(session.ends_at).getTime();
+  const startsAt = zonedWallClockToUtcMs(
+    startComponents.year,
+    startComponents.month,
+    startComponents.day,
+    startComponents.hour,
+    startComponents.minute,
+    startComponents.second,
+    timeZone
+  );
+  const endsAt = zonedWallClockToUtcMs(
+    endComponents.year,
+    endComponents.month,
+    endComponents.day,
+    endComponents.hour,
+    endComponents.minute,
+    endComponents.second,
+    timeZone
+  );
 
   if (now < startsAt) {
     return { error: "Sesi absensi belum dimulai." };
