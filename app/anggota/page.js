@@ -49,8 +49,8 @@ export default async function AnggotaPage() {
   const members = (data || []).map((m) => ({
     id: m.id,
     name: m.full_name,
-    title: m.role || divisionLabel(m.division),
-    division: divisionShortLabel(m.division),
+    title: divisionShortLabel(m.division),
+    division: divisionLabel(m.division),
     avatarUrl:
       m.avatar_url ||
       `https://placehold.co/200x200/B026FF/white?text=${encodeURIComponent(
