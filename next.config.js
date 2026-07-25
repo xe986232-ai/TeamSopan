@@ -53,6 +53,13 @@ const nextConfig = {
         // gak bisa cuma nyertain file ikon yang dipakai doang.
         "./node_modules/lucide-react/package.json",
         "./node_modules/lucide-react/dist/esm/**/*",
+        // @remotion/renderer nge-require() binary compositor (Rust, buat
+        // composite frame) + ffmpeg/ffprobe berdasarkan process.platform/
+        // arch saat runtime -- ini optionalDependency, jadi gak otomatis
+        // ke-trace walau paketnya (@remotion/renderer) sendiri udah
+        // "external". Server Vercel jalan di Linux x64 glibc, jadi butuh
+        // varian -linux-x64-gnu ini secara spesifik.
+        "./node_modules/@remotion/compositor-linux-x64-gnu/**/*",
       ],
     },
   },
