@@ -52,22 +52,42 @@ export function TiktokPreviewScene() {
   async function handleExport() {
     if (!stageRef.current || isExporting) return;
     setIsExporting(true);
+
+    // html-to-image secara default coba fetch & embed semua @font-face (termasuk
+    // font Google Fonts yang di-self-host lewat next/font) supaya render-nya
+    // presisi. Di sebagian HP/koneksi, request itu bisa gagal (network/DNS/
+    // adblock) dan bikin SELURUH proses export ikut gagal. `skipFonts: true`
+    // + `fontEmbedCSS: ""` mematikan langkah itu -- teks tetap ke-render pakai
+    // font fallback browser, cukup buat kebutuhan ekspor gambar ini.
+    const baseOptions = {
+      cacheBust: true,
+      backgroundColor: "#000000",
+      skipFonts: true,
+      fontEmbedCSS: "",
+    };
+
+    const node = stageRef.current;
+    const targetWidth = 1080; // ekspor di resolusi tinggi, rasio 9:16 asli
+
     try {
-      const node = stageRef.current;
-      const targetWidth = 1080; // ekspor di resolusi tinggi, rasio 9:16 asli
-      const pixelRatio = targetWidth / node.offsetWidth;
-      const dataUrl = await toPng(node, {
-        pixelRatio,
-        cacheBust: true,
-        backgroundColor: "#000000",
-      });
+      let dataUrl;
+      try {
+        // percobaan 1: resolusi tinggi (~1080px lebar)
+        const pixelRatio = targetWidth / node.offsetWidth;
+        dataUrl = await toPng(node, { ...baseOptions, pixelRatio });
+      } catch (firstErr) {
+        console.warn("Ekspor resolusi tinggi gagal, coba ulang di resolusi standar:", firstErr);
+        // percobaan 2 (fallback): resolusi natural device, opsi paling minim
+        dataUrl = await toPng(node, { ...baseOptions, pixelRatio: window.devicePixelRatio || 1 });
+      }
+
       const link = document.createElement("a");
       link.download = `sopan-tiktok-overlay-${Date.now()}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
       console.error("Gagal mengekspor gambar:", err);
-      alert("Gagal mengekspor gambar. Coba lagi.");
+      alert(`Gagal mengekspor gambar: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
     } finally {
       setIsExporting(false);
     }
