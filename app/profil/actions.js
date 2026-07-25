@@ -19,7 +19,7 @@ export async function getOwnProfile() {
   const { data, error } = await supabase
     .from("members")
     .select(
-      "id, full_name, email, division, role, status, avatar_url, bio, instagram_url, tiktok_url, youtube_url"
+      "id, full_name, email, division, role, status, avatar_url, bio, instagram_url, tiktok_url, youtube_url, facebook_url"
     )
     .eq("id", user.id)
     .maybeSingle();
@@ -63,6 +63,7 @@ export async function updateOwnProfile(formData) {
   const instagramUrl = formData.get("instagram_url")?.toString().trim() ?? "";
   const tiktokUrl = formData.get("tiktok_url")?.toString().trim() ?? "";
   const youtubeUrl = formData.get("youtube_url")?.toString().trim() ?? "";
+  const facebookUrl = formData.get("facebook_url")?.toString().trim() ?? "";
   const avatar = formData.get("avatar");
 
   if (!fullName) {
@@ -77,6 +78,7 @@ export async function updateOwnProfile(formData) {
     instagram_url: instagramUrl,
     tiktok_url: tiktokUrl,
     youtube_url: youtubeUrl,
+    facebook_url: facebookUrl,
   };
 
   // Kalau ada file avatar baru diunggah, upload dulu ke storage lalu
@@ -105,7 +107,7 @@ export async function updateOwnProfile(formData) {
     .update(updatePayload)
     .eq("id", user.id)
     .select(
-      "id, full_name, email, division, role, status, avatar_url, bio, instagram_url, tiktok_url, youtube_url"
+      "id, full_name, email, division, role, status, avatar_url, bio, instagram_url, tiktok_url, youtube_url, facebook_url"
     )
     .maybeSingle();
 

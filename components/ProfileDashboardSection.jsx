@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Instagram, Music2, Youtube, Pencil, Loader2, LogOut } from "lucide-react";
+import { Pencil, Loader2, LogOut, Plus, X, ChevronDown } from "lucide-react";
 import { TextField } from "./ui/text-field";
 import { TextareaField } from "./ui/textarea-field";
 import { Button } from "./ui/button";
@@ -10,6 +10,8 @@ import { useRouter } from "next/navigation";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
 import { divisionLabel } from "@/lib/division";
 import { updateOwnProfile } from "@/app/profil/actions";
+import { SOCIAL_PLATFORMS } from "./ui/social-icons";
+import { useOutsideClick } from "@/hooks/use-outside-click";
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -40,8 +42,31 @@ function ProfileDashboardInner({ profile }) {
     instagram_url: profile.instagram_url || "",
     tiktok_url: profile.tiktok_url || "",
     youtube_url: profile.youtube_url || "",
+    facebook_url: profile.facebook_url || "",
   });
   const [saving, setSaving] = React.useState(false);
+
+  // Platform sosmed mana aja yang inputnya lagi ditampilin. Awalnya cuma
+  // platform yang udah keisi link di database (kolom lain kosong -> belum
+  // "ditambahkan" walau kolomnya udah ada di tabel members).
+  const [activeSocials, setActiveSocials] = React.useState(() =>
+    SOCIAL_PLATFORMS.filter((p) => (profile[p.field] || "").trim() !== "").map((p) => p.key)
+  );
+  const [socialMenuOpen, setSocialMenuOpen] = React.useState(false);
+  const socialMenuRef = React.useRef(null);
+  useOutsideClick(socialMenuRef, () => setSocialMenuOpen(false));
+
+  const availablePlatforms = SOCIAL_PLATFORMS.filter((p) => !activeSocials.includes(p.key));
+
+  function addSocial(platformKey) {
+    setActiveSocials((prev) => [...prev, platformKey]);
+    setSocialMenuOpen(false);
+  }
+
+  function removeSocial(platform) {
+    setActiveSocials((prev) => prev.filter((key) => key !== platform.key));
+    setForm((prev) => ({ ...prev, [platform.field]: "" }));
+  }
 
   const updateField = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -85,6 +110,7 @@ function ProfileDashboardInner({ profile }) {
       formData.set("instagram_url", form.instagram_url);
       formData.set("tiktok_url", form.tiktok_url);
       formData.set("youtube_url", form.youtube_url);
+      formData.set("facebook_url", form.facebook_url);
       formData.set("avatar", file);
 
       const result = await updateOwnProfile(formData);
@@ -129,6 +155,7 @@ function ProfileDashboardInner({ profile }) {
       formData.set("instagram_url", form.instagram_url.trim());
       formData.set("tiktok_url", form.tiktok_url.trim());
       formData.set("youtube_url", form.youtube_url.trim());
+      formData.set("facebook_url", form.facebook_url.trim());
 
       const result = await updateOwnProfile(formData);
       if (result.error) throw new Error(result.error);
@@ -237,20 +264,22 @@ function ProfileDashboardInner({ profile }) {
                     </p>
                   )}
 
-                  {(data.instagram_url || data.tiktok_url || data.youtube_url) && (
+                  {SOCIAL_PLATFORMS.some((p) => data[p.field]) && (
                     <div className="w-1/2 h-px my-6 rounded-full bg-black/10 dark:bg-white/10" />
                   )}
 
-                  {(data.instagram_url || data.tiktok_url || data.youtube_url) && (
+                  {SOCIAL_PLATFORMS.some((p) => data[p.field]) && (
                     <div className="flex items-center justify-center gap-3">
-                      {data.instagram_url && (
-                        <SocialButton icon={Instagram} label="Instagram" href={data.instagram_url} />
-                      )}
-                      {data.tiktok_url && (
-                        <SocialButton icon={Music2} label="TikTok" href={data.tiktok_url} />
-                      )}
-                      {data.youtube_url && (
-                        <SocialButton icon={Youtube} label="YouTube" href={data.youtube_url} />
+                      {SOCIAL_PLATFORMS.map(
+                        (platform) =>
+                          data[platform.field] && (
+                            <SocialButton
+                              key={platform.key}
+                              icon={platform.icon}
+                              label={platform.label}
+                              href={data[platform.field]}
+                            />
+                          )
                       )}
                     </div>
                   )}
@@ -293,28 +322,86 @@ function ProfileDashboardInner({ profile }) {
               onChange={updateField("bio")}
             />
 
-            <div className="grid gap-4 sm:grid-cols-1">
-              <TextField
-                id="instagram_url"
-                label="Instagram"
-                placeholder="https://instagram.com/username"
-                value={form.instagram_url}
-                onChange={updateField("instagram_url")}
-              />
-              <TextField
-                id="tiktok_url"
-                label="TikTok"
-                placeholder="https://tiktok.com/@username"
-                value={form.tiktok_url}
-                onChange={updateField("tiktok_url")}
-              />
-              <TextField
-                id="youtube_url"
-                label="YouTube"
-                placeholder="https://youtube.com/@username"
-                value={form.youtube_url}
-                onChange={updateField("youtube_url")}
-              />
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-ink">Sosial Media</label>
+
+              {activeSocials.length === 0 && (
+                <p className="text-xs text-ink-dim">
+                  Belum ada sosmed ditambahkan. Klik tombol di bawah buat nambahin.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {SOCIAL_PLATFORMS.filter((p) => activeSocials.includes(p.key)).map(
+                  (platform) => {
+                    const Icon = platform.icon;
+                    return (
+                      <div key={platform.key} className="flex items-center gap-2">
+                        <div className="shrink-0 w-10 h-10 rounded-full overflow-hidden flex items-center justify-center border border-black/10 dark:border-white/10">
+                          <Icon size={24} />
+                        </div>
+                        <div className="flex-1">
+                          <input
+                            id={platform.field}
+                            type="url"
+                            placeholder={platform.placeholder}
+                            value={form[platform.field]}
+                            onChange={updateField(platform.field)}
+                            aria-label={platform.label}
+                            className="w-full rounded-lg border border-black/10 dark:border-white/10 bg-base px-3.5 py-2.5 text-sm text-ink placeholder:text-ink-dim outline-none transition-colors focus:border-ink/40 dark:focus:border-white/40"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSocial(platform)}
+                          aria-label={`Hapus ${platform.label}`}
+                          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-full text-ink-dim hover:text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+
+              {availablePlatforms.length > 0 && (
+                <div className="relative" ref={socialMenuRef}>
+                  <button
+                    type="button"
+                    onClick={() => setSocialMenuOpen((v) => !v)}
+                    className="flex items-center gap-1.5 text-sm font-medium text-ink-muted hover:text-ink border border-dashed border-black/15 dark:border-white/15 rounded-lg px-3.5 py-2.5 w-full sm:w-auto justify-center transition-colors"
+                  >
+                    <Plus size={15} />
+                    Tambah Sosial Media
+                    <ChevronDown
+                      size={14}
+                      className={`transition-transform ${socialMenuOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+
+                  {socialMenuOpen && (
+                    <div className="absolute z-20 mt-2 w-56 rounded-xl border border-black/10 dark:border-white/10 bg-base-elevated shadow-lg overflow-hidden">
+                      {availablePlatforms.map((platform) => {
+                        const Icon = platform.icon;
+                        return (
+                          <button
+                            key={platform.key}
+                            type="button"
+                            onClick={() => addSocial(platform.key)}
+                            className="flex items-center gap-3 w-full px-3.5 py-2.5 text-sm text-ink hover:bg-black/5 dark:hover:bg-white/10 transition-colors text-left"
+                          >
+                            <span className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                              <Icon size={22} />
+                            </span>
+                            {platform.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             <Button
@@ -344,8 +431,8 @@ const SocialButton = ({ icon: Icon, label, href }) => (
     target="_blank"
     rel="noopener noreferrer"
     aria-label={label}
-    className="flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ease-out bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10"
+    className="flex items-center justify-center w-11 h-11 rounded-full overflow-hidden transition-transform duration-300 ease-out hover:scale-110"
   >
-    <Icon size={20} className="text-ink-muted hover:text-ink transition-colors" />
+    <Icon size={28} />
   </a>
 );
