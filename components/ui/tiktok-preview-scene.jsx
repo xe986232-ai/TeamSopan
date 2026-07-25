@@ -2,13 +2,15 @@
 
 import * as React from "react";
 import html2canvas from "html2canvas";
-import { Download, Loader2 } from "lucide-react";
+import { Download, Loader2, FileCode2 } from "lucide-react";
 import { Iphone15Pro } from "@/components/ui/iphone-15-pro";
 import { TiktokOverlay } from "@/components/ui/tiktok-overlay";
 import { MusicPlayerCard } from "@/components/ui/music-player-card";
 import { PlaylistPanel } from "@/components/ui/playlist-panel";
 import { CardStylePanel } from "@/components/ui/card-style-panel";
+import { TrackMetaPanel } from "@/components/ui/track-meta-panel";
 import { useLocalPlaylist } from "@/hooks/use-local-playlist";
+import { generateAlightMotionXml } from "@/lib/alightmotion-template";
 
 // ============================================================================
 // TiktokPreviewScene -- mockup HP + overlay chrome TikTok, dengan
@@ -41,11 +43,32 @@ import { useLocalPlaylist } from "@/hooks/use-local-playlist";
 // ============================================================================
 export function TiktokPreviewScene() {
   const controller = useLocalPlaylist();
-  const { audioRef, current } = controller;
+  const { audioRef, current, duration } = controller;
 
   const [bgOpacity, setBgOpacity] = React.useState(55);
   const [bgBlur, setBgBlur] = React.useState(64);
   const [isExporting, setIsExporting] = React.useState(false);
+  const [isExportingXml, setIsExportingXml] = React.useState(false);
+
+  // ---- metadata buat generate project Alight Motion (.xml) ----
+  const [trackTitle, setTrackTitle] = React.useState("");
+  const [trackArtist, setTrackArtist] = React.useState("@artist");
+  const [deviceName, setDeviceName] = React.useState("iPhone");
+  const titleTouchedRef = React.useRef(false);
+
+  // judul default ngikutin nama file lagu yang lagi aktif, TAPI cuma
+  // selama user belum pernah ngetik manual di kolom judul (biar gak
+  // ketimpa terus tiap ganti lagu setelah user isi sendiri)
+  React.useEffect(() => {
+    if (!titleTouchedRef.current && current?.name) {
+      setTrackTitle(current.name);
+    }
+  }, [current?.name]);
+
+  function handleTrackTitleChange(value) {
+    titleTouchedRef.current = true;
+    setTrackTitle(value);
+  }
 
   const stageRef = React.useRef(null);
 
@@ -177,6 +200,40 @@ export function TiktokPreviewScene() {
     }
   }
 
+  function handleExportXml() {
+    if (isExportingXml) return;
+
+    if (!current) {
+      alert("Tambahkan lagu terlebih dahulu di panel Daftar Putar sebelum generate project.");
+      return;
+    }
+
+    setIsExportingXml(true);
+    try {
+      const xml = generateAlightMotionXml({
+        title: trackTitle || current.name,
+        artist: trackArtist,
+        device: deviceName,
+        durationSeconds: duration || 0,
+        bgOpacity,
+        bgBlur,
+      });
+
+      const blob = new Blob([xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `sopan-tiktok-overlay-${Date.now()}.xml`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Gagal generate project Alight Motion:", err);
+      alert(`Gagal generate project: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
+    } finally {
+      setIsExportingXml(false);
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-8">
       <Iphone15Pro className="h-auto w-[240px] drop-shadow-2xl sm:w-[280px]">
@@ -214,15 +271,32 @@ export function TiktokPreviewScene() {
         </div>
       </Iphone15Pro>
 
-      <button
-        type="button"
-        onClick={handleExport}
-        disabled={isExporting}
-        className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-base shadow-lg shadow-black/10 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-        {isExporting ? "Mengekspor..." : "Ekspor Gambar (9:16)"}
-      </button>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={handleExport}
+          disabled={isExporting}
+          className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-base shadow-lg shadow-black/10 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
+          {isExporting ? "Mengekspor..." : "Ekspor Gambar (9:16)"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleExportXml}
+          disabled={isExportingXml}
+          className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-base-elevated px-5 py-2.5 text-sm font-semibold text-ink shadow-lg shadow-black/5 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExportingXml ? <Loader2 size={16} className="animate-spin" /> : <FileCode2 size={16} />}
+          {isExportingXml ? "Membuat project..." : "Generate Project (.xml)"}
+        </button>
+      </div>
+
+      <p className="max-w-[280px] text-center text-[11px] leading-relaxed text-ink/50">
+        Setelah file .xml diimpor ke Alight Motion, pilih ulang 2 foto (background &amp; sampul album) dari galeri --
+        Alight Motion tidak bisa membawa foto secara otomatis, hanya teks &amp; angka.
+      </p>
 
       <div className="flex w-full max-w-[280px] flex-col gap-4">
         <PlaylistPanel controller={controller} />
@@ -231,6 +305,14 @@ export function TiktokPreviewScene() {
           onBgOpacityChange={setBgOpacity}
           bgBlur={bgBlur}
           onBgBlurChange={setBgBlur}
+        />
+        <TrackMetaPanel
+          title={trackTitle}
+          onTitleChange={handleTrackTitleChange}
+          artist={trackArtist}
+          onArtistChange={setTrackArtist}
+          device={deviceName}
+          onDeviceChange={setDeviceName}
         />
       </div>
 
