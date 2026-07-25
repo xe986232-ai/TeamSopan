@@ -103,6 +103,11 @@ function AttendanceRoomInner({
   const [burstKey, setBurstKey] = React.useState(0);
   const [showIntro, setShowIntro] = React.useState(true);
   const [now, setNow] = React.useState(() => Date.now());
+  // `celebrate` cuma true SESAAT setelah absen baru berhasil (bukan pas
+  // reload halaman yang memang udah pernah absen sebelumnya) -- dipakai
+  // buat nampilin animasi checkmark bentar, terus otomatis di-fade-out
+  // biar list "yang sudah absen" di bawahnya naik ngisi tempat kosong.
+  const [celebrate, setCelebrate] = React.useState(false);
 
   // Tick tiap detik buat hitungan mundur & label "X menit lalu".
   React.useEffect(() => {
@@ -114,6 +119,16 @@ function AttendanceRoomInner({
     const timer = setTimeout(() => setShowIntro(false), 2200);
     return () => clearTimeout(timer);
   }, []);
+
+  // Sesudah animasi sukses (checkmark + burst) sempat kelihatan ~1.9
+  // detik, matiin `celebrate` -> area absen di-unmount, motion.div-nya
+  // fade + collapse (lihat exit di bawah), list yang sudah absen otomatis
+  // naik ngisi ruang yang kosong.
+  React.useEffect(() => {
+    if (!celebrate) return;
+    const timer = setTimeout(() => setCelebrate(false), 1900);
+    return () => clearTimeout(timer);
+  }, [celebrate]);
 
   // Pakai toLocalWallClock, BUKAN new Date(session.starts_at) langsung --
   // supaya "07:00" yang diset admin kebaca 07:00 di jam HP member ini,
@@ -171,6 +186,7 @@ function AttendanceRoomInner({
         },
         ...prev,
       ]);
+      setCelebrate(true);
     }
     setHasCheckedIn(true);
     setBurstKey((k) => k + 1);
@@ -281,16 +297,25 @@ function AttendanceRoomInner({
           </motion.div>
 
           {/* ---- Area absen ---- */}
+          {/* `layout` di wrapper ini + mode="popLayout" di AnimatePresence
+              bikin tingginya ikut animasi pas kontennya berubah (form ->
+              sukses -> hilang), bukan lompat tiba-tiba. Pas `celebrate`
+              balik ke false (lihat useEffect timer di atas), branch
+              "success" di-unmount total -- areanya collapse dengan fade,
+              dan List di bawah (yang juga dikasih `layout`) otomatis
+              geser naik ngisi tempat kosong. */}
           <motion.div
+            layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15, ease: SMOOTH_EASE }}
             className="w-full flex flex-col items-center gap-5"
           >
-            <AnimatePresence mode="wait">
-              {!hasCheckedIn ? (
+            <AnimatePresence mode="popLayout">
+              {!hasCheckedIn && (
                 <motion.div
                   key="form"
+                  layout
                   exit={{ opacity: 0, scale: 0.95 }}
                   transition={{ duration: 0.3 }}
                   className="w-full flex flex-col items-center gap-5"
@@ -329,11 +354,14 @@ function AttendanceRoomInner({
                     </p>
                   )}
                 </motion.div>
-              ) : (
+              )}
+              {hasCheckedIn && celebrate && (
                 <motion.div
                   key="success"
+                  layout
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.5, ease: SMOOTH_EASE }}
                   className="relative flex flex-col items-center gap-3"
                 >
@@ -366,6 +394,7 @@ function AttendanceRoomInner({
 
           {/* ---- List yang sudah absen ---- */}
           <motion.div
+            layout
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.3, ease: SMOOTH_EASE }}
