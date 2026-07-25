@@ -30,7 +30,7 @@ export default function PreviewNowPlayingPage() {
         <Iphone15Pro className="w-[240px] sm:w-[280px] h-auto drop-shadow-2xl">
           <div className="flex h-full w-full items-center justify-center bg-black px-3">
             <NowPlayingCard
-              cover="/divisi/creator-coming-soon/preview-mockup.png"
+              cover="https://images.unsplash.com/photo-1761405378292-30f64ad6f60b?q=80&w=800&auto=format&fit=crop"
               artist="ZuraRmx"
               title="DJ HEY KAMU GUFRON"
               subtitle="delynmybini"
