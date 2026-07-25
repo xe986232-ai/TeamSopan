@@ -49,6 +49,50 @@ export function TiktokPreviewScene() {
 
   const stageRef = React.useRef(null);
 
+  // html2canvas (kayak hampir semua library screenshot-DOM) TIDAK mendukung
+  // CSS `filter` (termasuk blur/saturate) maupun `backdrop-filter` -- itu
+  // sebabnya hasil ekspor sebelumnya background-nya keliatan tajam/pecah,
+  // beda sama preview yang blur. Solusinya: blur-nya di-"bake" duluan ke
+  // piksel asli gambar lewat Canvas 2D (`ctx.filter`, yang DIDUKUNG penuh
+  // buat operasi canvas biasa) sebelum di-screenshot, lalu hasilnya
+  // dipasang gantiin <img> aslinya lewat `onclone` html2canvas.
+  async function buildBlurredBackgroundDataUrl(coverUrl, blurPx, width, height) {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = () => reject(new Error("Gagal memuat gambar sampul untuk background."));
+      img.src = coverUrl;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(width));
+    canvas.height = Math.max(1, Math.round(height));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D tidak didukung di browser ini.");
+
+    // tiru crop object-cover + scale-125 dari CSS aslinya
+    const scale = 1.25;
+    const boxRatio = canvas.width / canvas.height;
+    const imgRatio = img.naturalWidth / img.naturalHeight;
+    let drawW, drawH;
+    if (imgRatio > boxRatio) {
+      drawH = canvas.height * scale;
+      drawW = drawH * imgRatio;
+    } else {
+      drawW = canvas.width * scale;
+      drawH = drawW / imgRatio;
+    }
+    const dx = (canvas.width - drawW) / 2;
+    const dy = (canvas.height - drawH) / 2;
+
+    ctx.filter = `blur(${blurPx}px) saturate(1.5)`;
+    ctx.globalAlpha = 0.9;
+    ctx.drawImage(img, dx, dy, drawW, drawH);
+
+    return canvas.toDataURL("image/png");
+  }
+
   async function handleExport() {
     if (!stageRef.current || isExporting) return;
     setIsExporting(true);
@@ -57,25 +101,63 @@ export function TiktokPreviewScene() {
     const targetWidth = 1080; // ekspor di resolusi tinggi, rasio 9:16 asli
 
     try {
+      const scaleFactor = targetWidth / node.offsetWidth;
+      const exportHeight = node.offsetHeight * scaleFactor;
+
+      // blur-nya perlu discale juga -- angka bgBlur (px) itu didefinisikan
+      // relatif ke ukuran mockup HP yang kecil di layar, bukan ke resolusi
+      // ekspor yang jauh lebih besar
+      let bakedBgDataUrl = null;
+      if (current?.coverUrl) {
+        try {
+          bakedBgDataUrl = await buildBlurredBackgroundDataUrl(
+            current.coverUrl,
+            bgBlur * scaleFactor,
+            targetWidth,
+            exportHeight
+          );
+        } catch (bakeErr) {
+          console.warn("Gagal bikin background blur untuk ekspor, lanjut tanpa itu:", bakeErr);
+        }
+      }
+
+      const onclone = (clonedDoc, clonedNode) => {
+        // panel card pakai backdrop-blur (juga gak didukung html2canvas) --
+        // matikan aja biar gak ke-render transparan/aneh, background rgba
+        // solidnya sendiri tetap kepakai jadi teks tetap kebaca
+        clonedNode.querySelectorAll('[class*="backdrop-blur"]').forEach((el) => {
+          el.style.backdropFilter = "none";
+          el.style.webkitBackdropFilter = "none";
+        });
+
+        // pasang background yang udah di-blur manual, gantiin <img> asli
+        // yang masih tajam (karena CSS filter-nya diabaikan html2canvas)
+        if (bakedBgDataUrl) {
+          const bgImg = clonedNode.querySelector("img[data-export-ambient-bg]");
+          if (bgImg) {
+            bgImg.src = bakedBgDataUrl;
+            bgImg.style.filter = "none";
+            bgImg.style.transform = "none";
+            bgImg.style.objectFit = "cover";
+          }
+        }
+      };
+
+      const captureOptions = {
+        backgroundColor: "#000000",
+        useCORS: true,
+        logging: false,
+        onclone,
+      };
+
       let canvas;
       try {
         // percobaan 1: resolusi tinggi (~1080px lebar)
-        const scale = targetWidth / node.offsetWidth;
-        canvas = await html2canvas(node, {
-          backgroundColor: "#000000",
-          scale,
-          useCORS: true,
-          logging: false,
-        });
+        canvas = await html2canvas(node, { ...captureOptions, scale: scaleFactor });
       } catch (firstErr) {
         console.warn("Ekspor resolusi tinggi gagal, coba ulang di resolusi standar:", firstErr);
         // percobaan 2 (fallback): resolusi natural device
-        canvas = await html2canvas(node, {
-          backgroundColor: "#000000",
-          scale: window.devicePixelRatio || 1,
-          useCORS: true,
-          logging: false,
-        });
+        canvas = await html2canvas(node, { ...captureOptions, scale: window.devicePixelRatio || 1 });
       }
 
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
@@ -106,6 +188,7 @@ export function TiktokPreviewScene() {
               <div className="absolute inset-0">
                 {current?.coverUrl ? (
                   <img
+                    data-export-ambient-bg
                     src={current.coverUrl}
                     alt=""
                     aria-hidden="true"
