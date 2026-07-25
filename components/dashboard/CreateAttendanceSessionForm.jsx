@@ -46,6 +46,16 @@ export default function CreateAttendanceSessionForm() {
   const [created, setCreated] = React.useState(null);
   const [copied, setCopied] = React.useState(false);
 
+  // Gabungkan tanggal + jam jadi Date pakai konstruktor komponen terpisah
+  // (y, m, d, h, i) -- ini otomatis dibaca sebagai zona waktu LOKAL
+  // perangkat yang buka form (WIB/WITA/WIT/dll), bukan UTC atau hardcode
+  // WIB. Jadi benar buat admin di mana pun dia berada.
+  function localDateTimeToISO(dateStr, timeStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const [h, i] = timeStr.split(":").map(Number);
+    return new Date(y, m - 1, d, h, i, 0, 0).toISOString();
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsPending(true);
@@ -53,9 +63,8 @@ export default function CreateAttendanceSessionForm() {
 
     const result = await createAttendanceSession({
       division,
-      date,
-      startTime,
-      endTime,
+      startsAtISO: localDateTimeToISO(date, startTime),
+      endsAtISO: localDateTimeToISO(date, endTime),
     });
 
     setIsPending(false);
