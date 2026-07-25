@@ -60,11 +60,11 @@ export function TiktokOverlay({
       <div className="flex-1" />
 
       {/* ---- kolom aksi kanan ---- */}
-      <div className="absolute right-2 bottom-[76px] flex flex-col items-center gap-4">
+      <div className="absolute right-2.5 bottom-[92px] flex flex-col items-center gap-5">
         <div className="relative">
-          <div className="h-8 w-8 rounded-full border-2 border-white bg-white/20" />
-          <div className="absolute -bottom-1.5 left-1/2 flex h-4 w-4 -translate-x-1/2 items-center justify-center rounded-full bg-[#fe2c55]">
-            <Plus size={11} strokeWidth={3} />
+          <div className="h-11 w-11 rounded-full border-2 border-white bg-white/20" />
+          <div className="absolute -bottom-2 left-1/2 flex h-5 w-5 -translate-x-1/2 items-center justify-center rounded-full bg-[#fe2c55]">
+            <Plus size={13} strokeWidth={3} />
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export function TiktokOverlay({
       </div>
 
       {/* ---- username & caption ---- */}
-      <div className="absolute bottom-[76px] left-3 right-14">
+      <div className="absolute bottom-[92px] left-3 right-16">
         <p className="text-[14px] font-medium">{username}</p>
         <p className="mt-1 text-[12px] leading-snug text-white/90">{caption}</p>
       </div>
@@ -100,9 +100,9 @@ export function TiktokOverlay({
 
 function ActionIcon({ icon: Icon, count }) {
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <Icon size={26} strokeWidth={1.75} />
-      <span className="text-[11px] font-medium">{count}</span>
+    <div className="flex flex-col items-center gap-1">
+      <Icon size={32} strokeWidth={1.75} />
+      <span className="text-[12px] font-medium">{count}</span>
     </div>
   );
 }

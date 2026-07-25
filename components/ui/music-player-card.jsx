@@ -39,13 +39,13 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85 }) {
   const subtitle = current ? "File lokal" : "Tambahkan lagu di panel bawah";
 
   return (
-    <div className={cn("relative w-full max-w-[230px]", className)}>
+    <div className={cn("relative w-full max-w-[272px]", className)}>
       <div
         className="rounded-[1.75rem] backdrop-blur-xl p-3.5 shadow-2xl shadow-black/50 text-white"
         style={{ backgroundColor: `rgba(0, 0, 0, ${bgOpacity / 100})` }}
       >
         {/* ---- cover art ---- */}
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.15rem] bg-white/5">
+        <div className="relative aspect-[10/9] w-full overflow-hidden rounded-[1.15rem] bg-white/5">
           {cover ? (
             <img src={cover} alt={`Sampul ${title}`} className="h-full w-full object-cover" draggable={false} />
           ) : (
