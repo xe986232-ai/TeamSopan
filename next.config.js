@@ -25,7 +25,18 @@ const nextConfig = {
     // di /var/task cuma ada remotion/index.js, bikin webpack Remotion
     // gagal resolve "./Root" saat runtime di Vercel.
     outputFileTracingIncludes: {
-      "/api/render-tiktok-video": ["./remotion/**/*"],
+      "/api/render-tiktok-video": [
+        "./remotion/**/*",
+        // @remotion/google-fonts/Outfit (dipakai di TiktokOverlayComposition.jsx)
+        // cuma required lewat file yang di-copy manual di atas, jadi gak
+        // ke-trace otomatis. Paket lengkapnya ~64MB (semua Google Fonts),
+        // makanya cuma file yang benar-benar dipakai (Outfit + dependency
+        // internalnya) yang disertakan, bukan seluruh folder paket.
+        "./node_modules/@remotion/google-fonts/package.json",
+        "./node_modules/@remotion/google-fonts/dist/cjs/base.js",
+        "./node_modules/@remotion/google-fonts/dist/cjs/Outfit.js",
+        "./node_modules/@remotion/google-fonts/dist/cjs/resolve-font-subsets.js",
+      ],
     },
   },
   images: {
