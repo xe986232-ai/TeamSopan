@@ -24,7 +24,7 @@ export default async function AbsensiRoomPage({ params }) {
 
   const { data: member } = await supabase
     .from("members")
-    .select("id, full_name, division")
+    .select("id, full_name, division, avatar_url")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -38,12 +38,22 @@ export default async function AbsensiRoomPage({ params }) {
   let hasCheckedIn = false;
 
   if (session) {
+    // Join ke tabel members lewat member_id buat ikut ambil avatar_url --
+    // biar list "yang sudah absen" nampilin foto profil, bukan cuma
+    // inisial. Kalau member belum upload foto, avatar_url null -> fallback
+    // inisial tetap jalan seperti biasa di AvatarCircle.
     const { data: recordsData } = await supabase
       .from("attendance_records")
-      .select("id, full_name, member_id, checked_in_at")
+      .select("id, full_name, member_id, checked_in_at, members(avatar_url)")
       .eq("session_id", session.id)
       .order("checked_in_at", { ascending: false });
-    records = recordsData || [];
+    records = (recordsData || []).map((r) => ({
+      id: r.id,
+      full_name: r.full_name,
+      member_id: r.member_id,
+      checked_in_at: r.checked_in_at,
+      avatar_url: r.members?.avatar_url ?? null,
+    }));
     hasCheckedIn = records.some((r) => r.member_id === user.id);
   }
 
@@ -56,7 +66,11 @@ export default async function AbsensiRoomPage({ params }) {
       division={division}
       records={records}
       hasCheckedIn={hasCheckedIn}
-      currentUser={member ? { id: member.id, fullName: member.full_name } : null}
+      currentUser={
+        member
+          ? { id: member.id, fullName: member.full_name, avatarUrl: member.avatar_url }
+          : null
+      }
     />
   );
 }

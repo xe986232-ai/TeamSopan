@@ -20,10 +20,10 @@ function initials(name) {
     .join("");
 }
 
-function AvatarCircle({ name, accentFrom, accentTo, size = 40 }) {
+function AvatarCircle({ name, avatarUrl, accentFrom, accentTo, size = 40 }) {
   return (
     <span
-      className="relative flex shrink-0 items-center justify-center rounded-full font-display font-bold text-white"
+      className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold text-white"
       style={{
         width: size,
         height: size,
@@ -31,7 +31,15 @@ function AvatarCircle({ name, accentFrom, accentTo, size = 40 }) {
         fontSize: size * 0.36,
       }}
     >
-      {initials(name)}
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt={name}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        initials(name)
+      )}
     </span>
   );
 }
@@ -150,6 +158,7 @@ function AttendanceRoomInner({
           full_name: currentUser.fullName,
           member_id: currentUser.id,
           checked_in_at: new Date().toISOString(),
+          avatar_url: currentUser.avatarUrl,
         },
         ...prev,
       ]);
@@ -241,6 +250,13 @@ function AttendanceRoomInner({
             >
               Divisi {division.name}
             </span>
+            <AvatarCircle
+              name={currentUser.fullName}
+              avatarUrl={currentUser.avatarUrl}
+              accentFrom={division.accentFrom}
+              accentTo={division.accentTo}
+              size={72}
+            />
             <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-ink leading-tight">
               Halo, {firstName}
             </h1>
@@ -369,6 +385,7 @@ function AttendanceRoomInner({
                   >
                     <AvatarCircle
                       name={member.full_name}
+                      avatarUrl={member.avatar_url}
                       accentFrom={division.accentFrom}
                       accentTo={division.accentTo}
                       size={56}
