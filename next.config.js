@@ -18,26 +18,41 @@ const nextConfig = {
       "@remotion/google-fonts",
       "remotion",
     ],
-    // remotion/Root.jsx & remotion/TiktokOverlayComposition.jsx cuma
-    // direferensikan lewat string path (bundle() entryPoint di
-    // lib/remotion-bundle.js), bukan import statis -- jadi Next.js gak
-    // otomatis nyertain mereka ke serverless function bundle. Tanpa ini,
-    // di /var/task cuma ada remotion/index.js, bikin webpack Remotion
-    // gagal resolve "./Root" saat runtime di Vercel.
+    // Remotion (via lib/remotion-bundle.js) menjalankan webpack-nya SENDIRI
+    // di runtime (terpisah dari webpack Next.js), target browser (headless
+    // Chromium) -- dia butuh SEMUA source mentah komponen yang dipakai
+    // TiktokOverlayComposition ADA SEBAGAI FILE FISIK di /var/task, karena
+    // Next.js hanya nge-inline file yang di-require secara statis ke dalam
+    // chunk-nya sendiri, bukan nyalin file aslinya terpisah.
+    //
+    // Daftar di bawah ini hasil trace MANUAL & LENGKAP dari seluruh rantai
+    // import remotion/index.js -> Root.jsx -> TiktokOverlayComposition.jsx
+    // -> components/ui/tiktok-stage.jsx -> components/ui/music-player-card.jsx
+    // -> lib/utils.js, termasuk SEMUA paket node_modules yang mereka pakai
+    // (clsx, tailwind-merge, lucide-react, @remotion/google-fonts/Outfit) --
+    // bukan ditambah satu-satu tiap ada error baru.
     outputFileTracingIncludes: {
       "/api/render-tiktok-video": [
         "./remotion/**/*",
-        // @remotion/google-fonts/Outfit (dipakai di TiktokOverlayComposition.jsx)
-        // cuma required lewat file yang di-copy manual di atas, jadi gak
-        // ke-trace otomatis. Paket lengkapnya ~64MB (semua Google Fonts),
-        // makanya cuma file yang benar-benar dipakai yang disertakan.
-        // PENTING: pakai varian ESM (dist/esm), bukan CJS -- Remotion
-        // bundle() ini target-nya browser (dijalankan di headless
-        // Chromium), jadi resolusi paket lewat exports field pakai
-        // kondisi "import"/"module", bukan "require". dist/esm/Outfit.mjs
-        // sudah self-contained (base + resolve-font-subsets di-inline).
+        "./components/ui/tiktok-stage.jsx",
+        "./components/ui/music-player-card.jsx",
+        "./lib/utils.js",
+        // PENTING: semua paket di bawah pakai varian ESM (dist/esm /
+        // *.mjs), bukan CJS -- Remotion bundle() ini target-nya browser,
+        // jadi resolusi exports field-nya pakai kondisi "import"/"module".
         "./node_modules/@remotion/google-fonts/package.json",
         "./node_modules/@remotion/google-fonts/dist/esm/Outfit.mjs",
+        "./node_modules/clsx/package.json",
+        "./node_modules/clsx/dist/clsx.mjs",
+        "./node_modules/tailwind-merge/package.json",
+        "./node_modules/tailwind-merge/dist/bundle-mjs.mjs",
+        // lucide-react: entry esm-nya (dist/esm/lucide-react.js) me-re-export
+        // SEMUA ikon (~3000 file) lewat static export, jadi webpack Remotion
+        // butuh SELURUH folder icons ada biar bisa resolve module graph-nya
+        // (walau abis itu di-tree-shake, cuma 7 ikon yang beneran dipakai) --
+        // gak bisa cuma nyertain file ikon yang dipakai doang.
+        "./node_modules/lucide-react/package.json",
+        "./node_modules/lucide-react/dist/esm/**/*",
       ],
     },
   },
