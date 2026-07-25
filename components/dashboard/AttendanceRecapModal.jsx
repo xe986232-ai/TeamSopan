@@ -45,41 +45,78 @@ function imageFormatFromDataUrl(dataUrl) {
   return "JPEG";
 }
 
-// Gambar 1 sel "Foto" di tabel PDF: foto asli kalau ada & berhasil
-// dimuat, kalau tidak fallback ke lingkaran inisial abu-abu -- desain
-// sengaja hitam-putih/abu-abu (bukan warna-warni) biar nyambung sama
-// tabel yang simpel.
-function drawAvatarCell(doc, cell, photoDataUrl, fullName) {
-  const size = 20;
-  const cx = cell.x + cell.width / 2;
+// Lingkaran tipis abu-abu di belakang avatar buat efek shadow -- pakai
+// GState biar transparan (opacity rendah), jadi ngena tapi tetep halus,
+// bukan bayangan item pekat.
+function drawAvatarShadow(doc, cx, cy, r) {
+  doc.saveGraphicsState();
+  if (doc.GState) {
+    doc.setGState(new doc.GState({ opacity: 0.22 }));
+  }
+  doc.setFillColor(55, 65, 81);
+  doc.circle(cx + 0.5, cy + 1, r + 0.5, "F");
+  doc.restoreGraphicsState();
+}
+
+// Tempel foto profil dibentuk bulat sempurna (clip circle) -- jsPDF gak
+// punya "border-radius" buat gambar, jadi pathnya digambar dulu tanpa
+// fill/stroke (null) trus di-clip, baru gambarnya ditempel di dalam.
+function drawCircularPhoto(doc, dataUrl, cx, cy, r) {
+  doc.saveGraphicsState();
+  doc.circle(cx, cy, r, null);
+  doc.clip();
+  doc.discardPath();
+  doc.addImage(
+    dataUrl,
+    imageFormatFromDataUrl(dataUrl),
+    cx - r,
+    cy - r,
+    r * 2,
+    r * 2,
+    undefined,
+    "FAST"
+  );
+  doc.restoreGraphicsState();
+}
+
+// Gambar 1 sel "Nama Anggota" gabungan: foto bulat (kasih shadow tipis)
+// nempel deket ke nama, bukan kolom kepisah -- foto asli kalau ada &
+// berhasil dimuat, kalau nggak fallback ke lingkaran inisial abu-abu.
+function drawMemberCell(doc, cell, photoDataUrl, fullName) {
+  const r = 9.5;
+  const cx = cell.x + 6 + r;
   const cy = cell.y + cell.height / 2;
+
+  drawAvatarShadow(doc, cx, cy, r);
 
   if (photoDataUrl) {
     try {
-      doc.addImage(
-        photoDataUrl,
-        imageFormatFromDataUrl(photoDataUrl),
-        cx - size / 2,
-        cy - size / 2,
-        size,
-        size,
-        undefined,
-        "FAST"
-      );
-      return;
+      drawCircularPhoto(doc, photoDataUrl, cx, cy, r);
     } catch {
-      // Kalau gagal ditempel (format aneh, dll), lanjut ke fallback di bawah.
+      photoDataUrl = null;
     }
   }
 
-  doc.setDrawColor(170, 170, 170);
-  doc.setFillColor(245, 245, 245);
-  doc.circle(cx, cy, size / 2, "FD");
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(7.5);
-  doc.setTextColor(110, 110, 110);
-  doc.text(initials(fullName) || "-", cx, cy + 2.6, { align: "center" });
-  doc.setTextColor(0, 0, 0);
+  if (!photoDataUrl) {
+    doc.setDrawColor(200, 200, 205);
+    doc.setFillColor(238, 240, 244);
+    doc.circle(cx, cy, r, "FD");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 105, 115);
+    doc.text(initials(fullName) || "-", cx, cy + 2.6, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+  }
+
+  // Ring tipis di sekeliling avatar biar ada batas jelas dari background.
+  doc.setDrawColor(215, 218, 224);
+  doc.circle(cx, cy, r, "S");
+
+  // Nama ditaro deket banget ke foto (bukan kolom terpisah).
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(30, 30, 30);
+  doc.text(fullName || "-", cx + r + 8, cy + 3.2);
 }
 
 function formatDateTimeFull(iso) {
@@ -182,25 +219,27 @@ export default function AttendanceRecapModal({ data, onClose }) {
 
       y += 26;
 
-      // ---- Tabel: sengaja hitam-putih/abu-abu, gak pakai warna-warni,
-      // biar simpel & rapi dicetak. ----
+      // ---- Tabel: header biru solid + grid tipis, mengikuti gaya tabel
+      // referensi (header berwarna, badan putih bersih). ----
       const baseTableOptions = {
         theme: "grid",
         margin: { left: marginX, right: marginX },
         styles: {
           fontSize: 9.5,
           cellPadding: 6,
-          minCellHeight: 30,
-          lineColor: [215, 215, 215],
+          minCellHeight: 32,
+          lineColor: [222, 226, 232],
           lineWidth: 0.6,
           textColor: [30, 30, 30],
           valign: "middle",
+          fillColor: [255, 255, 255],
         },
         headStyles: {
-          fillColor: [240, 240, 240],
-          textColor: [30, 30, 30],
+          fillColor: [37, 92, 219],
+          textColor: [255, 255, 255],
           fontStyle: "bold",
-          lineColor: [190, 190, 190],
+          lineColor: [37, 92, 219],
+          halign: "left",
         },
       };
 
@@ -211,21 +250,21 @@ export default function AttendanceRecapModal({ data, onClose }) {
       autoTable(doc, {
         ...baseTableOptions,
         startY: y + 8,
-        head: [["Foto", "No", "Nama Anggota", "Jam Absen"]],
+        head: [["No", "Nama Anggota", "Jam Absen"]],
         body:
           hadir.length > 0
-            ? hadir.map((m, i) => ["", String(i + 1), m.fullName, formatTime(m.checkedInAt)])
-            : [["", "-", "Belum ada yang absen di sesi ini.", "-"]],
+            ? hadir.map((m, i) => [String(i + 1), "", formatTime(m.checkedInAt)])
+            : [["-", "Belum ada yang absen di sesi ini.", "-"]],
         columnStyles: {
-          0: { cellWidth: 40, halign: "center" },
-          1: { cellWidth: 32, halign: "center" },
-          3: { cellWidth: 85, halign: "center" },
+          0: { cellWidth: 32, halign: "center" },
+          1: { cellPadding: { top: 6, bottom: 6, left: 8, right: 6 } },
+          2: { cellWidth: 85, halign: "center" },
         },
         didDrawCell: (cellData) => {
-          if (cellData.section === "body" && cellData.column.index === 0 && hadir.length > 0) {
+          if (cellData.section === "body" && cellData.column.index === 1 && hadir.length > 0) {
             const member = hadir[cellData.row.index];
             const photo = hadirPhotos[cellData.row.index];
-            if (member) drawAvatarCell(doc, cellData.cell, photo, member.fullName);
+            if (member) drawMemberCell(doc, cellData.cell, photo, member.fullName);
           }
         },
       });
@@ -243,24 +282,24 @@ export default function AttendanceRecapModal({ data, onClose }) {
       autoTable(doc, {
         ...baseTableOptions,
         startY: nextY + 8,
-        head: [["Foto", "No", "Nama Anggota"]],
+        head: [["No", "Nama Anggota"]],
         body:
           tidakHadir.length > 0
-            ? tidakHadir.map((m, i) => ["", String(i + 1), m.fullName])
-            : [["", "-", "Semua anggota divisi ini sudah absen."]],
+            ? tidakHadir.map((m, i) => [String(i + 1), ""])
+            : [["-", "Semua anggota divisi ini sudah absen."]],
         columnStyles: {
-          0: { cellWidth: 40, halign: "center" },
-          1: { cellWidth: 32, halign: "center" },
+          0: { cellWidth: 32, halign: "center" },
+          1: { cellPadding: { top: 6, bottom: 6, left: 8, right: 6 } },
         },
         didDrawCell: (cellData) => {
           if (
             cellData.section === "body" &&
-            cellData.column.index === 0 &&
+            cellData.column.index === 1 &&
             tidakHadir.length > 0
           ) {
             const member = tidakHadir[cellData.row.index];
             const photo = tidakHadirPhotos[cellData.row.index];
-            if (member) drawAvatarCell(doc, cellData.cell, photo, member.fullName);
+            if (member) drawMemberCell(doc, cellData.cell, photo, member.fullName);
           }
         },
       });
