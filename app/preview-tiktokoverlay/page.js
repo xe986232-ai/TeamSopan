@@ -1,5 +1,6 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
 import { TiktokPreviewScene } from "@/components/ui/tiktok-preview-scene";
+import { RemotionDemo } from "@/components/ui/remotion-demo";
 
 export const metadata = {
   title: "Preview TikTok Overlay",
@@ -20,6 +21,12 @@ export default function PreviewTiktokOverlayPage() {
 
       <section className="relative flex items-center justify-center px-6 py-28 sm:py-32">
         <TiktokPreviewScene />
+      </section>
+
+      {/* ---- Tes animasi (Remotion Player) -- lihat components/ui/remotion-demo.jsx.
+                 Murni jalan di browser, bukan render server. ---- */}
+      <section className="relative flex items-center justify-center border-t border-ink/10 bg-base-elevated/40 px-6 py-20">
+        <RemotionDemo />
       </section>
     </main>
   );
