@@ -45,7 +45,7 @@ export default function AttendanceRecapModal({ data, onClose }) {
   const handleDownloadPdf = async () => {
     setIsExporting(true);
     try {
-      const [{ default: jsPDF }] = await Promise.all([
+      const [{ default: jsPDF }, { default: autoTable }] = await Promise.all([
         import("jspdf"),
         import("jspdf-autotable"),
       ]);
@@ -77,41 +77,70 @@ export default function AttendanceRecapModal({ data, onClose }) {
         y
       );
 
-      y += 20;
+      y += 24;
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
+      doc.setTextColor(16, 122, 71);
       doc.text(`Hadir (${hadir.length})`, marginX, y);
+      doc.setTextColor(0, 0, 0);
 
-      autoTableSafe(doc, {
+      autoTable(doc, {
         startY: y + 8,
         margin: { left: marginX, right: marginX },
-        head: [["No", "Nama", "Jam Absen"]],
-        body: hadir.map((m, i) => [
-          String(i + 1),
-          m.fullName,
-          formatTime(m.checkedInAt),
-        ]),
-        headStyles: { fillColor: [22, 119, 245] },
-        styles: { fontSize: 10 },
+        theme: "grid",
+        head: [["No", "Nama Anggota", "Jam Absen"]],
+        body:
+          hadir.length > 0
+            ? hadir.map((m, i) => [
+                String(i + 1),
+                m.fullName,
+                formatTime(m.checkedInAt),
+              ])
+            : [["-", "Belum ada yang absen di sesi ini.", "-"]],
+        headStyles: {
+          fillColor: [16, 122, 71],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: { fillColor: [240, 253, 244] },
+        columnStyles: {
+          0: { cellWidth: 36, halign: "center" },
+          2: { cellWidth: 90, halign: "center" },
+        },
+        styles: { fontSize: 10, cellPadding: 6, lineColor: [220, 220, 220] },
       });
 
-      let nextY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 26 : y + 40;
-      if (nextY > 760) {
+      let nextY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 28 : y + 40;
+      if (nextY > 720) {
         doc.addPage();
         nextY = 50;
       }
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
+      doc.setTextColor(190, 30, 45);
       doc.text(`Tidak Hadir (${tidakHadir.length})`, marginX, nextY);
+      doc.setTextColor(0, 0, 0);
 
-      autoTableSafe(doc, {
+      autoTable(doc, {
         startY: nextY + 8,
         margin: { left: marginX, right: marginX },
-        head: [["No", "Nama"]],
-        body: tidakHadir.map((m, i) => [String(i + 1), m.fullName]),
-        headStyles: { fillColor: [239, 68, 68] },
-        styles: { fontSize: 10 },
+        theme: "grid",
+        head: [["No", "Nama Anggota"]],
+        body:
+          tidakHadir.length > 0
+            ? tidakHadir.map((m, i) => [String(i + 1), m.fullName])
+            : [["-", "Semua anggota divisi ini sudah absen."]],
+        headStyles: {
+          fillColor: [190, 30, 45],
+          textColor: [255, 255, 255],
+          fontStyle: "bold",
+        },
+        alternateRowStyles: { fillColor: [254, 242, 242] },
+        columnStyles: {
+          0: { cellWidth: 36, halign: "center" },
+        },
+        styles: { fontSize: 10, cellPadding: 6, lineColor: [220, 220, 220] },
       });
 
       const dateSlug = new Date(session.starts_at)
@@ -301,13 +330,4 @@ export default function AttendanceRecapModal({ data, onClose }) {
       </motion.div>
     </div>
   );
-}
-
-// jspdf-autotable nempel diri ke prototype jsPDF pas di-import (side
-// effect), tapi di beberapa versi expose-nya lewat `doc.autoTable(...)`.
-// Wrapper kecil ini biar pemanggilnya gak perlu peduli detail itu.
-function autoTableSafe(doc, options) {
-  if (typeof doc.autoTable === "function") {
-    doc.autoTable(options);
-  }
 }
