@@ -68,8 +68,12 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
           <Cast size={16} className="mt-0.5 shrink-0 text-white/70" />
         </div>
 
-        {/* ---- progress bar ---- */}
-        <div className="relative mt-3 flex h-3 items-center">
+        {/* ---- progress bar ----
+            data-export-progress-row: dipakai oleh lib/export-stage-video.js
+            buat tau di koordinat mana progress bar ini harus digambar ulang
+            (baris ini disembunyikan pas di-screenshot statis, terus digambar
+            manual tiap frame video biar keliatan jalan beneran) */}
+        <div data-export-progress-row className="relative mt-3 flex h-3 items-center">
           <input
             type="range"
             min={0}
@@ -84,7 +88,10 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
             style={{ "--pct": `${seekPct}%` }}
           />
         </div>
-        <div className="mt-0.5 flex items-center justify-between text-[10.5px] tabular-nums text-white/60">
+        {/* data-export-time-row: sama kayak progress bar di atas -- teks
+            waktu ini disembunyikan pas screenshot statis, digambar ulang
+            manual tiap frame video mengikuti audio.currentTime asli */}
+        <div data-export-time-row className="mt-0.5 flex items-center justify-between text-[10.5px] tabular-nums text-white/60">
           <span>{formatTime(currentTime)}</span>
           <span>{formatRemaining(remaining)}</span>
         </div>

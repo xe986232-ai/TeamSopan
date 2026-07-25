@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import html2canvas from "html2canvas";
-import { Download, Loader2, FileCode2 } from "lucide-react";
+import { Download, Loader2, FileCode2, Video } from "lucide-react";
+import { exportStageAsVideo } from "@/lib/export-stage-video";
 import { Iphone15Pro } from "@/components/ui/iphone-15-pro";
 import { TiktokOverlay } from "@/components/ui/tiktok-overlay";
 import { MusicPlayerCard } from "@/components/ui/music-player-card";
@@ -50,6 +51,8 @@ export function TiktokPreviewScene() {
   const [bgBlur, setBgBlur] = React.useState(64);
   const [isExporting, setIsExporting] = React.useState(false);
   const [isExportingXml, setIsExportingXml] = React.useState(false);
+  const [isExportingVideo, setIsExportingVideo] = React.useState(false);
+  const [videoExportProgress, setVideoExportProgress] = React.useState(0); // 0-100
 
   // ---- metadata buat generate project Alight Motion (.xml) ----
   const [trackTitle, setTrackTitle] = React.useState("");
@@ -251,6 +254,46 @@ export function TiktokPreviewScene() {
     }
   }
 
+  // ekspor VIDEO (bukan cuma gambar diam) -- panggung yang sama dipakai
+  // ekspor PNG (`stageRef`, background+card, TANPA overlay chrome TikTok)
+  // direkam real-time selama lagu diputar penuh, progress bar & waktu ikut
+  // jalan beneran. Lihat lib/export-stage-video.js buat detail caranya.
+  async function handleExportVideo() {
+    if (!stageRef.current || isExportingVideo) return;
+    if (!audioRef.current?.src) {
+      alert("Tambahkan & putar lagu terlebih dahulu di panel Daftar Putar sebelum ekspor video.");
+      return;
+    }
+
+    setIsExportingVideo(true);
+    setVideoExportProgress(0);
+    try {
+      const { blob, mimeType } = await exportStageAsVideo({
+        stageEl: stageRef.current,
+        audioEl: audioRef.current,
+        coverUrl: current?.coverUrl || null,
+        bgBlurPx: bgBlur,
+        onProgress: ({ currentTime, duration }) => {
+          setVideoExportProgress(duration ? Math.round((currentTime / duration) * 100) : 0);
+        },
+      });
+
+      const ext = mimeType.includes("mp4") ? "mp4" : "webm";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = `sopan-tiktok-overlay-${Date.now()}.${ext}`;
+      link.href = url;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Gagal mengekspor video:", err);
+      alert(`Gagal mengekspor video: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
+    } finally {
+      setIsExportingVideo(false);
+      setVideoExportProgress(0);
+    }
+  }
+
   return (
     <div className="flex flex-col items-center gap-8">
       <Iphone15Pro className="h-auto w-[240px] drop-shadow-2xl sm:w-[280px]">
@@ -338,7 +381,23 @@ export function TiktokPreviewScene() {
           {isExportingXml ? <Loader2 size={16} className="animate-spin" /> : <FileCode2 size={16} />}
           {isExportingXml ? "Membuat project..." : "Generate Project (.xml)"}
         </button>
+
+        <button
+          type="button"
+          onClick={handleExportVideo}
+          disabled={isExportingVideo}
+          className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-base-elevated px-5 py-2.5 text-sm font-semibold text-ink shadow-lg shadow-black/5 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExportingVideo ? <Loader2 size={16} className="animate-spin" /> : <Video size={16} />}
+          {isExportingVideo ? `Merekam... ${videoExportProgress}%` : "Ekspor Video"}
+        </button>
       </div>
+
+      {isExportingVideo && (
+        <p className="max-w-[280px] text-center text-[11px] leading-relaxed text-ink/50">
+          Video direkam real-time sepanjang durasi lagu -- jangan tutup/pindah tab sampai selesai.
+        </p>
+      )}
 
       <p className="max-w-[280px] text-center text-[11px] leading-relaxed text-ink/50">
         Setelah file .xml diimpor ke Alight Motion, pilih ulang 2 foto (background &amp; sampul album) dari galeri --
