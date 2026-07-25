@@ -6,21 +6,6 @@
 // bisa nampil interaktif persis di layar mockup-nya. `src` (gambar) dan
 // `videoSrc` (video) dari versi asli tetap didukung kalau nggak pakai
 // children.
-// Area layar dipaksa rasio 9:16 (bukan rasio asli iPhone ~9:19.5) supaya
-// konten yang dirender di dalamnya (mis. NowPlayingScene) selalu tampil
-// dalam frame 9:16. Lebar screen tetap sama dengan punya frame aslinya
-// (389.5), tingginya dihitung ulang dari rasio 9:16, lalu screen-nya
-// dipusatkan (centered) secara vertikal di dalam area screen bezel yang
-// asli -- jadi bezel/body HP-nya sendiri TIDAK berubah bentuk, cuma area
-// layarnya yang lebih pendek & pas 9:16.
-const SCREEN_X = 21.25;
-const SCREEN_W = 389.5;
-const SCREEN_H = (SCREEN_W * 16) / 9; // ~692.44
-const SCREEN_Y_ORIGINAL = 19.25;
-const SCREEN_H_ORIGINAL = 843.5;
-const SCREEN_Y = SCREEN_Y_ORIGINAL + (SCREEN_H_ORIGINAL - SCREEN_H) / 2; // ~94.78
-const SCREEN_RADIUS = 55.75;
-
 export function Iphone15Pro({ width = 433, height = 882, src, videoSrc, children, ...props }) {
   return (
     <svg
@@ -67,7 +52,7 @@ export function Iphone15Pro({ width = 433, height = 882, src, videoSrc, children
 
       {/* konten layar -- prioritas: children (live React) > videoSrc > src */}
       {children ? (
-        <foreignObject x={SCREEN_X} y={SCREEN_Y} width={SCREEN_W} height={SCREEN_H} clipPath="url(#roundedCorners)">
+        <foreignObject x="21.25" y="19.25" width="389.5" height="843.5" clipPath="url(#roundedCorners)">
           <div
             xmlns="http://www.w3.org/1999/xhtml"
             className="h-full w-full overflow-hidden rounded-[55.75px]"
@@ -80,16 +65,16 @@ export function Iphone15Pro({ width = 433, height = 882, src, videoSrc, children
           {src && (
             <image
               href={src}
-              x={SCREEN_X}
-              y={SCREEN_Y}
-              width={SCREEN_W}
-              height={SCREEN_H}
+              x="21.25"
+              y="19.25"
+              width="389.5"
+              height="843.5"
               preserveAspectRatio="xMidYMid slice"
               clipPath="url(#roundedCorners)"
             />
           )}
           {videoSrc && (
-            <foreignObject x={SCREEN_X} y={SCREEN_Y} width={SCREEN_W} height={SCREEN_H}>
+            <foreignObject x="21.25" y="19.25" width="389.5" height="843.5">
               <video
                 className="size-full overflow-hidden rounded-[55.75px] object-cover"
                 src={videoSrc}
@@ -117,7 +102,7 @@ export function Iphone15Pro({ width = 433, height = 882, src, videoSrc, children
       />
       <defs>
         <clipPath id="roundedCorners">
-          <rect x={SCREEN_X} y={SCREEN_Y} width={SCREEN_W} height={SCREEN_H} rx={SCREEN_RADIUS} ry={SCREEN_RADIUS} />
+          <rect x="21.25" y="19.25" width="389.5" height="843.5" rx="55.75" ry="55.75" />
         </clipPath>
       </defs>
     </svg>

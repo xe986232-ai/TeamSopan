@@ -40,7 +40,7 @@ export function MusicPlayerCard({ controller, className }) {
 
   return (
     <div className={cn("relative w-full max-w-[230px]", className)}>
-      <div className="rounded-[1.75rem] bg-gradient-to-b from-white/[0.12] via-black/85 via-30% to-black/90 backdrop-blur-xl p-3.5 shadow-2xl shadow-black/50 text-white">
+      <div className="rounded-[1.75rem] bg-black/85 backdrop-blur-xl p-3.5 shadow-2xl shadow-black/50 text-white">
         {/* ---- cover art ---- */}
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.15rem] bg-white/5">
           {cover ? (
