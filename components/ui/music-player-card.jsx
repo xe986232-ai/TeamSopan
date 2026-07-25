@@ -30,7 +30,7 @@ function formatRemaining(seconds) {
   return `-${formatTime(seconds)}`;
 }
 
-export function MusicPlayerCard({ controller, className }) {
+export function MusicPlayerCard({ controller, className, bgOpacity = 85 }) {
   const { current, isPlaying, currentTime, remaining, seekPct, volume, setVolume, togglePlay, skip, handleSeekChange, setSeeking } =
     controller;
 
@@ -40,7 +40,10 @@ export function MusicPlayerCard({ controller, className }) {
 
   return (
     <div className={cn("relative w-full max-w-[230px]", className)}>
-      <div className="rounded-[1.75rem] bg-black/85 backdrop-blur-xl p-3.5 shadow-2xl shadow-black/50 text-white">
+      <div
+        className="rounded-[1.75rem] backdrop-blur-xl p-3.5 shadow-2xl shadow-black/50 text-white"
+        style={{ backgroundColor: `rgba(0, 0, 0, ${bgOpacity / 100})` }}
+      >
         {/* ---- cover art ---- */}
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.15rem] bg-white/5">
           {cover ? (
