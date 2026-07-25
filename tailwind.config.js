@@ -74,12 +74,17 @@ module.exports = {
           "0%": { "background-position": "0%" },
           "100%": { "background-position": "200%" },
         },
+        "swipe-button-text": {
+          "0%": { backgroundPosition: "0 0" },
+          "100%": { backgroundPosition: "var(--swipe-button-text-width) 0" },
+        },
       },
       animation: {
         "aurora": "aurora 60s linear infinite",
         "scroll": "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",
         "rainbow": "rainbow var(--speed, 2s) infinite linear",
+        "swipe-button-text": "swipe-button-text 1.5s cubic-bezier(.4,0,.2,1) infinite",
       },
     },
   },

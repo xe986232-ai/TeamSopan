@@ -3,8 +3,10 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Users, Sparkles, Clock } from "lucide-react";
+import { Check, X, Users, Clock } from "lucide-react";
 import { Button } from "./ui/button";
+import { SwipeButton } from "./ui/swipe-button";
+import { cn } from "@/lib/utils";
 import { ToastProvider, useToast } from "./ui/toast";
 import { formatCountdown, timeAgoLabel, toLocalWallClock } from "@/lib/absensi";
 import { checkInToSession } from "@/app/absensi/[roomId]/actions";
@@ -320,27 +322,20 @@ function AttendanceRoomInner({
                   transition={{ duration: 0.3 }}
                   className="w-full flex flex-col items-center gap-5"
                 >
-                  <div className="relative">
-                    <motion.div
-                      animate={status === "aktif" ? { scale: [1, 1.03, 1] } : {}}
-                      transition={{ duration: 3.4, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <button
-                        type="button"
-                        onClick={handleAbsen}
-                        disabled={!canCheckIn}
-                        className="h-32 w-32 rounded-full flex flex-col items-center justify-center gap-1 text-white font-display font-bold shadow-lg transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-                        style={{
-                          background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-                          boxShadow: `0 10px 32px -10px ${division.accentTo}70`,
-                        }}
-                      >
-                        <Sparkles size={22} />
-                        <span className="text-sm">
-                          {isSubmitting ? "..." : "Absen"}
-                        </span>
-                      </button>
-                    </motion.div>
+                  <div
+                    className={cn(
+                      "relative",
+                      !canCheckIn && "pointer-events-none opacity-50"
+                    )}
+                  >
+                    <SwipeButton
+                      onSwipeComplete={handleAbsen}
+                      text={isSubmitting ? "Memproses..." : "Geser buat Absen"}
+                      className="w-[280px]"
+                      style={{
+                        boxShadow: `0 10px 32px -10px ${division.accentTo}70`,
+                      }}
+                    />
                   </div>
 
                   {status === "akan-datang" && (
