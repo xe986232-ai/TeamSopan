@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 import { Download, Loader2 } from "lucide-react";
 import { Iphone15Pro } from "@/components/ui/iphone-15-pro";
 import { TiktokOverlay } from "@/components/ui/tiktok-overlay";
@@ -31,8 +31,8 @@ import { useLocalPlaylist } from "@/hooks/use-local-playlist";
 //      `stageRef` (background + card), overlay TikTok-nya otomatis nggak
 //      ikut ke-capture.
 //
-// Tombol "Ekspor Gambar" pakai html-to-image buat nge-render `stageRef`
-// jadi PNG ~1080x1920 (rasio 9:16 asli) lalu langsung didownload.
+// Tombol "Ekspor Gambar" pakai html2canvas buat nge-render `stageRef` jadi
+// PNG ~1080x1920 (rasio 9:16 asli) lalu langsung didownload.
 //
 // PlaylistPanel (upload lagu, ganti sampul) & CardStylePanel (opacity card +
 // blur background) tetap di LUAR mockup HP -- nyambung ke instance
@@ -53,38 +53,40 @@ export function TiktokPreviewScene() {
     if (!stageRef.current || isExporting) return;
     setIsExporting(true);
 
-    // html-to-image secara default coba fetch & embed semua @font-face (termasuk
-    // font Google Fonts yang di-self-host lewat next/font) supaya render-nya
-    // presisi. Di sebagian HP/koneksi, request itu bisa gagal (network/DNS/
-    // adblock) dan bikin SELURUH proses export ikut gagal. `skipFonts: true`
-    // + `fontEmbedCSS: ""` mematikan langkah itu -- teks tetap ke-render pakai
-    // font fallback browser, cukup buat kebutuhan ekspor gambar ini.
-    const baseOptions = {
-      cacheBust: true,
-      backgroundColor: "#000000",
-      skipFonts: true,
-      fontEmbedCSS: "",
-    };
-
     const node = stageRef.current;
     const targetWidth = 1080; // ekspor di resolusi tinggi, rasio 9:16 asli
 
     try {
-      let dataUrl;
+      let canvas;
       try {
         // percobaan 1: resolusi tinggi (~1080px lebar)
-        const pixelRatio = targetWidth / node.offsetWidth;
-        dataUrl = await toPng(node, { ...baseOptions, pixelRatio });
+        const scale = targetWidth / node.offsetWidth;
+        canvas = await html2canvas(node, {
+          backgroundColor: "#000000",
+          scale,
+          useCORS: true,
+          logging: false,
+        });
       } catch (firstErr) {
         console.warn("Ekspor resolusi tinggi gagal, coba ulang di resolusi standar:", firstErr);
-        // percobaan 2 (fallback): resolusi natural device, opsi paling minim
-        dataUrl = await toPng(node, { ...baseOptions, pixelRatio: window.devicePixelRatio || 1 });
+        // percobaan 2 (fallback): resolusi natural device
+        canvas = await html2canvas(node, {
+          backgroundColor: "#000000",
+          scale: window.devicePixelRatio || 1,
+          useCORS: true,
+          logging: false,
+        });
       }
 
+      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("Gagal membuat file gambar dari kanvas.");
+
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.download = `sopan-tiktok-overlay-${Date.now()}.png`;
-      link.href = dataUrl;
+      link.href = url;
       link.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Gagal mengekspor gambar:", err);
       alert(`Gagal mengekspor gambar: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
