@@ -166,6 +166,28 @@ button:focus-visible {
   }
 }
 
+/* Hero title texture-fill: teks "SOPAN TEAM" pakai foto sebagai isi huruf
+   (background-clip: text), gambar diganti bergantian dengan crossfade halus. */
+.hero-texture-text {
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: hero-texture-crossfade 1.1s ease-out;
+}
+
+@keyframes hero-texture-crossfade {
+  from {
+    opacity: 0;
+    filter: blur(6px) saturate(0.6);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0px) saturate(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

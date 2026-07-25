@@ -65,6 +65,91 @@ function BlurText({
   );
 }
 
+// Foto Unsplash yang dipakai sebagai "isi" tekstur huruf SOPAN/TEAM —
+// gambar-gambar ini gantian ditampilkan di dalam bentuk huruf (bukan warna
+// solid), pakai teknik background-clip: text.
+const HERO_TEXTURE_IMAGES = [
+  "https://images.unsplash.com/photo-1618172193622-ae2d025f4032?w=1400&q=80",
+  "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1400&q=80",
+  "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1400&q=80",
+  "https://images.unsplash.com/photo-1636955779321-819753cd1741?w=1400&q=80",
+];
+
+/**
+ * TexturedText — versi "isi huruf pakai foto" dari nama hero (mirip
+ * referensi: teks besar yang di dalamnya ada gambar, bukan warna polos).
+ * Pakai background-clip: text supaya foto ke-crop persis bentuk hurufnya,
+ * lalu foto-nya diganti bergantian tiap beberapa detik dengan crossfade
+ * halus. Reveal pertama tetap nunggu section masuk viewport dulu.
+ */
+function TexturedText({
+  text,
+  images,
+  className = "",
+  style,
+  cycleMs = 3200,
+  offset = 0,
+}) {
+  const [inView, setInView] = useState(false);
+  const [idx, setIdx] = useState(offset % images.length);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
+  useEffect(() => {
+    if (!inView || images.length <= 1) return;
+    const timer = setInterval(() => {
+      setIdx((prev) => (prev + 1) % images.length);
+    }, cycleMs);
+    return () => clearInterval(timer);
+  }, [inView, images, cycleMs]);
+
+  return (
+    <span
+      ref={ref}
+      className={className}
+      style={{
+        ...style,
+        display: "inline-block",
+        opacity: inView ? 1 : 0,
+        transform: inView ? "translateY(0)" : "translateY(-20px)",
+        transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
+      }}
+    >
+      <span
+        key={idx}
+        aria-hidden="true"
+        className="hero-texture-text"
+        style={{
+          backgroundImage: `url(${images[idx]})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        {text}
+      </span>
+      {/* Teks asli disembunyikan visual tapi tetap kebaca screen reader/SEO */}
+      <span className="sr-only">{text}</span>
+    </span>
+  );
+}
+
 /**
  * GlitchAvatar — logo/avatar muncul belakangan (setelah teks nama selesai
  * animasi), pakai efek "glitch masuk": jitter posisi + potongan clip-path
@@ -230,23 +315,19 @@ export default function PortfolioHero({
         <HeroCollageBackground isDark={isDark} />
         <div className="relative text-center">
           <div>
-            <BlurText
+            <TexturedText
               text={nameTop}
-              delay={80}
-              animateBy="letters"
-              direction="top"
-              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase justify-center whitespace-nowrap"
-              style={{ color: accentColor }}
+              images={HERO_TEXTURE_IMAGES}
+              offset={0}
+              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
             />
           </div>
           <div>
-            <BlurText
+            <TexturedText
               text={nameBottom}
-              delay={80}
-              animateBy="letters"
-              direction="top"
-              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase justify-center whitespace-nowrap"
-              style={{ color: accentColor }}
+              images={HERO_TEXTURE_IMAGES}
+              offset={2}
+              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
             />
           </div>
 
