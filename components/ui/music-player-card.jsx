@@ -11,11 +11,20 @@ import { cn } from "@/lib/utils";
 // ngeliatin background ambient yang di-blur di belakangnya -- persis
 // referensi gambar yang dikasih user.
 //
-// Semua state & fungsi (play/pause/seek/volume/dst) DATANG dari luar lewat
-// prop `controller`, yaitu hasil return dari hook `useLocalPlaylist()`.
-// Komponen ini sendiri gak nyimpen state apa pun -- jadi upload lagu/sampul
-// bisa dikontrol dari panel yang letaknya di luar mockup HP, sementara card
-// ini cuma nampilin & ngerespon.
+// PENTING (Remotion migration): komponen ini SENGAJA dibikin "bodoh" / pure
+// -- cuma nerima primitif (angka, string, boolean) & callback lewat props,
+// TIDAK pernah baca DOM (getBoundingClientRect, dst) atau nyimpen state
+// sendiri. Ini SATU-SATUNYA versi MusicPlayerCard yang ada -- dipakai
+// PERSIS SAMA baik oleh:
+//   1. Preview browser (TiktokPreviewScene) -- lewat props `interactive`
+//      terhubung ke instance useLocalPlaylist() beneran (bisa diklik/geser).
+//   2. Komposisi Remotion (remotion/TiktokOverlayComposition.jsx) -- posisi
+//      progress bar & waktu dihitung dari `currentFrame / fps`, bukan dari
+//      audio.currentTime real-time, dan `interactive=false` (statis, gak
+//      ada event handler yang dipasang).
+// Jangan pernah bikin varian lain (mis. MusicPlayerCardExport.jsx) -- kalau
+// ada perubahan tampilan, cukup ubah di sini, otomatis kepakai di preview
+// maupun hasil render video/gambar.
 // ============================================================================
 
 function formatTime(seconds) {
@@ -30,17 +39,33 @@ function formatRemaining(seconds) {
   return `-${formatTime(seconds)}`;
 }
 
-export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrideTitle = "", overrideArtist = "" }) {
-  const { current, isPlaying, currentTime, remaining, seekPct, volume, setVolume, togglePlay, skip, handleSeekChange, setSeeking } =
-    controller;
-
-  const cover = current?.coverUrl || null;
-  // `overrideTitle`/`overrideArtist` datang dari TrackMetaPanel (kolom
-  // "Judul lagu" & "Artist") -- kalau user udah ngetik sesuatu di situ,
-  // preview HP di sini LANGSUNG ikut berubah (live preview), bukan cuma
-  // kepakai pas generate .xml doang.
-  const title = overrideTitle.trim() ? overrideTitle : current ? current.name : "Belum ada lagu";
-  const subtitle = overrideArtist.trim() ? overrideArtist : current ? "File lokal" : "Tambahkan lagu di panel bawah";
+export function MusicPlayerCard({
+  className,
+  // ---- konten ----
+  coverUrl = null,
+  title = "Belum ada lagu",
+  subtitle = "Tambahkan lagu di panel bawah",
+  bgOpacity = 85,
+  // ---- transport state (semuanya angka/boolean polos, bukan objek DOM) ----
+  isPlaying = false,
+  currentTime = 0,
+  duration = 0,
+  seekPct = 0,
+  volume = 70,
+  // ---- interaktivitas: true = preview browser (tombol & slider aktif),
+  //      false = render Remotion (statis, tanpa event handler) ----
+  interactive = true,
+  onTogglePlay,
+  onSkip,
+  onSeekChange,
+  onSetSeeking,
+  onVolumeChange,
+  // ---- tag pembungkus gambar: default <img> biasa (preview browser).
+  //      Remotion mengoper komponen `Img` miliknya sendiri di sini supaya
+  //      frame ditunggu sampai gambar selesai dimuat sebelum di-capture. ----
+  ImgTag = "img",
+}) {
+  const remaining = Math.max((duration || 0) - currentTime, 0);
 
   return (
     <div className={cn("relative w-full max-w-[272px]", className)}>
@@ -50,11 +75,11 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
       >
         {/* ---- cover art ---- */}
         <div className="relative aspect-[10/9] w-full overflow-hidden rounded-[1.15rem] bg-white/5">
-          {cover ? (
-            <img src={cover} alt={`Sampul ${title}`} className="h-full w-full object-cover" draggable={false} />
+          {coverUrl ? (
+            <ImgTag src={coverUrl} alt={`Sampul ${title}`} className="h-full w-full object-cover" draggable={false} />
           ) : (
             <div className="flex h-full w-full items-center justify-center px-4 text-center text-[11px] text-white/30">
-              {current ? "Belum ada sampul" : "Belum ada lagu diputar"}
+              {title ? "Belum ada sampul" : "Belum ada lagu diputar"}
             </div>
           )}
         </div>
@@ -69,28 +94,40 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
         </div>
 
         {/* ---- progress bar ----
-            data-export-progress-row: dipakai oleh lib/export-stage-video.js
-            buat tau di koordinat mana progress bar ini harus digambar ulang
-            (baris ini disembunyikan pas di-screenshot statis, terus digambar
-            manual tiap frame video biar keliatan jalan beneran) */}
+            data-export-progress-row: dulu dipakai lib/export-stage-video.js
+            (html2canvas) buat nemu koordinat progress bar biar bisa digambar
+            ulang manual di atas canvas. Sekarang gak kepakai lagi (renderer
+            Remotion ngerender komponen ini APA ADANYA, gak perlu diakalin),
+            tapi atribut-nya dibiarin nempel siapa tau berguna buat targeting
+            CSS/testing di masa depan. */}
         <div data-export-progress-row className="relative mt-3 flex h-3 items-center">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={0.1}
-            value={seekPct}
-            onChange={handleSeekChange}
-            onPointerDown={() => setSeeking(true)}
-            onPointerUp={() => setSeeking(false)}
-            aria-label="Posisi audio"
-            className="mpc-range w-full"
-            style={{ "--pct": `${seekPct}%` }}
-          />
+          {interactive ? (
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={0.1}
+              value={seekPct}
+              onChange={onSeekChange}
+              onPointerDown={() => onSetSeeking?.(true)}
+              onPointerUp={() => onSetSeeking?.(false)}
+              aria-label="Posisi audio"
+              className="mpc-range w-full"
+              style={{ "--pct": `${seekPct}%` }}
+            />
+          ) : (
+            // versi statis (non-interaktif) buat render Remotion -- visual
+            // identik sama <input type="range"> di atas (track + thumb bulat)
+            // tapi dibangun dari <div> polos, jadi hasilnya konsisten lintas
+            // OS/browser headless (native range widget bisa beda tampilan
+            // antar platform).
+            <div className="mpc-range-static w-full" style={{ "--pct": `${seekPct}%` }}>
+              <div className="mpc-range-static-thumb" />
+            </div>
+          )}
         </div>
-        {/* data-export-time-row: sama kayak progress bar di atas -- teks
-            waktu ini disembunyikan pas screenshot statis, digambar ulang
-            manual tiap frame video mengikuti audio.currentTime asli */}
+        {/* data-export-time-row: keterangan sama kayak di atas -- sisa
+            penanda lama, gak lagi dipakai buat capture manual. */}
         <div data-export-time-row className="mt-0.5 flex items-center justify-between text-[10.5px] tabular-nums text-white/60">
           <span>{formatTime(currentTime)}</span>
           <span>{formatRemaining(remaining)}</span>
@@ -98,13 +135,31 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
 
         {/* ---- transport controls ---- */}
         <div className="mt-3 flex items-center justify-center gap-7">
-          <button type="button" onClick={() => skip(-10)} aria-label="Mundur 10 detik" className="text-white transition-opacity hover:opacity-70">
+          <button
+            type="button"
+            onClick={interactive ? () => onSkip?.(-10) : undefined}
+            aria-label="Mundur 10 detik"
+            tabIndex={interactive ? 0 : -1}
+            className="text-white transition-opacity hover:opacity-70"
+          >
             <SkipBack size={19} fill="currentColor" />
           </button>
-          <button type="button" onClick={togglePlay} aria-label={isPlaying ? "Jeda" : "Putar"} className="text-white transition-opacity hover:opacity-70">
+          <button
+            type="button"
+            onClick={interactive ? onTogglePlay : undefined}
+            aria-label={isPlaying ? "Jeda" : "Putar"}
+            tabIndex={interactive ? 0 : -1}
+            className="text-white transition-opacity hover:opacity-70"
+          >
             {isPlaying ? <Pause size={25} fill="currentColor" /> : <Play size={25} fill="currentColor" />}
           </button>
-          <button type="button" onClick={() => skip(10)} aria-label="Maju 10 detik" className="text-white transition-opacity hover:opacity-70">
+          <button
+            type="button"
+            onClick={interactive ? () => onSkip?.(10) : undefined}
+            aria-label="Maju 10 detik"
+            tabIndex={interactive ? 0 : -1}
+            className="text-white transition-opacity hover:opacity-70"
+          >
             <SkipForward size={19} fill="currentColor" />
           </button>
         </div>
@@ -112,16 +167,22 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
         {/* ---- volume ---- */}
         <div className="mt-3 flex items-center gap-2">
           <Volume1 size={13} className="shrink-0 text-white/60" />
-          <input
-            type="range"
-            min={0}
-            max={100}
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            aria-label="Volume"
-            className="mpc-range w-full"
-            style={{ "--pct": `${volume}%` }}
-          />
+          {interactive ? (
+            <input
+              type="range"
+              min={0}
+              max={100}
+              value={volume}
+              onChange={(e) => onVolumeChange?.(Number(e.target.value))}
+              aria-label="Volume"
+              className="mpc-range w-full"
+              style={{ "--pct": `${volume}%` }}
+            />
+          ) : (
+            <div className="mpc-range-static w-full" style={{ "--pct": `${volume}%` }}>
+              <div className="mpc-range-static-thumb" />
+            </div>
+          )}
           <Volume2 size={15} className="shrink-0 text-white/60" />
         </div>
       </div>
@@ -163,6 +224,33 @@ export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrid
           height: 3px;
           border-radius: 9999px;
           background: transparent;
+        }
+
+        /* padanan visual <input type="range"> di atas, versi non-interaktif
+           (dipakai render Remotion) -- posisi & style thumb HARUS senilai
+           sama kayak .mpc-range di atas biar preview = export. */
+        .mpc-range-static {
+          position: relative;
+          height: 3px;
+          border-radius: 9999px;
+          background: linear-gradient(
+            to right,
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(255, 255, 255, 0.95) var(--pct),
+            rgba(255, 255, 255, 0.25) var(--pct),
+            rgba(255, 255, 255, 0.25) 100%
+          );
+        }
+        .mpc-range-static-thumb {
+          position: absolute;
+          top: 50%;
+          left: var(--pct);
+          width: 12px;
+          height: 12px;
+          border-radius: 9999px;
+          background: #fff;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+          transform: translate(-50%, -50%);
         }
       `}</style>
     </div>

@@ -1,12 +1,10 @@
 "use client";
 
 import * as React from "react";
-import html2canvas from "html2canvas";
 import { Download, Loader2, FileCode2, Video } from "lucide-react";
-import { exportStageAsVideo } from "@/lib/export-stage-video";
 import { Iphone15Pro } from "@/components/ui/iphone-15-pro";
 import { TiktokOverlay } from "@/components/ui/tiktok-overlay";
-import { MusicPlayerCard } from "@/components/ui/music-player-card";
+import { TiktokStage } from "@/components/ui/tiktok-stage";
 import { PlaylistPanel } from "@/components/ui/playlist-panel";
 import { CardStylePanel } from "@/components/ui/card-style-panel";
 import { TrackMetaPanel } from "@/components/ui/track-meta-panel";
@@ -16,27 +14,24 @@ import { generateAlightMotionXml, ALIGHT_MOTION_LAYERS } from "@/lib/alightmotio
 
 // ============================================================================
 // TiktokPreviewScene -- mockup HP + overlay chrome TikTok, dengan
-// MusicPlayerCard sebagai "konten utama" (layer di BAWAH overlay, persis
-// posisi video kalau ini beneran TikTok).
+// `TiktokStage` (background blur + MusicPlayerCard) sebagai "konten utama"
+// (layer di BAWAH overlay, persis posisi video kalau ini beneran TikTok).
 //
-// Layer (dari bawah ke atas):
-//   1. `stageRef` -- panggung rasio 9:16 (persis rasio video TikTok asli).
-//      Dikunci lebarnya penuh selebar layar HP, tinggi mengikuti otomatis
-//      lewat aspect-[9/16] -- karena rasio internal layar HP lebih "kurus"
-//      dari 9:16, hasilnya panggung ini otomatis punya sedikit letterbox
-//      hitam di atas & bawah (mirip video 9:16 di HP yang lebih tinggi).
-//      Di dalam panggung ini ada:
-//        a. background ambient (blur sampul aktif, object-cover, ngisi
-//           penuh panggung 9:16) -- blur-nya dinamis lewat CardStylePanel
-//        b. MusicPlayerCard, diposisikan di tengah panggung
-//   2. TiktokOverlay -- chrome TikTok (status bar, tab, aksi kanan, bottom
-//      nav), transparan di tengah, ditaruh DI LUAR/DI ATAS `stageRef` (bukan
-//      anak dari stageRef) supaya pas tombol ekspor cuma nangkep isi
-//      `stageRef` (background + card), overlay TikTok-nya otomatis nggak
-//      ikut ke-capture.
+// RENDER ENGINE (Remotion): ekspor Gambar & Video TIDAK LAGI screenshot DOM
+// (html2canvas) -- itu sebabnya dulu background blur/backdrop-blur harus
+// di-"bake" manual ke canvas dan progress bar/waktu digambar ulang manual
+// per-frame (lihat riwayat lib/export-stage-video.js, sekarang dihapus).
+// Sekarang tombol ekspor cuma ngirim state editor (judul, artist, opacity,
+// blur, file audio, file sampul) ke /api/render-tiktok-video, yang
+// me-render ULANG komponen <TiktokStage> yang SAMA PERSIS lewat Chromium
+// headless (Remotion) di server -- jadi CSS blur/backdrop-filter otomatis
+// akurat, dan preview di layar = hasil file export, karena keduanya berasal
+// dari komponen React yang sama. Lihat remotion/TiktokOverlayComposition.jsx.
 //
-// Tombol "Ekspor Gambar" pakai html2canvas buat nge-render `stageRef` jadi
-// PNG ~1080x1920 (rasio 9:16 asli) lalu langsung didownload.
+// TiktokOverlay -- chrome TikTok (status bar, tab, aksi kanan, bottom nav),
+// transparan di tengah, ditaruh DI LUAR/DI ATAS <TiktokStage> (bukan anak
+// dari stage) supaya server render cuma ngerender isi stage-nya doang
+// (background + card), TANPA chrome TikTok ikut ke-render.
 //
 // PlaylistPanel (upload lagu, ganti sampul) & CardStylePanel (opacity card +
 // blur background) tetap di LUAR mockup HP -- nyambung ke instance
@@ -45,7 +40,20 @@ import { generateAlightMotionXml, ALIGHT_MOTION_LAYERS } from "@/lib/alightmotio
 // ============================================================================
 export function TiktokPreviewScene() {
   const controller = useLocalPlaylist();
-  const { audioRef, current, duration } = controller;
+  const {
+    audioRef,
+    current,
+    duration,
+    isPlaying,
+    currentTime,
+    seekPct,
+    volume,
+    setVolume,
+    togglePlay,
+    skip,
+    handleSeekChange,
+    setSeeking,
+  } = controller;
 
   const [bgOpacity, setBgOpacity] = React.useState(55);
   const [bgBlur, setBgBlur] = React.useState(64);
@@ -54,7 +62,7 @@ export function TiktokPreviewScene() {
   const [isExportingVideo, setIsExportingVideo] = React.useState(false);
   const [videoExportProgress, setVideoExportProgress] = React.useState(0); // 0-100
 
-  // ---- metadata buat generate project Alight Motion (.xml) ----
+  // ---- metadata buat generate project Alight Motion (.xml) & buat render ----
   const [trackTitle, setTrackTitle] = React.useState("");
   const [trackArtist, setTrackArtist] = React.useState("@artist");
   const [deviceName, setDeviceName] = React.useState("iPhone");
@@ -89,128 +97,61 @@ export function TiktokPreviewScene() {
     });
   }
 
-  const stageRef = React.useRef(null);
+  const displayTitle = trackTitle.trim() ? trackTitle : current ? current.name : "Belum ada lagu";
+  const displaySubtitle = trackArtist.trim() ? trackArtist : current ? "File lokal" : "Tambahkan lagu di panel bawah";
 
-  // html2canvas (kayak hampir semua library screenshot-DOM) TIDAK mendukung
-  // CSS `filter` (termasuk blur/saturate) maupun `backdrop-filter` -- itu
-  // sebabnya hasil ekspor sebelumnya background-nya keliatan tajam/pecah,
-  // beda sama preview yang blur. Solusinya: blur-nya di-"bake" duluan ke
-  // piksel asli gambar lewat Canvas 2D (`ctx.filter`, yang DIDUKUNG penuh
-  // buat operasi canvas biasa) sebelum di-screenshot, lalu hasilnya
-  // dipasang gantiin <img> aslinya lewat `onclone` html2canvas.
-  async function buildBlurredBackgroundDataUrl(coverUrl, blurPx, width, height) {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = () => reject(new Error("Gagal memuat gambar sampul untuk background."));
-      img.src = coverUrl;
-    });
-
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(width));
-    canvas.height = Math.max(1, Math.round(height));
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas 2D tidak didukung di browser ini.");
-
-    // tiru crop object-cover + scale-125 dari CSS aslinya
-    const scale = 1.25;
-    const boxRatio = canvas.width / canvas.height;
-    const imgRatio = img.naturalWidth / img.naturalHeight;
-    let drawW, drawH;
-    if (imgRatio > boxRatio) {
-      drawH = canvas.height * scale;
-      drawW = drawH * imgRatio;
-    } else {
-      drawW = canvas.width * scale;
-      drawH = drawW / imgRatio;
-    }
-    const dx = (canvas.width - drawW) / 2;
-    const dy = (canvas.height - drawH) / 2;
-
-    ctx.filter = `blur(${blurPx}px) saturate(1.5)`;
-    ctx.globalAlpha = 0.9;
-    ctx.drawImage(img, dx, dy, drawW, drawH);
-
-    return canvas.toDataURL("image/png");
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
   }
 
-  async function handleExport() {
-    if (!stageRef.current || isExporting) return;
-    setIsExporting(true);
+  // blob: URL (hasil URL.createObjectURL di useLocalPlaylist) bisa di-fetch
+  // ulang buat dapetin isi File-nya lagi -- dipakai buat ngirim file
+  // audio/sampul asli ke endpoint render server.
+  async function blobUrlToBlob(url) {
+    const res = await fetch(url);
+    return res.blob();
+  }
 
-    const node = stageRef.current;
-    const targetWidth = 1080; // ekspor di resolusi tinggi, rasio 9:16 asli
-
+  async function readErrorMessage(res, fallback) {
     try {
-      const scaleFactor = targetWidth / node.offsetWidth;
-      const exportHeight = node.offsetHeight * scaleFactor;
+      const data = await res.json();
+      return data?.error || fallback;
+    } catch {
+      return fallback;
+    }
+  }
 
-      // blur-nya perlu discale juga -- angka bgBlur (px) itu didefinisikan
-      // relatif ke ukuran mockup HP yang kecil di layar, bukan ke resolusi
-      // ekspor yang jauh lebih besar
-      let bakedBgDataUrl = null;
+  // ekspor GAMBAR (PNG, 1080x1920) -- render server-side via Remotion
+  // (renderStill), bukan html2canvas.
+  async function handleExport() {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const form = new FormData();
       if (current?.coverUrl) {
-        try {
-          bakedBgDataUrl = await buildBlurredBackgroundDataUrl(
-            current.coverUrl,
-            bgBlur * scaleFactor,
-            targetWidth,
-            exportHeight
-          );
-        } catch (bakeErr) {
-          console.warn("Gagal bikin background blur untuk ekspor, lanjut tanpa itu:", bakeErr);
-        }
+        const coverBlob = await blobUrlToBlob(current.coverUrl);
+        form.append("cover", coverBlob, "cover.png");
       }
+      form.append(
+        "meta",
+        JSON.stringify({
+          title: displayTitle,
+          artist: displaySubtitle,
+          bgOpacity,
+          bgBlur,
+        })
+      );
 
-      const onclone = (clonedDoc, clonedNode) => {
-        // panel card pakai backdrop-blur (juga gak didukung html2canvas) --
-        // matikan aja biar gak ke-render transparan/aneh, background rgba
-        // solidnya sendiri tetap kepakai jadi teks tetap kebaca
-        clonedNode.querySelectorAll('[class*="backdrop-blur"]').forEach((el) => {
-          el.style.backdropFilter = "none";
-          el.style.webkitBackdropFilter = "none";
-        });
+      const res = await fetch("/api/render-tiktok-video?mode=image", { method: "POST", body: form });
+      if (!res.ok) throw new Error(await readErrorMessage(res, "Gagal membuat file gambar."));
 
-        // pasang background yang udah di-blur manual, gantiin <img> asli
-        // yang masih tajam (karena CSS filter-nya diabaikan html2canvas)
-        if (bakedBgDataUrl) {
-          const bgImg = clonedNode.querySelector("img[data-export-ambient-bg]");
-          if (bgImg) {
-            bgImg.src = bakedBgDataUrl;
-            bgImg.style.filter = "none";
-            bgImg.style.transform = "none";
-            bgImg.style.objectFit = "cover";
-          }
-        }
-      };
-
-      const captureOptions = {
-        backgroundColor: "#000000",
-        useCORS: true,
-        logging: false,
-        onclone,
-      };
-
-      let canvas;
-      try {
-        // percobaan 1: resolusi tinggi (~1080px lebar)
-        canvas = await html2canvas(node, { ...captureOptions, scale: scaleFactor });
-      } catch (firstErr) {
-        console.warn("Ekspor resolusi tinggi gagal, coba ulang di resolusi standar:", firstErr);
-        // percobaan 2 (fallback): resolusi natural device
-        canvas = await html2canvas(node, { ...captureOptions, scale: window.devicePixelRatio || 1 });
-      }
-
-      const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("Gagal membuat file gambar dari kanvas.");
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `sopan-tiktok-overlay-${Date.now()}.png`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
+      const blob = await res.blob();
+      downloadBlob(blob, `sopan-tiktok-overlay-${Date.now()}.png`);
     } catch (err) {
       console.error("Gagal mengekspor gambar:", err);
       alert(`Gagal mengekspor gambar: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
@@ -240,12 +181,7 @@ export function TiktokPreviewScene() {
       });
 
       const blob = new Blob([xml], { type: "application/xml" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `sopan-tiktok-overlay-${Date.now()}.xml`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
+      downloadBlob(blob, `sopan-tiktok-overlay-${Date.now()}.xml`);
     } catch (err) {
       console.error("Gagal generate project Alight Motion:", err);
       alert(`Gagal generate project: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
@@ -254,41 +190,59 @@ export function TiktokPreviewScene() {
     }
   }
 
-  // ekspor VIDEO (bukan cuma gambar diam) -- panggung yang sama dipakai
-  // ekspor PNG (`stageRef`, background+card, TANPA overlay chrome TikTok)
-  // direkam real-time selama lagu diputar penuh, progress bar & waktu ikut
-  // jalan beneran. Lihat lib/export-stage-video.js buat detail caranya.
+  // ekspor VIDEO (MP4) -- dulu direkam real-time di browser pakai
+  // MediaRecorder + html2canvas (lihat riwayat lib/export-stage-video.js).
+  // Sekarang: kirim file lagu + sampul + metadata style ke server, Remotion
+  // yang me-render <TiktokStage> frame-by-frame (currentFrame/fps, BUKAN
+  // audio.currentTime) lalu encode ke MP4 lewat FFmpeg bawaannya. Progress
+  // di bawah ini estimasi (indikator sibuk), karena render jalan di server,
+  // bukan di timeline lagu di browser -- jadi gak lagi "makan waktu sama
+  // persis kayak durasi lagu" seperti sebelumnya.
   async function handleExportVideo() {
-    if (!stageRef.current || isExportingVideo) return;
-    if (!audioRef.current?.src) {
-      alert("Tambahkan & putar lagu terlebih dahulu di panel Daftar Putar sebelum ekspor video.");
+    if (isExportingVideo) return;
+    if (!current?.url) {
+      alert("Tambahkan lagu terlebih dahulu di panel Daftar Putar sebelum ekspor video.");
       return;
     }
 
     setIsExportingVideo(true);
-    setVideoExportProgress(0);
-    try {
-      const { blob, mimeType } = await exportStageAsVideo({
-        stageEl: stageRef.current,
-        audioEl: audioRef.current,
-        coverUrl: current?.coverUrl || null,
-        bgBlurPx: bgBlur,
-        onProgress: ({ currentTime, duration }) => {
-          setVideoExportProgress(duration ? Math.round((currentTime / duration) * 100) : 0);
-        },
-      });
+    setVideoExportProgress(5);
+    const progressTimer = setInterval(() => {
+      setVideoExportProgress((p) => (p < 90 ? Math.min(90, p + Math.random() * 6) : p));
+    }, 900);
 
-      const ext = mimeType.includes("mp4") ? "mp4" : "webm";
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.download = `sopan-tiktok-overlay-${Date.now()}.${ext}`;
-      link.href = url;
-      link.click();
-      URL.revokeObjectURL(url);
+    try {
+      const form = new FormData();
+      const audioBlob = await blobUrlToBlob(current.url);
+      form.append("audio", audioBlob, current.name || "audio");
+
+      if (current.coverUrl) {
+        const coverBlob = await blobUrlToBlob(current.coverUrl);
+        form.append("cover", coverBlob, "cover.png");
+      }
+
+      form.append(
+        "meta",
+        JSON.stringify({
+          title: displayTitle,
+          artist: displaySubtitle,
+          bgOpacity,
+          bgBlur,
+          durationInSeconds: duration || 0,
+        })
+      );
+
+      const res = await fetch("/api/render-tiktok-video?mode=video", { method: "POST", body: form });
+      if (!res.ok) throw new Error(await readErrorMessage(res, "Gagal merender video."));
+
+      const blob = await res.blob();
+      setVideoExportProgress(100);
+      downloadBlob(blob, `sopan-tiktok-overlay-${Date.now()}.mp4`);
     } catch (err) {
       console.error("Gagal mengekspor video:", err);
       alert(`Gagal mengekspor video: ${err?.message || "penyebab tidak diketahui"}. Coba lagi.`);
     } finally {
+      clearInterval(progressTimer);
       setIsExportingVideo(false);
       setVideoExportProgress(0);
     }
@@ -300,38 +254,28 @@ export function TiktokPreviewScene() {
         <div className="relative h-full w-full overflow-hidden bg-black">
           {/* ---- 1. panggung 9:16 (background + card) -- ini yang di-ekspor ---- */}
           <div className="absolute inset-0 flex items-center justify-center">
-            <div ref={stageRef} className="relative aspect-[9/16] w-full overflow-hidden bg-black">
-              {/* 1a. background ambient: sampul aktif, di-blur, ngisi penuh panggung */}
-              <div className="absolute inset-0">
-                {current?.coverUrl ? (
-                  <img
-                    data-export-ambient-bg
-                    src={current.coverUrl}
-                    alt=""
-                    aria-hidden="true"
-                    className="h-full w-full scale-125 object-cover opacity-90 saturate-150"
-                    style={{ filter: `blur(${bgBlur}px)` }}
-                  />
-                ) : (
-                  <div className="h-full w-full bg-gradient-to-br from-neutral-800 via-neutral-900 to-black" />
-                )}
-                <div className="absolute inset-0 bg-black/35" />
-              </div>
-
-              {/* 1b. konten utama: MusicPlayerCard, di tengah panggung */}
-              <div className="absolute inset-0 flex items-center justify-center px-3">
-                <MusicPlayerCard
-                  controller={controller}
-                  bgOpacity={bgOpacity}
-                  overrideTitle={trackTitle}
-                  overrideArtist={trackArtist}
-                />
-              </div>
-            </div>
+            <TiktokStage
+              coverUrl={current?.coverUrl || null}
+              bgBlur={bgBlur}
+              bgOpacityCard={bgOpacity}
+              title={displayTitle}
+              subtitle={displaySubtitle}
+              isPlaying={isPlaying}
+              currentTime={currentTime}
+              duration={duration}
+              seekPct={seekPct}
+              volume={volume}
+              interactive
+              onTogglePlay={togglePlay}
+              onSkip={skip}
+              onSeekChange={handleSeekChange}
+              onSetSeeking={setSeeking}
+              onVolumeChange={setVolume}
+            />
           </div>
 
           {/* ---- 2. overlay chrome TikTok, nempel di atas semuanya, di LUAR
-                     stageRef supaya nggak ikut ke-ekspor ---- */}
+                     TiktokStage supaya nggak ikut ke-ekspor ---- */}
           <TiktokOverlay likeCount={53} commentCount={5} saveCount={13} shareCount={28} />
         </div>
       </Iphone15Pro>
@@ -369,7 +313,7 @@ export function TiktokPreviewScene() {
           className="inline-flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-base shadow-lg shadow-black/10 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isExporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-          {isExporting ? "Mengekspor..." : "Ekspor Gambar (9:16)"}
+          {isExporting ? "Merender..." : "Ekspor Gambar (9:16)"}
         </button>
 
         <button
@@ -389,13 +333,14 @@ export function TiktokPreviewScene() {
           className="inline-flex items-center gap-2 rounded-full border border-ink/15 bg-base-elevated px-5 py-2.5 text-sm font-semibold text-ink shadow-lg shadow-black/5 transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isExportingVideo ? <Loader2 size={16} className="animate-spin" /> : <Video size={16} />}
-          {isExportingVideo ? `Merekam... ${videoExportProgress}%` : "Ekspor Video"}
+          {isExportingVideo ? `Merender... ${Math.round(videoExportProgress)}%` : "Ekspor Video"}
         </button>
       </div>
 
       {isExportingVideo && (
         <p className="max-w-[280px] text-center text-[11px] leading-relaxed text-ink/50">
-          Video direkam real-time sepanjang durasi lagu -- jangan tutup/pindah tab sampai selesai.
+          Video dirender di server (Remotion) supaya hasilnya sama persis dengan preview -- mohon tunggu, jangan
+          tutup tab.
         </p>
       )}
 
