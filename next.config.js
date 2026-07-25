@@ -30,12 +30,14 @@ const nextConfig = {
         // @remotion/google-fonts/Outfit (dipakai di TiktokOverlayComposition.jsx)
         // cuma required lewat file yang di-copy manual di atas, jadi gak
         // ke-trace otomatis. Paket lengkapnya ~64MB (semua Google Fonts),
-        // makanya cuma file yang benar-benar dipakai (Outfit + dependency
-        // internalnya) yang disertakan, bukan seluruh folder paket.
+        // makanya cuma file yang benar-benar dipakai yang disertakan.
+        // PENTING: pakai varian ESM (dist/esm), bukan CJS -- Remotion
+        // bundle() ini target-nya browser (dijalankan di headless
+        // Chromium), jadi resolusi paket lewat exports field pakai
+        // kondisi "import"/"module", bukan "require". dist/esm/Outfit.mjs
+        // sudah self-contained (base + resolve-font-subsets di-inline).
         "./node_modules/@remotion/google-fonts/package.json",
-        "./node_modules/@remotion/google-fonts/dist/cjs/base.js",
-        "./node_modules/@remotion/google-fonts/dist/cjs/Outfit.js",
-        "./node_modules/@remotion/google-fonts/dist/cjs/resolve-font-subsets.js",
+        "./node_modules/@remotion/google-fonts/dist/esm/Outfit.mjs",
       ],
     },
   },
