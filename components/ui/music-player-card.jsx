@@ -30,13 +30,17 @@ function formatRemaining(seconds) {
   return `-${formatTime(seconds)}`;
 }
 
-export function MusicPlayerCard({ controller, className, bgOpacity = 85 }) {
+export function MusicPlayerCard({ controller, className, bgOpacity = 85, overrideTitle = "", overrideArtist = "" }) {
   const { current, isPlaying, currentTime, remaining, seekPct, volume, setVolume, togglePlay, skip, handleSeekChange, setSeeking } =
     controller;
 
   const cover = current?.coverUrl || null;
-  const title = current ? current.name : "Belum ada lagu";
-  const subtitle = current ? "File lokal" : "Tambahkan lagu di panel bawah";
+  // `overrideTitle`/`overrideArtist` datang dari TrackMetaPanel (kolom
+  // "Judul lagu" & "Artist") -- kalau user udah ngetik sesuatu di situ,
+  // preview HP di sini LANGSUNG ikut berubah (live preview), bukan cuma
+  // kepakai pas generate .xml doang.
+  const title = overrideTitle.trim() ? overrideTitle : current ? current.name : "Belum ada lagu";
+  const subtitle = overrideArtist.trim() ? overrideArtist : current ? "File lokal" : "Tambahkan lagu di panel bawah";
 
   return (
     <div className={cn("relative w-full max-w-[272px]", className)}>

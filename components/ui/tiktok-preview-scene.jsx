@@ -9,8 +9,9 @@ import { MusicPlayerCard } from "@/components/ui/music-player-card";
 import { PlaylistPanel } from "@/components/ui/playlist-panel";
 import { CardStylePanel } from "@/components/ui/card-style-panel";
 import { TrackMetaPanel } from "@/components/ui/track-meta-panel";
+import { LayerPanel } from "@/components/ui/layer-panel";
 import { useLocalPlaylist } from "@/hooks/use-local-playlist";
-import { generateAlightMotionXml } from "@/lib/alightmotion-template";
+import { generateAlightMotionXml, ALIGHT_MOTION_LAYERS } from "@/lib/alightmotion-template";
 
 // ============================================================================
 // TiktokPreviewScene -- mockup HP + overlay chrome TikTok, dengan
@@ -68,6 +69,21 @@ export function TiktokPreviewScene() {
   function handleTrackTitleChange(value) {
     titleTouchedRef.current = true;
     setTrackTitle(value);
+  }
+
+  // ---- layer project Alight Motion yang mau disembunyikan dari .xml ----
+  const [hiddenLayerIds, setHiddenLayerIds] = React.useState(() => new Set());
+
+  function handleToggleLayer(id) {
+    setHiddenLayerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }
 
   const stageRef = React.useRef(null);
@@ -217,6 +233,7 @@ export function TiktokPreviewScene() {
         durationSeconds: duration || 0,
         bgOpacity,
         bgBlur,
+        excludedLayerIds: Array.from(hiddenLayerIds),
       });
 
       const blob = new Blob([xml], { type: "application/xml" });
@@ -260,7 +277,12 @@ export function TiktokPreviewScene() {
 
               {/* 1b. konten utama: MusicPlayerCard, di tengah panggung */}
               <div className="absolute inset-0 flex items-center justify-center px-3">
-                <MusicPlayerCard controller={controller} bgOpacity={bgOpacity} />
+                <MusicPlayerCard
+                  controller={controller}
+                  bgOpacity={bgOpacity}
+                  overrideTitle={trackTitle}
+                  overrideArtist={trackArtist}
+                />
               </div>
             </div>
           </div>
@@ -271,6 +293,31 @@ export function TiktokPreviewScene() {
         </div>
       </Iphone15Pro>
 
+      {/* ---- panel kustomisasi (playlist, tampilan card, info judul/artist,
+                 layer project) -- ditaruh DI ATAS tombol export supaya alur
+                 kerjanya: atur dulu semuanya di sini (langsung kelihatan
+                 hasilnya di mockup HP di atas), baru ekspor di bawah ---- */}
+      <div className="flex w-full max-w-[280px] flex-col gap-4">
+        <PlaylistPanel controller={controller} />
+        <CardStylePanel
+          bgOpacity={bgOpacity}
+          onBgOpacityChange={setBgOpacity}
+          bgBlur={bgBlur}
+          onBgBlurChange={setBgBlur}
+        />
+        <TrackMetaPanel
+          title={trackTitle}
+          onTitleChange={handleTrackTitleChange}
+          artist={trackArtist}
+          onArtistChange={setTrackArtist}
+          device={deviceName}
+          onDeviceChange={setDeviceName}
+        />
+        <LayerPanel layers={ALIGHT_MOTION_LAYERS} hiddenLayerIds={hiddenLayerIds} onToggleLayer={handleToggleLayer} />
+      </div>
+
+      {/* ---- tombol export -- ditaruh PALING BAWAH, setelah semua
+                 pengaturan di atas selesai diisi ---- */}
       <div className="flex flex-wrap items-center justify-center gap-3">
         <button
           type="button"
@@ -297,24 +344,6 @@ export function TiktokPreviewScene() {
         Setelah file .xml diimpor ke Alight Motion, pilih ulang 2 foto (background &amp; sampul album) dari galeri --
         Alight Motion tidak bisa membawa foto secara otomatis, hanya teks &amp; angka.
       </p>
-
-      <div className="flex w-full max-w-[280px] flex-col gap-4">
-        <PlaylistPanel controller={controller} />
-        <CardStylePanel
-          bgOpacity={bgOpacity}
-          onBgOpacityChange={setBgOpacity}
-          bgBlur={bgBlur}
-          onBgBlurChange={setBgBlur}
-        />
-        <TrackMetaPanel
-          title={trackTitle}
-          onTitleChange={handleTrackTitleChange}
-          artist={trackArtist}
-          onArtistChange={setTrackArtist}
-          device={deviceName}
-          onDeviceChange={setDeviceName}
-        />
-      </div>
 
       <audio ref={audioRef} preload="metadata" className="hidden" />
     </div>
