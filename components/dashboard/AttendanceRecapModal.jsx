@@ -14,6 +14,74 @@ function initials(name) {
     .join("");
 }
 
+// Foto profil member disimpan sebagai URL (Supabase Storage) -- jsPDF
+// cuma bisa nempelin gambar dari data URL (base64), jadi tiap foto perlu
+// di-fetch & dikonversi dulu sebelum tabel digambar. Kalau gagal (foto
+// dihapus, offline, dll), balikin null -- nanti fallback ke lingkaran
+// inisial di dalam sel tabel, bukan bikin export gagal total.
+async function loadImageAsDataUrl(url) {
+  if (!url) return null;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result || null);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function imageFormatFromDataUrl(dataUrl) {
+  const match = /^data:image\/(png|jpeg|jpg|webp)/i.exec(dataUrl || "");
+  if (!match) return "JPEG";
+  const ext = match[1].toLowerCase();
+  if (ext === "png") return "PNG";
+  if (ext === "webp") return "WEBP";
+  return "JPEG";
+}
+
+// Gambar 1 sel "Foto" di tabel PDF: foto asli kalau ada & berhasil
+// dimuat, kalau tidak fallback ke lingkaran inisial abu-abu -- desain
+// sengaja hitam-putih/abu-abu (bukan warna-warni) biar nyambung sama
+// tabel yang simpel.
+function drawAvatarCell(doc, cell, photoDataUrl, fullName) {
+  const size = 20;
+  const cx = cell.x + cell.width / 2;
+  const cy = cell.y + cell.height / 2;
+
+  if (photoDataUrl) {
+    try {
+      doc.addImage(
+        photoDataUrl,
+        imageFormatFromDataUrl(photoDataUrl),
+        cx - size / 2,
+        cy - size / 2,
+        size,
+        size,
+        undefined,
+        "FAST"
+      );
+      return;
+    } catch {
+      // Kalau gagal ditempel (format aneh, dll), lanjut ke fallback di bawah.
+    }
+  }
+
+  doc.setDrawColor(170, 170, 170);
+  doc.setFillColor(245, 245, 245);
+  doc.circle(cx, cy, size / 2, "FD");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(7.5);
+  doc.setTextColor(110, 110, 110);
+  doc.text(initials(fullName) || "-", cx, cy + 2.6, { align: "center" });
+  doc.setTextColor(0, 0, 0);
+}
+
 function formatDateTimeFull(iso) {
   return new Date(iso).toLocaleString("id-ID", {
     weekday: "long",
@@ -50,105 +118,155 @@ export default function AttendanceRecapModal({ data, onClose }) {
         import("jspdf-autotable"),
       ]);
 
+      // Muat semua foto profil dulu (paralel) sebelum mulai gambar PDF,
+      // supaya pas tabel di-render fotonya udah siap pakai.
+      const [hadirPhotos, tidakHadirPhotos] = await Promise.all([
+        Promise.all(hadir.map((m) => loadImageAsDataUrl(m.avatarUrl))),
+        Promise.all(tidakHadir.map((m) => loadImageAsDataUrl(m.avatarUrl))),
+      ]);
+
       const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
       const marginX = 40;
-      let y = 50;
+      const centerX = pageWidth / 2;
+      let y = 54;
 
+      // ---- Kepala dokumen: rata tengah, main-mainin ukuran/bold biar
+      // ada hierarki jelas (judul >> sub-judul >> detail sesi). ----
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Rekap Absensi - SOPAN TEAM", marginX, y);
+      doc.setFontSize(19);
+      doc.text("REKAP ABSENSI", centerX, y, { align: "center" });
 
-      y += 22;
+      y += 16;
       doc.setFont("helvetica", "normal");
-      doc.setFontSize(11);
-      doc.text(`Divisi: ${division?.name || session.division}`, marginX, y);
-      y += 16;
-      doc.text(`Tanggal: ${formatDateTimeFull(session.starts_at)}`, marginX, y);
-      y += 16;
-      doc.text(
-        `Jam sesi: ${formatTime(session.starts_at)} - ${formatTime(session.ends_at)}`,
-        marginX,
-        y
-      );
-      y += 16;
-      doc.text(
-        `Total: ${hadir.length} hadir / ${total} anggota (${pct}%)`,
-        marginX,
-        y
-      );
+      doc.setFontSize(9.5);
+      doc.setTextColor(120, 120, 120);
+      doc.text("SOPAN TEAM", centerX, y, { align: "center" });
+      doc.setTextColor(0, 0, 0);
+
+      y += 18;
+      doc.setDrawColor(210, 210, 210);
+      doc.line(centerX - 70, y, centerX + 70, y);
 
       y += 24;
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(16, 122, 71);
+      doc.setFontSize(13);
+      doc.text(`Divisi ${division?.name || session.division}`, centerX, y, {
+        align: "center",
+      });
+
+      y += 17;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.text(formatDateTimeFull(session.starts_at), centerX, y, {
+        align: "center",
+      });
+
+      y += 15;
+      doc.text(
+        `Jam sesi ${formatTime(session.starts_at)} - ${formatTime(session.ends_at)}`,
+        centerX,
+        y,
+        { align: "center" }
+      );
+
+      y += 19;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.text(
+        `${hadir.length} dari ${total} anggota hadir (${pct}%)`,
+        centerX,
+        y,
+        { align: "center" }
+      );
+
+      y += 26;
+
+      // ---- Tabel: sengaja hitam-putih/abu-abu, gak pakai warna-warni,
+      // biar simpel & rapi dicetak. ----
+      const baseTableOptions = {
+        theme: "grid",
+        margin: { left: marginX, right: marginX },
+        styles: {
+          fontSize: 9.5,
+          cellPadding: 6,
+          minCellHeight: 30,
+          lineColor: [215, 215, 215],
+          lineWidth: 0.6,
+          textColor: [30, 30, 30],
+          valign: "middle",
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [30, 30, 30],
+          fontStyle: "bold",
+          lineColor: [190, 190, 190],
+        },
+      };
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
       doc.text(`Hadir (${hadir.length})`, marginX, y);
-      doc.setTextColor(0, 0, 0);
 
       autoTable(doc, {
+        ...baseTableOptions,
         startY: y + 8,
-        margin: { left: marginX, right: marginX },
-        theme: "grid",
-        head: [["No", "Nama Anggota", "Jam Absen"]],
+        head: [["Foto", "No", "Nama Anggota", "Jam Absen"]],
         body:
           hadir.length > 0
-            ? hadir.map((m, i) => [
-                String(i + 1),
-                m.fullName,
-                formatTime(m.checkedInAt),
-              ])
-            : [["-", "Belum ada yang absen di sesi ini.", "-"]],
-        headStyles: {
-          fillColor: [16, 122, 71],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        alternateRowStyles: { fillColor: [240, 253, 244] },
+            ? hadir.map((m, i) => ["", String(i + 1), m.fullName, formatTime(m.checkedInAt)])
+            : [["", "-", "Belum ada yang absen di sesi ini.", "-"]],
         columnStyles: {
-          0: { cellWidth: 36, halign: "center" },
-          2: { cellWidth: 90, halign: "center" },
+          0: { cellWidth: 40, halign: "center" },
+          1: { cellWidth: 32, halign: "center" },
+          3: { cellWidth: 85, halign: "center" },
         },
-        styles: { fontSize: 10, cellPadding: 6, lineColor: [220, 220, 220] },
+        didDrawCell: (cellData) => {
+          if (cellData.section === "body" && cellData.column.index === 0 && hadir.length > 0) {
+            const member = hadir[cellData.row.index];
+            const photo = hadirPhotos[cellData.row.index];
+            if (member) drawAvatarCell(doc, cellData.cell, photo, member.fullName);
+          }
+        },
       });
 
       let nextY = doc.lastAutoTable ? doc.lastAutoTable.finalY + 28 : y + 40;
-      if (nextY > 720) {
+      if (nextY > 700) {
         doc.addPage();
-        nextY = 50;
+        nextY = 54;
       }
 
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.setTextColor(190, 30, 45);
+      doc.setFontSize(11.5);
       doc.text(`Tidak Hadir (${tidakHadir.length})`, marginX, nextY);
-      doc.setTextColor(0, 0, 0);
 
       autoTable(doc, {
+        ...baseTableOptions,
         startY: nextY + 8,
-        margin: { left: marginX, right: marginX },
-        theme: "grid",
-        head: [["No", "Nama Anggota"]],
+        head: [["Foto", "No", "Nama Anggota"]],
         body:
           tidakHadir.length > 0
-            ? tidakHadir.map((m, i) => [String(i + 1), m.fullName])
-            : [["-", "Semua anggota divisi ini sudah absen."]],
-        headStyles: {
-          fillColor: [190, 30, 45],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-        },
-        alternateRowStyles: { fillColor: [254, 242, 242] },
+            ? tidakHadir.map((m, i) => ["", String(i + 1), m.fullName])
+            : [["", "-", "Semua anggota divisi ini sudah absen."]],
         columnStyles: {
-          0: { cellWidth: 36, halign: "center" },
+          0: { cellWidth: 40, halign: "center" },
+          1: { cellWidth: 32, halign: "center" },
         },
-        styles: { fontSize: 10, cellPadding: 6, lineColor: [220, 220, 220] },
+        didDrawCell: (cellData) => {
+          if (
+            cellData.section === "body" &&
+            cellData.column.index === 0 &&
+            tidakHadir.length > 0
+          ) {
+            const member = tidakHadir[cellData.row.index];
+            const photo = tidakHadirPhotos[cellData.row.index];
+            if (member) drawAvatarCell(doc, cellData.cell, photo, member.fullName);
+          }
+        },
       });
 
-      const dateSlug = new Date(session.starts_at)
-        .toISOString()
-        .slice(0, 10);
-      doc.save(
-        `absensi-${session.division}-${dateSlug}.pdf`
-      );
+      const dateSlug = new Date(session.starts_at).toISOString().slice(0, 10);
+      doc.save(`absensi-${session.division}-${dateSlug}.pdf`);
     } finally {
       setIsExporting(false);
     }
