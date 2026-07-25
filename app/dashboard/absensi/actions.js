@@ -4,17 +4,15 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
 
-// PENTING soal timezone: dulu di sini kita hardcode semua jam yang admin
-// isi dianggap WIB (+07:00). Ternyata itu salah -- anggota/admin SOPAN
-// TEAM ada yang di zona WITA (+08:00) atau WIT (+09:00), bukan cuma WIB.
-// Kalau dihardcode WIB, admin yang isi jam di zona WITA/WIT bakal
-// kesimpen 1-2 jam meleset dari yang dia maksud.
-//
-// Fix: konversi tanggal+jam ke ISO/UTC sekarang dilakukan di BROWSER
-// (lihat CreateAttendanceSessionForm.jsx), pakai `new Date(y, m, d, h, i)`
-// yang otomatis baca zona waktu perangkat admin (WIB/WITA/WIT/dll --
-// apa pun locale HP-nya). Server di sini cuma terima ISO string yang
-// sudah pasti benar dan gak perlu nebak-nebak zona waktu lagi.
+// SOPAN TEAM basisnya di Indonesia -- semua jam yang admin isi di form
+// dianggap WIB (Asia/Jakarta, UTC+7). Kalau cuma `new Date(\`${date}T${time}:00\`)`
+// tanpa offset, Node bakal baca string itu pakai timezone SERVER (Vercel
+// default-nya UTC), jadi jam yang diisi admin ketunda ~7 jam pas
+// disimpan. Makanya offset +07:00 di-set eksplisit di sini, gak peduli
+// server-nya jalan di timezone apa.
+function wibDateTime(date, time) {
+  return new Date(`${date}T${time}:00+07:00`);
+}
 
 // Dipanggil dari form "Buat Sesi Absensi Baru" di /dashboard/absensi.
 // Halaman ini sudah dijaga middleware (cuma admin yang bisa akses), jadi
@@ -22,18 +20,19 @@ import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
 // identitas ulang di sini.
 export async function createAttendanceSession({
   division,
-  startsAtISO,
-  endsAtISO,
+  date,
+  startTime,
+  endTime,
 }) {
   if (!division || !DIVISIONS_ABSENSI[division]) {
     return { error: "Divisi tidak dikenali." };
   }
-  if (!startsAtISO || !endsAtISO) {
+  if (!date || !startTime || !endTime) {
     return { error: "Tanggal, jam mulai, dan jam selesai wajib diisi." };
   }
 
-  const startsAt = new Date(startsAtISO);
-  const endsAt = new Date(endsAtISO);
+  const startsAt = wibDateTime(date, startTime);
+  const endsAt = wibDateTime(date, endTime);
   if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
     return { error: "Tanggal/jam tidak valid." };
   }
