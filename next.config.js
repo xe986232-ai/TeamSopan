@@ -18,6 +18,15 @@ const nextConfig = {
       "@remotion/google-fonts",
       "remotion",
     ],
+    // remotion/Root.jsx & remotion/TiktokOverlayComposition.jsx cuma
+    // direferensikan lewat string path (bundle() entryPoint di
+    // lib/remotion-bundle.js), bukan import statis -- jadi Next.js gak
+    // otomatis nyertain mereka ke serverless function bundle. Tanpa ini,
+    // di /var/task cuma ada remotion/index.js, bikin webpack Remotion
+    // gagal resolve "./Root" saat runtime di Vercel.
+    outputFileTracingIncludes: {
+      "/api/render-tiktok-video/route": ["./remotion/**/*"],
+    },
   },
   images: {
     remotePatterns: [
