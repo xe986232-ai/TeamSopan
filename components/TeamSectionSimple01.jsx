@@ -1,13 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Instagram, Music2, Youtube } from "lucide-react";
-
-const socialIconMap = {
-  instagram: Instagram,
-  tiktok: Music2,
-  youtube: Youtube,
-};
+import { SOCIAL_GLYPHS } from "./ui/social-icons";
 
 // Menampilkan daftar anggota tim. Data datang dari props `members` (diisi
 // oleh app/anggota/page.js hasil query ke tabel `members` di Supabase) —
@@ -62,7 +56,7 @@ export const TeamSectionSimple01 = ({ members = [], loadError }) => {
                   {item.social && (
                     <div className="flex items-center gap-3">
                       {Object.entries(item.social).map(([key, url]) => {
-                        const Icon = socialIconMap[key];
+                        const Icon = SOCIAL_GLYPHS[key];
                         if (!Icon || !url) return null;
                         return (
                           <a

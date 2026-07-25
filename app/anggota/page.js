@@ -2,7 +2,7 @@ import { SiteNavbar } from "@/components/ui/site-navbar";
 import Footer from "@/components/Footer";
 import { TeamSectionSimple01 } from "@/components/TeamSectionSimple01";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
-import { divisionLabel } from "@/lib/division";
+import { divisionLabel, divisionShortLabel } from "@/lib/division";
 
 const navItems = [
   { name: "Tentang", link: "/#tentang" },
@@ -41,7 +41,7 @@ export default async function AnggotaPage() {
   const { data, error } = await supabase
     .from("members")
     .select(
-      "id, full_name, division, role, avatar_url, bio, instagram_url, tiktok_url, youtube_url"
+      "id, full_name, division, role, avatar_url, bio, instagram_url, tiktok_url, youtube_url, facebook_url"
     )
     .eq("status", "aktif")
     .order("joined_at", { ascending: true });
@@ -50,7 +50,7 @@ export default async function AnggotaPage() {
     id: m.id,
     name: m.full_name,
     title: m.role || divisionLabel(m.division),
-    division: divisionLabel(m.division),
+    division: divisionShortLabel(m.division),
     avatarUrl:
       m.avatar_url ||
       `https://placehold.co/200x200/B026FF/white?text=${encodeURIComponent(
@@ -60,6 +60,7 @@ export default async function AnggotaPage() {
       instagram: m.instagram_url || null,
       tiktok: m.tiktok_url || null,
       youtube: m.youtube_url || null,
+      facebook: m.facebook_url || null,
     },
   }));
 
