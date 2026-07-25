@@ -509,6 +509,9 @@ export function LocalMusicPlayer({ deviceName = "iPhone", className }) {
           --lmp-text-main: #f5f5f7;
           --lmp-text-dim: #9a9aa2;
           position: relative;
+          width: 100%;
+          max-width: 430px;
+          margin: 0 auto;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -531,7 +534,7 @@ export function LocalMusicPlayer({ deviceName = "iPhone", className }) {
         }
 
         .lmp-phone {
-          width: min(94vw, 430px);
+          width: 100%;
           background: linear-gradient(160deg, var(--lmp-glass-light), var(--lmp-glass-dark) 60%);
           border-radius: 46px;
           padding: 24px;
@@ -767,7 +770,7 @@ export function LocalMusicPlayer({ deviceName = "iPhone", className }) {
         }
 
         .lmp-panel {
-          width: min(94vw, 430px);
+          width: 100%;
           margin-top: 44px;
         }
         .lmp-panel-header {
