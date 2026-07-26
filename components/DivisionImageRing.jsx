@@ -88,14 +88,14 @@ export default function DivisionImageRing() {
   const animationDuration = prefersReducedMotion ? DURATION * 4 : DURATION;
 
   return (
-    <section className="relative bg-base py-16 sm:py-24 overflow-hidden">
+    <section className="relative bg-base py-10 sm:py-14 overflow-hidden">
       <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.7 }}
-          className="mx-auto max-w-2xl text-center mb-12"
+          className="mx-auto max-w-2xl text-center mb-6"
         >
           <p className="font-body font-semibold text-sm tracking-widest text-pink-500 uppercase">
             Member Area
@@ -111,7 +111,7 @@ export default function DivisionImageRing() {
         <div
           className="grid w-full place-items-center overflow-hidden select-none"
           style={{
-            height: "min(105vw, 480px)",
+            height: "clamp(220px, 90vw, 380px)",
             perspective: PERSPECTIVE,
             // Vignette fade di kiri-kanan biar ring blend mulus ke
             // background, bukan keliatan ke-crop tajam.

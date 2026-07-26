@@ -60,8 +60,8 @@ export default function Home() {
       <DivisionsSection />
       <TrendingSoundSection />
       <CreatorTrendingSection />
-      <AdminSection />
       <DivisionImageRing />
+      <AdminSection />
       <ShowcaseSection />
       <TestimonialSection />
       <FaqSection />
