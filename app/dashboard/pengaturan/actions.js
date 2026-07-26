@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { LOGO_STYLES, LOGO_SHAPES } from "@/lib/logo-styles";
+import { HERO_TEXT_EFFECTS } from "@/lib/hero-text-effects";
 
 export async function updateLogoStyle(styleId, shapeId) {
   // Validasi ketat: cuma boleh salah satu key yang memang ada di preset,
@@ -73,6 +74,41 @@ export async function updateAnnouncementBanner({ enabled, text, link }) {
 
   revalidatePath("/dashboard/pengaturan");
   revalidatePath("/");
+
+  return { success: true };
+}
+
+export async function updateHeroTextEffect(effectId) {
+  // Validasi ketat: cuma boleh salah satu key yang memang ada di preset
+  // (lihat lib/hero-text-effects.js), biar nggak ada sembarang string
+  // kesimpen sebagai "hero_text_effect" di DB.
+  if (!effectId || !HERO_TEXT_EFFECTS[effectId]) {
+    return { error: "Effect teks Hero tidak dikenali." };
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert(
+      {
+        id: 1,
+        hero_text_effect: effectId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+  if (error) {
+    return { error: `Gagal simpan: ${error.message}` };
+  }
+
+  // Hero di homepage & /preview-hero ambil hero_text_effect client-side
+  // tiap mount, tapi tetap revalidate biar halaman dashboard & homepage
+  // nggak nyimpan cache lama.
+  revalidatePath("/dashboard/pengaturan");
+  revalidatePath("/");
+  revalidatePath("/preview-hero");
 
   return { success: true };
 }

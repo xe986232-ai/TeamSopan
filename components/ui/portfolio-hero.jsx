@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import { createPublicSupabaseClient } from "@/lib/supabase/client";
+import { DEFAULT_HERO_TEXT_EFFECT } from "@/lib/hero-text-effects";
 
 /**
  * BlurText — animasi reveal per kata/huruf dengan efek blur + fade + slide,
@@ -168,6 +170,132 @@ function TexturedText({
 }
 
 /**
+ * SequentialTexturedText — effect kedua untuk teks nama hero: foto
+ * "berjalan" satu huruf demi satu huruf secara berurutan (bukan semua
+ * huruf gonta-ganti bareng seperti TexturedText). Huruf yang lagi
+ * "dilewati" tampil bertekstur foto, huruf-huruf sebelumnya yang sudah
+ * dilewati berubah jadi putih polos, dan huruf yang belum kelewatan
+ * masih redup/samar. Sampai huruf terakhir, semua sempat putih penuh
+ * sebentar, lalu mengulang dari awal lagi.
+ */
+function SequentialTexturedText({
+  text,
+  images,
+  className = "",
+  style,
+  offset = 0,
+  stepMs = 260,
+  holdMs = 1400,
+}) {
+  const [inView, setInView] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
+  const letters = useMemo(() => text.split(""), [text]);
+
+  useEffect(() => {
+    if (!inView) return;
+    let cancelled = false;
+    let timeoutId;
+    let idx = 0;
+
+    function tick() {
+      if (cancelled) return;
+      setActiveIndex(idx);
+      if (idx < letters.length) {
+        idx += 1;
+        timeoutId = setTimeout(tick, stepMs);
+      } else {
+        // Sudah kelewatan semua huruf (semuanya putih sebentar), tahan
+        // dulu baru ulang dari huruf pertama.
+        timeoutId = setTimeout(() => {
+          idx = 0;
+          tick();
+        }, holdMs);
+      }
+    }
+
+    tick();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [inView, letters.length, stepMs, holdMs]);
+
+  return (
+    <span ref={ref} className={`inline-flex flex-nowrap ${className}`} style={style}>
+      {letters.map((ch, i) => {
+        if (ch === " ") {
+          return (
+            <span key={i} aria-hidden="true" style={{ display: "inline-block", width: "0.35em" }} />
+          );
+        }
+
+        const isPassed = i < activeIndex;
+        const isActive = i === activeIndex;
+        const img = images[(offset + i) % images.length];
+
+        return (
+          <span
+            key={i}
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(-20px)",
+              transition: `opacity 0.5s ease-out ${i * 40}ms, transform 0.5s ease-out ${i * 40}ms`,
+            }}
+          >
+            {isActive ? (
+              <span
+                className="hero-texture-text"
+                style={{
+                  backgroundImage: `url(${img})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                  transition: "filter 0.25s ease",
+                }}
+              >
+                {ch}
+              </span>
+            ) : (
+              <span
+                style={{
+                  color: isPassed ? "#FFFFFF" : "rgba(195, 228, 29, 0.28)",
+                  transition: "color 0.35s ease",
+                }}
+              >
+                {ch}
+              </span>
+            )}
+          </span>
+        );
+      })}
+      {/* Teks asli disembunyikan visual tapi tetap kebaca screen reader/SEO */}
+      <span className="sr-only">{text}</span>
+    </span>
+  );
+}
+
+/**
  * GlitchAvatar — logo/avatar muncul belakangan (setelah teks nama selesai
  * animasi), pakai efek "glitch masuk": jitter posisi + potongan clip-path
  * yang lompat-lompat + sedikit color-split (ghost cyan/magenta), lalu
@@ -317,6 +445,36 @@ export default function PortfolioHero({
 
   const isDark = mounted ? resolvedTheme === "dark" : true;
 
+  // Effect animasi teks nama — diatur admin dari /dashboard/pengaturan,
+  // disimpan di kolom `hero_text_effect` tabel `site_settings`. Default
+  // aman dipakai sambil nunggu data ke-fetch / kalau gagal ambil, jadi
+  // tampilan situs yang sudah live tidak berubah sampai admin sengaja
+  // ganti pilihannya.
+  const [textEffect, setTextEffect] = useState(DEFAULT_HERO_TEXT_EFFECT);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createPublicSupabaseClient();
+
+    supabase
+      .from("site_settings")
+      .select("hero_text_effect")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[PortfolioHero] Gagal ambil hero_text_effect:", error);
+          return;
+        }
+        if (data?.hero_text_effect) setTextEffect(data.hero_text_effect);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <section
       className="relative min-h-[80vh] sm:min-h-[85vh] md:min-h-[90vh] flex flex-col overflow-hidden transition-colors"
@@ -332,20 +490,56 @@ export default function PortfolioHero({
         <HeroCollageBackground isDark={isDark} />
         <div className="relative text-center">
           <div>
-            <TexturedText
-              text={nameTop}
-              images={HERO_TEXTURE_IMAGES}
-              offset={0}
-              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
-            />
+            {textEffect === "sequential" ? (
+              <SequentialTexturedText
+                text={nameTop}
+                images={HERO_TEXTURE_IMAGES}
+                offset={0}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
+            ) : textEffect === "static" ? (
+              <BlurText
+                text={nameTop}
+                delay={80}
+                animateBy="letters"
+                direction="top"
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase justify-center whitespace-nowrap"
+                style={{ color: accentColor }}
+              />
+            ) : (
+              <TexturedText
+                text={nameTop}
+                images={HERO_TEXTURE_IMAGES}
+                offset={0}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
+            )}
           </div>
           <div>
-            <TexturedText
-              text={nameBottom}
-              images={HERO_TEXTURE_IMAGES}
-              offset={2}
-              className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
-            />
+            {textEffect === "sequential" ? (
+              <SequentialTexturedText
+                text={nameBottom}
+                images={HERO_TEXTURE_IMAGES}
+                offset={2}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
+            ) : textEffect === "static" ? (
+              <BlurText
+                text={nameBottom}
+                delay={80}
+                animateBy="letters"
+                direction="top"
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase justify-center whitespace-nowrap"
+                style={{ color: accentColor }}
+              />
+            ) : (
+              <TexturedText
+                text={nameBottom}
+                images={HERO_TEXTURE_IMAGES}
+                offset={2}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
+            )}
           </div>
 
           {/* Avatar / logo overlap — masuk belakangan dengan animasi glitch */}
@@ -380,3 +574,9 @@ export default function PortfolioHero({
     </section>
   );
 }
+
+// Diekspor supaya bisa dipakai bikin preview mini live di
+// app/dashboard/pengaturan/HeroTextEffectPicker.jsx — biar admin lihat
+// dulu masing-masing effect sebelum simpan pilihan, tanpa harus buka tab
+// baru ke /preview-hero.
+export { TexturedText, SequentialTexturedText, BlurText, HERO_TEXTURE_IMAGES };

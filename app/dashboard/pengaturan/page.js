@@ -3,8 +3,10 @@ import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import LogoStylePicker from "./LogoStylePicker";
 import AnnouncementBannerEditor from "./AnnouncementBannerEditor";
+import HeroTextEffectPicker from "./HeroTextEffectPicker";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DEFAULT_LOGO_STYLE, DEFAULT_LOGO_SHAPE } from "@/lib/logo-styles";
+import { DEFAULT_HERO_TEXT_EFFECT } from "@/lib/hero-text-effects";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +31,7 @@ const DEFAULT_SITE_SETTINGS = {
   bannerEnabled: false,
   bannerText: "",
   bannerLink: "",
+  heroTextEffect: DEFAULT_HERO_TEXT_EFFECT,
 };
 
 async function getSiteSettings() {
@@ -36,7 +39,9 @@ async function getSiteSettings() {
     const supabase = createAdminSupabaseClient();
     const { data, error } = await supabase
       .from("site_settings")
-      .select("logo_style, logo_shape, banner_enabled, banner_text, banner_link")
+      .select(
+        "logo_style, logo_shape, banner_enabled, banner_text, banner_link, hero_text_effect"
+      )
       .eq("id", 1)
       .maybeSingle();
 
@@ -50,6 +55,7 @@ async function getSiteSettings() {
       bannerEnabled: !!data.banner_enabled,
       bannerText: data.banner_text || "",
       bannerLink: data.banner_link || "",
+      heroTextEffect: data.hero_text_effect || DEFAULT_HERO_TEXT_EFFECT,
     };
   } catch (err) {
     console.error("[dashboard/pengaturan] Gagal ambil site_settings:", err);
@@ -72,6 +78,8 @@ export default async function PengaturanPage() {
         currentStyle={settings.logoStyle}
         currentShape={settings.logoShape}
       />
+
+      <HeroTextEffectPicker currentEffect={settings.heroTextEffect} />
 
       <AnnouncementBannerEditor
         currentEnabled={settings.bannerEnabled}
