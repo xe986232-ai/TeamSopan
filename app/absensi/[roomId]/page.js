@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
+import {
+  createServerSupabaseClient,
+  createAdminSupabaseClient,
+} from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI } from "@/lib/absensi";
 import AttendanceRoom from "@/components/AttendanceRoom";
 
@@ -42,7 +45,17 @@ export default async function AbsensiRoomPage({ params }) {
     // biar list "yang sudah absen" nampilin foto profil, bukan cuma
     // inisial. Kalau member belum upload foto, avatar_url null -> fallback
     // inisial tetap jalan seperti biasa di AvatarCircle.
-    const { data: recordsData } = await supabase
+    //
+    // PENTING: pakai admin client (bukan `supabase` session client) buat
+    // query ini. Policy RLS tabel `members` cuma izinin
+    // "auth.uid() = id" (baca baris sendiri) -- kalau dijoin lewat
+    // session client, avatar_url MEMBER LAIN selalu balik null (avatar
+    // sendiri tetap kebaca karena kebetulan cocok sama auth.uid()), jadi
+    // avatar orang lain gak pernah muncul di list. avatar_url bukan data
+    // sensitif buat sesama anggota yang udah login di 1 room absensi,
+    // jadi aman dibaca lewat admin client di sini.
+    const adminForAvatar = createAdminSupabaseClient();
+    const { data: recordsData } = await adminForAvatar
       .from("attendance_records")
       .select("id, full_name, member_id, checked_in_at, members(avatar_url)")
       .eq("session_id", session.id)

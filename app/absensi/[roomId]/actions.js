@@ -179,9 +179,12 @@ export async function sendMessage(roomId, text) {
   return { success: true, message };
 }
 
-// Toggle 1 emoji reaksi ke sebuah pesan -- kalau member ini sudah kasih
-// emoji yang sama sebelumnya, tap lagi = hapus (unique constraint di
-// tabel attendance_reactions mencegah dobel emoji yang sama per orang).
+// Toggle 1 emoji reaksi ke sebuah pesan -- EXCLUSIVE per member per
+// pesan (cuma boleh 1 emoji aktif). Kalau member ini pilih emoji yang
+// SAMA dengan yang lagi aktif, tap lagi = hapus (batal reaksi). Kalau
+// pilih emoji BEDA, reaksi lama dia di pesan itu otomatis kehapus dulu
+// baru yang baru dipasang -- jadi gak numpuk beberapa emoji sekaligus
+// dari 1 orang di 1 pesan yang sama.
 export async function toggleReaction(roomId, messageId, emoji) {
   const sessionClient = createServerSupabaseClient();
   const {
@@ -194,12 +197,14 @@ export async function toggleReaction(roomId, messageId, emoji) {
 
   const admin = createAdminSupabaseClient();
 
+  // Reaksi member ini yang lagi aktif di pesan ini (kalau ada) --
+  // paling banyak 1 baris karena logika di bawah selalu jaga
+  // exclusivity-nya.
   const { data: existing } = await admin
     .from("attendance_reactions")
-    .select("id")
+    .select("id, emoji")
     .eq("message_id", messageId)
     .eq("member_id", user.id)
-    .eq("emoji", emoji)
     .maybeSingle();
 
   if (existing) {
@@ -212,8 +217,12 @@ export async function toggleReaction(roomId, messageId, emoji) {
       return { error: `Gagal menghapus reaksi: ${deleteError.message}` };
     }
 
-    revalidatePath(`/absensi/${roomId}`);
-    return { success: true, removed: true };
+    // Emoji yang di-tap sama dengan yang lagi aktif -> cukup dihapus,
+    // selesai (ini toggle "batal reaksi").
+    if (existing.emoji === emoji) {
+      revalidatePath(`/absensi/${roomId}`);
+      return { success: true, removed: true };
+    }
   }
 
   const { data: reaction, error: insertError } = await admin
