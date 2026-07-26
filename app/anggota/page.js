@@ -1,6 +1,6 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
 import Footer from "@/components/Footer";
-import { TeamSectionSimple01 } from "@/components/TeamSectionSimple01";
+import AnggotaReveal from "@/components/AnggotaReveal";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { divisionLabel, divisionShortLabel } from "@/lib/division";
 
@@ -67,7 +67,7 @@ export default async function AnggotaPage() {
   return (
     <main className="relative bg-base">
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
-      <TeamSectionSimple01 members={members} loadError={error?.message} />
+      <AnggotaReveal members={members} loadError={error?.message} />
       <Footer />
     </main>
   );
