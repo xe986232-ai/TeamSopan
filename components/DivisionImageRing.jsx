@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
-import { motion } from "framer-motion";
 
 // Karya tiap divisi ditampilkan berputar di ring 3D ini. Foto masih
 // placeholder Unsplash (pola sama seperti AdminSection) -- gampang diganti
@@ -70,68 +69,17 @@ const BASE_SLIDES = [
 // ring cuma 30 derajat -- itu yang bikin lengkungannya halus.
 const SLIDES = [...BASE_SLIDES, ...BASE_SLIDES];
 
-const CARD_WIDTH = 160; // px
-const CARD_ASPECT = 7 / 10;
-// PERSPECTIVE sengaja dibikin deket (relatif ke radius ring) supaya efek
-// "menekuk ke dalam" di kartu-kartu pinggir kelihatan jelas kayak silinder
-// -- bukan cuma carousel datar. Semakin kecil angka ini dibanding radius,
-// semakin dramatis lengkungannya.
-const PERSPECTIVE = 280; // px
-const AUTO_SPEED_DEG_PER_SEC = 10;
-const DRAG_SENSITIVITY = 0.35;
+const CARD_WIDTH = "9.5em"; // ~150px, dipakai juga di rumus translateZ di bawah
+const CARD_ASPECT = "7/10";
+const PERSPECTIVE = "19em"; // ~2x CARD_WIDTH -- rasio ini yang bikin kartu pinggir menekuk tajam ke dalam
+const DURATION = 30; // detik untuk satu putaran penuh 360 derajat
 
 export default function DivisionImageRing() {
   const n = SLIDES.length;
-  // Jari-jari ring dihitung dari lebar kartu + jumlah kartu, biar tiap
-  // kartu pas nempel membentuk lingkaran tanpa saling tabrakan -- dihitung
-  // di JS (bukan CSS trig function `tan()`) supaya kompatibel di browser
-  // lama.
-  const radius = useMemo(
-    () => Math.round(CARD_WIDTH / 2 / Math.tan(Math.PI / n)),
-    [n]
-  );
-
-  const [rotation, setRotation] = useState(0);
-  const rotationRef = useRef(0);
-  const draggingRef = useRef(false);
-  const lastXRef = useRef(0);
-  const lastTimeRef = useRef(null);
-  const rafRef = useRef(null);
-  const pausedRef = useRef(false);
-
-  useEffect(() => {
-    const tick = (time) => {
-      if (lastTimeRef.current == null) lastTimeRef.current = time;
-      const dt = (time - lastTimeRef.current) / 1000;
-      lastTimeRef.current = time;
-
-      if (!draggingRef.current && !pausedRef.current) {
-        rotationRef.current += AUTO_SPEED_DEG_PER_SEC * dt;
-        setRotation(rotationRef.current);
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  const handlePointerDown = useCallback((e) => {
-    draggingRef.current = true;
-    lastXRef.current = e.clientX;
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-  }, []);
-
-  const handlePointerMove = useCallback((e) => {
-    if (!draggingRef.current) return;
-    const dx = e.clientX - lastXRef.current;
-    lastXRef.current = e.clientX;
-    rotationRef.current += dx * DRAG_SENSITIVITY;
-    setRotation(rotationRef.current);
-  }, []);
-
-  const stopDragging = useCallback(() => {
-    draggingRef.current = false;
-  }, []);
+  const prefersReducedMotion = useReducedMotion();
+  // Kalau user minta reduced motion, tetap muter tapi jauh lebih pelan --
+  // bukan berhenti total, biar kontennya (karya tim) tetap kelihatan semua.
+  const animationDuration = prefersReducedMotion ? DURATION * 4 : DURATION;
 
   return (
     <section className="relative bg-base py-16 sm:py-24 overflow-hidden">
@@ -150,15 +98,15 @@ export default function DivisionImageRing() {
             Sekilas Proses di Balik Layar
           </h2>
           <p className="font-body text-sm text-ink-muted mt-3">
-            Muter otomatis -- atau geser langsung buat lihat-lihat sendiri.
+            Muter otomatis 360 derajat nonstop.
           </p>
         </motion.div>
 
         <div
-          className="relative mx-auto grid place-items-center touch-pan-y select-none"
+          className="grid w-full place-items-center overflow-hidden select-none"
           style={{
             height: "min(85vw, 380px)",
-            perspective: `${PERSPECTIVE}px`,
+            perspective: PERSPECTIVE,
             // Vignette fade di kiri-kanan biar ring blend mulus ke
             // background, bukan keliatan ke-crop tajam.
             WebkitMaskImage:
@@ -166,39 +114,36 @@ export default function DivisionImageRing() {
             maskImage:
               "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)",
           }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={stopDragging}
-          onPointerLeave={stopDragging}
-          onPointerCancel={stopDragging}
-          onMouseEnter={() => (pausedRef.current = true)}
-          onMouseLeave={() => (pausedRef.current = false)}
           role="group"
-          aria-label="Galeri karya divisi, geser untuk memutar"
+          aria-label="Galeri karya divisi, berputar otomatis"
         >
-          <div
-            className="relative cursor-grab active:cursor-grabbing"
-            style={{
-              width: CARD_WIDTH,
-              aspectRatio: CARD_ASPECT,
-              transformStyle: "preserve-3d",
-              transform: `rotateY(${rotation}deg)`,
+          <motion.div
+            className="grid place-self-center"
+            style={{ transformStyle: "preserve-3d" }}
+            animate={{ rotateY: [0, 360] }}
+            transition={{
+              duration: animationDuration,
+              ease: "linear",
+              repeat: Infinity,
             }}
           >
             {SLIDES.map((slide, i) => (
               <div
                 key={`${slide.id}-${i}`}
-                className="absolute inset-0 overflow-hidden rounded-xl border border-black/10 shadow-xl"
+                className="col-start-1 row-start-1 relative overflow-hidden rounded-2xl border border-black/10 shadow-xl"
                 style={{
-                  transform: `rotateY(${(360 / n) * i}deg) translateZ(${radius}px)`,
+                  width: CARD_WIDTH,
+                  aspectRatio: CARD_ASPECT,
                   backfaceVisibility: "hidden",
+                  WebkitBackfaceVisibility: "hidden",
+                  transform: `rotateY(calc(${i} * (1turn / ${n}))) translateZ(calc(-1 * (0.5 * ${CARD_WIDTH} + 0.5em) / tan(0.5 * (1turn / ${n}))))`,
                 }}
               >
                 <Image
                   alt={slide.title}
                   src={slide.image}
                   fill
-                  sizes="160px"
+                  sizes="150px"
                   draggable={false}
                   className="object-cover pointer-events-none"
                 />
@@ -224,7 +169,7 @@ export default function DivisionImageRing() {
                 </div>
               </div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
     </section>
