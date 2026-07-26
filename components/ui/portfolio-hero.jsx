@@ -73,6 +73,8 @@ const HERO_TEXTURE_IMAGES = [
   "https://images.unsplash.com/photo-1620641788421-7a1c342ea42e?w=1400&q=80",
   "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=1400&q=80",
   "https://images.unsplash.com/photo-1636955779321-819753cd1741?w=1400&q=80",
+  "https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=1400&q=80",
+  "https://images.unsplash.com/photo-1614680376593-902f74cf0d41?w=1400&q=80",
 ];
 
 /**
@@ -120,30 +122,45 @@ function TexturedText({
     return () => clearInterval(timer);
   }, [inView, images, cycleMs]);
 
+  const letters = useMemo(() => text.split(""), [text]);
+
   return (
-    <span
-      ref={ref}
-      className={className}
-      style={{
-        ...style,
-        display: "inline-block",
-        opacity: inView ? 1 : 0,
-        transform: inView ? "translateY(0)" : "translateY(-20px)",
-        transition: "opacity 0.6s ease-out, transform 0.6s ease-out",
-      }}
-    >
-      <span
-        key={idx}
-        aria-hidden="true"
-        className="hero-texture-text"
-        style={{
-          backgroundImage: `url(${images[idx]})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        {text}
-      </span>
+    <span ref={ref} className={`inline-flex flex-nowrap ${className}`} style={style}>
+      {letters.map((ch, i) => {
+        if (ch === " ") {
+          return (
+            <span key={i} aria-hidden="true" style={{ display: "inline-block", width: "0.35em" }} />
+          );
+        }
+        // tiap huruf ambil foto BEDA dari array (index digeser per posisi
+        // huruf), jadi hasilnya kayak referensi: satu huruf = satu foto,
+        // bukan satu foto direntang ke seluruh kata.
+        const img = images[(idx + i) % images.length];
+        return (
+          <span
+            key={i}
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(-20px)",
+              transition: `opacity 0.5s ease-out ${i * 60}ms, transform 0.5s ease-out ${i * 60}ms`,
+            }}
+          >
+            <span
+              key={`${i}-${idx}`}
+              className="hero-texture-text"
+              style={{
+                backgroundImage: `url(${img})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {ch}
+            </span>
+          </span>
+        );
+      })}
       {/* Teks asli disembunyikan visual tapi tetap kebaca screen reader/SEO */}
       <span className="sr-only">{text}</span>
     </span>
