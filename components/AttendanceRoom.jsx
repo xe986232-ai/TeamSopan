@@ -59,22 +59,31 @@ function AvatarCircle({ name, avatarUrl, size = 40 }) {
   );
 }
 
-// Bubble chat di SAMPING avatar member yang sudah absen (kiri atau kanan,
-// tergantung posisi avatarnya di baris -- lihat packAttendanceRows &
-// pemakaiannya di bawah). Bentuknya modif dari bubble shadcn/ui biasa:
-// dikasih "ekor" (kotak kecil diputar 45 derajat) di sisi yang menghadap
-// avatar pemiliknya, bukan di bawah lagi kayak versi lama.
+// Tinggi tetap area bubble+reaksi di atas tiap avatar. SEMUA item grid
+// (baik yang lagi punya bubble chat maupun yang enggak) pakai slot
+// setinggi ini -- jadi avatar SELALU nempel di baseline yang sama persis,
+// gak peduli ada bubble/reaksi atau enggak, dan gak geser2 pas member lain
+// kirim pesan baru. Konten yang lebih tinggi dari slot ini (pesan yang
+// wrap ke 2 baris, dsb) boleh "meluap" ke atas slot -- overflow visible
+// sengaja gak di-clip -- tapi tinggi slotnya sendiri tetap konstan buat
+// baris grid.
+const BUBBLE_SLOT_HEIGHT = 76;
+
+// Bubble chat kecil DI ATAS avatar member yang sudah absen. Ekornya
+// vertikal, nunjuk ke BAWAH ke arah avatar pemiliknya (bukan ke samping).
+// Kalau teks-nya kepanjangan, bubble melebar ke bawah (nambah baris),
+// BUKAN melebar ke samping sampai kepotong layar -- lebar bubble dibatasi
+// biar tetap muat di kolom avatar-nya.
 //
 // Reaksi emoji cuma boleh 1 per orang per pesan (exclusive -- pilih emoji
 // baru otomatis ganti punya lama, lihat handleToggleReaction & actions.js).
-// Tombol "+" kecil nempel di pojok bawah bubble jadi pemicu picker: tap ->
-// muncul 4 pilihan emoji sebentar -> begitu pilih salah satu, picker
-// LANGSUNG ketutup dan emoji itu LANGSUNG nempel jadi badge di pojok
-// bubble (gak ada lagi baris tombol emoji yang nongol terus).
-function MessageBubble({ message, reactionList, currentUserId, onToggleReaction, side }) {
+// Tombol "+" kecil nempel di pojok bubble jadi pemicu picker: tap -> muncul
+// 4 pilihan emoji sebentar -> begitu pilih salah satu, picker LANGSUNG
+// ketutup dan emoji itu LANGSUNG nempel jadi badge di pojok bubble (gak
+// ada lagi baris tombol emoji yang nongol terus).
+function MessageBubble({ message, reactionList, currentUserId, onToggleReaction }) {
   const [pickerOpen, setPickerOpen] = React.useState(false);
   const isMine = message.member_id === currentUserId;
-  const isLeft = side === "left";
 
   const counts = {};
   for (const r of reactionList) {
@@ -89,15 +98,14 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
   };
 
   return (
-    <div className="flex flex-col items-center gap-1 shrink-0">
+    <div className="flex flex-col items-center gap-1">
       <div className="relative">
-        {/* Bentuk pill/stadium solid (ujung full rounded) -- ngikutin
-            referensi bubble chat yang dikasih, bukan kotak rounded-2xl
-            lagi. Pesan dibatasi CHAT_CHAR_LIMIT karakter jadi aman muat
-            satu baris tanpa perlu wrap. */}
+        {/* Lebar dibatasi (max-w) supaya teks yang kepanjangan WRAP ke
+            baris baru (bubble jadi lebih tinggi), bukan melebar ke
+            samping sampai keluar kolom/layar. */}
         <div
           className={cn(
-            "whitespace-nowrap rounded-full px-3.5 py-2 text-center text-[11px] font-medium leading-none",
+            "max-w-[92px] rounded-[18px] px-3 py-1.5 text-center text-[10px] leading-snug wrap-break-word",
             isMine
               ? "bg-ink-solid text-white dark:bg-white dark:text-ink-solid"
               : "bg-base-elevated border border-base-line text-ink"
@@ -105,21 +113,16 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
         >
           {message.message}
         </div>
-        {/* Ekor bubble -- segitiga runcing (bukan kotak diputar lagi),
-            nempel di sisi yang menghadap avatar pemiliknya (kanan bubble
-            kalau bubble-nya di kiri avatar, kiri bubble kalau bubble-nya
-            di kanan avatar). */}
+        {/* Ekor bubble -- segitiga vertikal di bawah bubble, nunjuk turun
+            ke avatar pemiliknya (bukan nyamping). */}
         <span
           aria-hidden="true"
           className={cn(
-            "absolute top-1/2 h-3 w-2.5 -translate-y-1/2",
-            isLeft ? "-right-[7px]" : "-left-[7px]",
+            "absolute left-1/2 -bottom-[6px] h-2.5 w-3 -translate-x-1/2",
             isMine ? "bg-ink-solid dark:bg-white" : "bg-base-elevated"
           )}
           style={{
-            clipPath: isLeft
-              ? "polygon(0% 15%, 100% 50%, 0% 85%)"
-              : "polygon(100% 15%, 0% 50%, 100% 85%)",
+            clipPath: "polygon(15% 0%, 85% 0%, 50% 100%)",
           }}
         />
 
@@ -130,8 +133,7 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
           onClick={() => setPickerOpen((v) => !v)}
           aria-label={myReaction ? "Ganti reaksi" : "Kasih reaksi"}
           className={cn(
-            "absolute -bottom-2 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-full border px-1 text-[11px] leading-none shadow-sm transition-transform",
-            isLeft ? "-right-2" : "-left-2",
+            "absolute -bottom-2 -right-2 z-10 flex h-5 min-w-[20px] items-center justify-center rounded-full border px-1 text-[11px] leading-none shadow-sm transition-transform",
             pickerOpen && "scale-110",
             myReaction
               ? "border-base-line bg-base text-ink"
@@ -195,57 +197,6 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
   );
 }
 
-// Susun member yang sudah absen jadi baris-baris siap-render. Normalnya
-// tiap baris diisi penuh (fullCap avatar -- 3 di HP, 4 di layar lebih
-// lebar), TAPI begitu ada satu member di baris itu yang punya bubble chat
-// aktif, baris itu langsung dikecilin jadi maksimal (fullCap - 1) avatar
-// -- sisa ruangnya dipakai buat naruh bubble di SAMPING avatar (kiri utk
-// avatar pertama baris, kanan utk avatar kedua), bukan di atas kepala
-// kayak versi lama. Member yang gak kebagian gara-gara pengecilan ini
-// otomatis lanjut ke baris berikutnya, jadi list-nya tetap utuh, cuma
-// susunan barisnya yang jadi gak rata.
-function packAttendanceRows(records, messages, fullCap) {
-  const rows = [];
-  let current = [];
-  let currentHasMsg = false;
-  const capFor = (hasMsg) => (hasMsg ? Math.max(1, fullCap - 1) : fullCap);
-
-  for (const member of records) {
-    const memberHasMsg = Boolean(messages[member.member_id]);
-    const wouldHaveMsg = currentHasMsg || memberHasMsg;
-    const cap = capFor(wouldHaveMsg);
-
-    if (current.length >= cap) {
-      rows.push({ items: current, hasMsg: currentHasMsg });
-      current = [];
-      currentHasMsg = false;
-    }
-    current.push(member);
-    if (memberHasMsg) currentHasMsg = true;
-  }
-  if (current.length > 0) {
-    rows.push({ items: current, hasMsg: currentHasMsg });
-  }
-  return rows;
-}
-
-// Deteksi breakpoint `sm` (640px) Tailwind buat nentuin berapa avatar muat
-// per baris penuh -- 3 di HP, 4 di layar lebih lebar. Default-nya sengaja
-// mobile (false) biar render pertama di server & client sama persis (gak
-// ada layout flash/mismatch), baru di-update begitu ukuran layar kebaca
-// di browser.
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = React.useState(false);
-  React.useEffect(() => {
-    const mq = window.matchMedia("(min-width: 640px)");
-    const update = () => setIsDesktop(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
-  return isDesktop;
-}
-
 function ClosableMessage({ title, description }) {
   return (
     <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-base px-6">
@@ -302,16 +253,6 @@ function AttendanceRoomInner({
   // buat nampilin animasi checkmark bentar, terus otomatis di-fade-out
   // biar list "yang sudah absen" di bawahnya naik ngisi tempat kosong.
   const [celebrate, setCelebrate] = React.useState(false);
-
-  // Susunan baris avatar "yang sudah absen" -- lihat packAttendanceRows
-  // buat aturan kapan baris dikecilin dari 3/4 avatar jadi 2/3 avatar
-  // (begitu ada bubble chat aktif di baris itu).
-  const isDesktop = useIsDesktop();
-  const fullCap = isDesktop ? 4 : 3;
-  const attendanceRows = React.useMemo(
-    () => packAttendanceRows(records, messages, fullCap),
-    [records, messages, fullCap]
-  );
 
   // Tick tiap detik buat hitungan mundur & label "X menit lalu".
   React.useEffect(() => {
@@ -563,93 +504,58 @@ function AttendanceRoomInner({
               </span>
             </div>
 
-            <div
+            <ul
               data-lenis-prevent
-              className="flex flex-col gap-5 max-h-[45vh] overflow-y-auto px-1 py-1"
+              className="grid grid-cols-3 sm:grid-cols-4 justify-items-center gap-x-3 gap-y-6 max-h-[45vh] overflow-y-auto px-1 py-1"
             >
               <AnimatePresence initial={false}>
-                {attendanceRows.map((row) => (
-                  <motion.div
-                    key={row.items.map((m) => m.id).join("-")}
+                {records.map((member) => (
+                  <motion.li
+                    key={member.id}
                     layout
-                    className={cn(
-                      "flex w-full",
-                      row.hasMsg
-                        ? "items-center justify-center gap-3"
-                        : "items-start gap-x-3"
-                    )}
-                    style={
-                      row.hasMsg
-                        ? undefined
-                        : {
-                            display: "grid",
-                            gridTemplateColumns: `repeat(${fullCap}, minmax(0,1fr))`,
-                          }
-                    }
+                    initial={{ opacity: 0, y: -12, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, ease: SMOOTH_EASE }}
+                    className="flex flex-col items-center gap-2 text-center w-full"
                   >
-                    {row.items.map((member, idx) => {
-                      const message = messages[member.member_id];
-                      // Avatar pertama di baris (idx 0) dapat bubble di
-                      // kiri, avatar kedua (idx 1) dapat bubble di kanan --
-                      // jadi bubble-nya "mekar" ke luar, gak numpuk ke
-                      // tengah baris.
-                      const side = idx === 0 ? "left" : "right";
-                      return (
-                        <motion.div
-                          key={member.id}
-                          layout
-                          initial={{ opacity: 0, y: -12, scale: 0.9 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          transition={{ duration: 0.4, ease: SMOOTH_EASE }}
-                          className={cn(
-                            row.hasMsg
-                              ? "flex items-center gap-1.5"
-                              : "flex flex-col items-center gap-2 text-center w-full"
-                          )}
-                        >
-                          {row.hasMsg && message && side === "left" && (
-                            <MessageBubble
-                              message={message}
-                              reactionList={reactions[message.id] || []}
-                              currentUserId={currentUser.id}
-                              onToggleReaction={handleToggleReaction}
-                              side="left"
-                            />
-                          )}
-                          <div className="flex flex-col items-center gap-2 text-center shrink-0">
-                            <AvatarCircle
-                              name={member.full_name}
-                              avatarUrl={member.avatar_url}
-                              size={56}
-                            />
-                            <div className="min-w-0 max-w-[80px]">
-                              <p className="font-body font-semibold text-xs text-ink truncate">
-                                {member.full_name}
-                                {member.member_id === currentUser.id
-                                  ? " (kamu)"
-                                  : ""}
-                              </p>
-                              <p className="text-[11px] text-ink-dim">
-                                {timeAgoLabel(member.checked_in_at, now)}
-                              </p>
-                            </div>
-                          </div>
-                          {row.hasMsg && message && side === "right" && (
-                            <MessageBubble
-                              message={message}
-                              reactionList={reactions[message.id] || []}
-                              currentUserId={currentUser.id}
-                              onToggleReaction={handleToggleReaction}
-                              side="right"
-                            />
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </motion.div>
+                    {/* Slot bubble SELALU di-render (kosong kalau belum ada
+                        pesan) -- ini yang bikin avatar semua anggota rapi
+                        sejajar, gak melompat pas ada yang punya chat bubble
+                        dan yang lain enggak. Lihat BUBBLE_SLOT_HEIGHT di
+                        MessageBubble. */}
+                    <div
+                      style={{ height: BUBBLE_SLOT_HEIGHT }}
+                      className="w-full flex items-end justify-center"
+                    >
+                      {messages[member.member_id] && (
+                        <MessageBubble
+                          message={messages[member.member_id]}
+                          reactionList={
+                            reactions[messages[member.member_id].id] || []
+                          }
+                          currentUserId={currentUser.id}
+                          onToggleReaction={handleToggleReaction}
+                        />
+                      )}
+                    </div>
+                    <AvatarCircle
+                      name={member.full_name}
+                      avatarUrl={member.avatar_url}
+                      size={56}
+                    />
+                    <div className="min-w-0 w-full">
+                      <p className="font-body font-semibold text-xs text-ink truncate">
+                        {member.full_name}
+                        {member.member_id === currentUser.id ? " (kamu)" : ""}
+                      </p>
+                      <p className="text-[11px] text-ink-dim">
+                        {timeAgoLabel(member.checked_in_at, now)}
+                      </p>
+                    </div>
+                  </motion.li>
                 ))}
               </AnimatePresence>
-            </div>
+            </ul>
           </motion.div>
         </div>
 
