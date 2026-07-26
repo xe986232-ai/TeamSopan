@@ -45,34 +45,6 @@ function AvatarCircle({ name, avatarUrl, accentFrom, accentTo, size = 40 }) {
   );
 }
 
-// Semburan titik kecil pas berhasil absen, biar ga kerasa "flat".
-function CheckinBurst({ color }) {
-  const dots = React.useMemo(() => Array.from({ length: 12 }, (_, i) => i), []);
-  return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      {dots.map((i) => {
-        const angle = (i / dots.length) * Math.PI * 2;
-        const distance = 60 + ((i * 37) % 40);
-        return (
-          <motion.span
-            key={i}
-            className="absolute h-2 w-2 rounded-full"
-            style={{ background: color }}
-            initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
-            animate={{
-              opacity: 0,
-              x: Math.cos(angle) * distance,
-              y: Math.sin(angle) * distance,
-              scale: 0.3,
-            }}
-            transition={{ duration: 0.7, ease: "easeOut" }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 function ClosableMessage({ title, description }) {
   return (
     <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-base px-6">
@@ -101,7 +73,6 @@ function AttendanceRoomInner({
   const [records, setRecords] = React.useState(initialRecords);
   const [hasCheckedIn, setHasCheckedIn] = React.useState(initialHasCheckedIn);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [burstKey, setBurstKey] = React.useState(0);
   const [showIntro, setShowIntro] = React.useState(true);
   const [now, setNow] = React.useState(() => Date.now());
   // `celebrate` cuma true SESAAT setelah absen baru berhasil (bukan pas
@@ -190,7 +161,6 @@ function AttendanceRoomInner({
       setCelebrate(true);
     }
     setHasCheckedIn(true);
-    setBurstKey((k) => k + 1);
   };
 
   const canCheckIn = status === "aktif" && !hasCheckedIn && !isSubmitting;
@@ -343,31 +313,29 @@ function AttendanceRoomInner({
                 <motion.div
                   key="success"
                   layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.5, ease: SMOOTH_EASE }}
-                  className="relative flex flex-col items-center gap-3"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.4, ease: SMOOTH_EASE }}
+                  className="flex flex-col items-center gap-3"
                 >
-                  <div className="relative h-32 w-32 flex items-center justify-center">
-                    <AnimatePresence>
-                      {burstKey > 0 && (
-                        <CheckinBurst key={burstKey} color={division.accentTo} />
-                      )}
-                    </AnimatePresence>
-                    <div
-                      className="relative h-32 w-32 rounded-full flex items-center justify-center text-white"
-                      style={{
-                        background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-                        boxShadow: `0 12px 40px -8px ${division.accentTo}88`,
-                      }}
+                  <div
+                    className="relative flex h-10 w-[250px] items-center justify-center gap-2 rounded-lg text-sm font-semibold text-white"
+                    style={{
+                      background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
+                      boxShadow: `0 8px 24px -8px ${division.accentTo}88`,
+                    }}
+                  >
+                    <motion.span
+                      initial={{ scale: 0.4, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ duration: 0.3, ease: SMOOTH_EASE, delay: 0.05 }}
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20"
                     >
-                      <Check size={36} strokeWidth={3} />
-                    </div>
+                      <Check size={13} strokeWidth={3} />
+                    </motion.span>
+                    Absen berhasil, {firstName}!
                   </div>
-                  <p className="font-display font-bold text-lg text-ink">
-                    Absen berhasil, {firstName}! 🎉
-                  </p>
                   <p className="text-xs text-ink-muted">
                     Kamu tercatat aktif buat sesi ini.
                   </p>
