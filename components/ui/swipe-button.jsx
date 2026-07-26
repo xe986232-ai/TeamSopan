@@ -125,7 +125,7 @@ export function SwipeButton({
           style={{ "--swipe-button-text-width": "130px" }}
           className={cn(
             "pointer-events-none mx-auto max-w-md text-sm text-neutral-600/70 dark:text-neutral-400/70",
-            "animate-swipe-button-text [background-size:var(--swipe-button-text-width)_100%] bg-clip-text [background-position:0_0] bg-no-repeat select-none",
+            "animate-swipe-button-text [background-size:var(--swipe-button-text-width)_100%] bg-clip-text [background-position:0_0] bg-no-repeat select-none [transition:background-position_1s_cubic-bezier(.4,0,.2,1)_infinite]",
             "bg-gradient-to-r from-transparent via-black/80 via-50% to-transparent dark:via-white/80"
           )}
         >
