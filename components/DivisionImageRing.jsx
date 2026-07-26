@@ -70,15 +70,14 @@ const BASE_SLIDES = [
 const SLIDES = [...BASE_SLIDES, ...BASE_SLIDES];
 
 // clamp() berbasis vw supaya di layar mobile yang sempit kartu-nya ikut
-// membesar (nggak keliatan kekecilan kayak sebelumnya pas cuma pakai
-// satuan em tetap). Preferred value 40vw bikin kartu makin gede makin
-// sempit layarnya, dibatasi minimum/maksimum biar tetap wajar di semua
-// ukuran device.
-const CARD_WIDTH = "clamp(8.5em, 40vw, 11em)";
+// membesar (nggak keliatan kekecilan). Preferred value 55vw dibikin lebih
+// agresif dari sebelumnya biar kartu keliatan lebih gede & lebih maju ke
+// depan, dibatasi minimum/maksimum biar tetap wajar di semua ukuran device.
+const CARD_WIDTH = "clamp(11.5em, 55vw, 15em)";
 const CARD_ASPECT = "7/10";
 // Tetap dijaga rasio ~2:1 terhadap CARD_WIDTH (pakai clamp yang selaras)
 // biar efek menekuk ke dalam konsisten di semua ukuran layar.
-const PERSPECTIVE = "clamp(17em, 80vw, 22em)";
+const PERSPECTIVE = "clamp(23em, 110vw, 30em)";
 const DURATION = 30; // detik untuk satu putaran penuh 360 derajat
 
 export default function DivisionImageRing() {
@@ -102,17 +101,17 @@ export default function DivisionImageRing() {
             Member Area
           </p>
           <h2 className="font-display font-extrabold mt-2 text-3xl text-ink sm:text-4xl">
-            Sekilas Proses di Balik Layar
+            Wajah-Wajah di Balik Sopan Team
           </h2>
           <p className="font-body text-sm text-ink-muted mt-3">
-            Muter otomatis 360 derajat nonstop.
+            Karya para member, muter otomatis 360 derajat nonstop.
           </p>
         </motion.div>
 
         <div
           className="grid w-full place-items-center overflow-hidden select-none"
           style={{
-            height: "min(85vw, 380px)",
+            height: "min(105vw, 480px)",
             perspective: PERSPECTIVE,
             // Vignette fade di kiri-kanan biar ring blend mulus ke
             // background, bukan keliatan ke-crop tajam.
@@ -122,7 +121,7 @@ export default function DivisionImageRing() {
               "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)",
           }}
           role="group"
-          aria-label="Galeri karya divisi, berputar otomatis"
+          aria-label="Karya member Sopan Team, berputar otomatis"
         >
           <motion.div
             className="grid place-self-center"
@@ -150,7 +149,7 @@ export default function DivisionImageRing() {
                   alt={slide.title}
                   src={slide.image}
                   fill
-                  sizes="(max-width: 640px) 40vw, 176px"
+                  sizes="(max-width: 640px) 55vw, 240px"
                   draggable={false}
                   className="object-cover pointer-events-none"
                 />
