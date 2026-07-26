@@ -451,21 +451,14 @@ function GlitchAvatar({ avatarSrc }) {
         inView ? "hero-glitch-in" : "opacity-0"
       }`}
     >
-      <div
-        className="w-full h-full rounded-full"
-        style={{
-          boxShadow: "-4px 6px 10px rgba(0,0,0,0.35)",
-        }}
-      >
-        <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
-          <Image
-            src={avatarSrc}
-            alt="Logo Sopan Team"
-            width={120}
-            height={195}
-            className="w-[70%] h-[70%] object-contain"
-          />
-        </div>
+      <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
+        <Image
+          src={avatarSrc}
+          alt="Logo Sopan Team"
+          width={120}
+          height={195}
+          className="w-[70%] h-[70%] object-contain"
+        />
       </div>
       {/* Ghost layer color-split — kesan "glitch" khas RGB shift */}
       <span
