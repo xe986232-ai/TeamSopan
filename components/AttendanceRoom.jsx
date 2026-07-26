@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Check, X, Users, Clock } from "lucide-react";
 import { Button } from "./ui/button";
 import { SwipeButton } from "./ui/swipe-button";
-import HellBackground from "./ui/hell-background";
 import { ToastProvider, useToast } from "./ui/toast";
 import { formatCountdown, timeAgoLabel, toLocalWallClock } from "@/lib/absensi";
 import { checkInToSession } from "@/app/absensi/[roomId]/actions";
@@ -217,14 +216,12 @@ function AttendanceRoomInner({
         data-lenis-prevent
         className="fixed inset-0 z-[6000] flex flex-col items-center overflow-y-auto bg-base"
       >
-        <div className="pointer-events-none absolute inset-0 opacity-70">
-          <HellBackground
-            color={division.accentFrom}
-            backdropBlurAmount="lg"
-            className="absolute inset-0"
-          />
-        </div>
-        <div className="pointer-events-none absolute inset-0 bg-base/60 dark:bg-base/50" />
+        <div
+          className="pointer-events-none absolute -top-1/3 left-1/2 -translate-x-1/2 w-[85vw] h-[60vw] rounded-full opacity-[0.12] blur-3xl"
+          style={{
+            background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
+          }}
+        />
 
         <Link
           href="/"
