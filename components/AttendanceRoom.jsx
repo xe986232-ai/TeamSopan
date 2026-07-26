@@ -25,7 +25,7 @@ const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 // Limit karakter pesan/status singkat -- sengaja dibikin pendek biar
 // bubble-nya tetap ringkas di samping avatar (gak makan banyak ruang
 // baris & gak butuh banyak baris teks).
-const CHAT_CHAR_LIMIT = 60;
+const CHAT_CHAR_LIMIT = 15;
 
 function initials(name) {
   return name
@@ -91,9 +91,13 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
   return (
     <div className="flex flex-col items-center gap-1 shrink-0">
       <div className="relative">
+        {/* Bentuk pill/stadium solid (ujung full rounded) -- ngikutin
+            referensi bubble chat yang dikasih, bukan kotak rounded-2xl
+            lagi. Pesan dibatasi CHAT_CHAR_LIMIT karakter jadi aman muat
+            satu baris tanpa perlu wrap. */}
         <div
           className={cn(
-            "max-w-[118px] rounded-2xl px-2.5 py-1.5 text-left text-[10px] leading-snug wrap-break-word",
+            "whitespace-nowrap rounded-full px-3.5 py-2 text-center text-[11px] font-medium leading-none",
             isMine
               ? "bg-ink-solid text-white dark:bg-white dark:text-ink-solid"
               : "bg-base-elevated border border-base-line text-ink"
@@ -101,21 +105,22 @@ function MessageBubble({ message, reactionList, currentUserId, onToggleReaction,
         >
           {message.message}
         </div>
-        {/* Ekor bubble -- nempel di sisi yang menghadap avatar pemiliknya
-            (kanan bubble kalau bubble-nya di kiri avatar, kiri bubble
-            kalau bubble-nya di kanan avatar). */}
+        {/* Ekor bubble -- segitiga runcing (bukan kotak diputar lagi),
+            nempel di sisi yang menghadap avatar pemiliknya (kanan bubble
+            kalau bubble-nya di kiri avatar, kiri bubble kalau bubble-nya
+            di kanan avatar). */}
         <span
           aria-hidden="true"
           className={cn(
-            "absolute top-1/2 h-2 w-2 -translate-y-1/2 rotate-45",
-            isLeft ? "-right-[4px]" : "-left-[4px]",
-            isMine
-              ? "bg-ink-solid dark:bg-white"
-              : cn(
-                  "bg-base-elevated border-base-line",
-                  isLeft ? "border-r border-t" : "border-l border-b"
-                )
+            "absolute top-1/2 h-3 w-2.5 -translate-y-1/2",
+            isLeft ? "-right-[7px]" : "-left-[7px]",
+            isMine ? "bg-ink-solid dark:bg-white" : "bg-base-elevated"
           )}
+          style={{
+            clipPath: isLeft
+              ? "polygon(0% 15%, 100% 50%, 0% 85%)"
+              : "polygon(100% 15%, 0% 50%, 100% 85%)",
+          }}
         />
 
         {/* Badge reaksi -- nunjukin emoji yang kamu pilih (atau "+" kalau
@@ -660,15 +665,16 @@ function AttendanceRoomInner({
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 placeholder={
-                  hasCheckedIn ? "Tulis sesuatu..." : "Absen dulu buat bisa kirim pesan"
+                  hasCheckedIn ? "Tulis status..." : "Absen dulu buat bisa kirim pesan"
                 }
                 disabled={!hasCheckedIn || isSendingMessage}
                 maxLength={CHAT_CHAR_LIMIT}
                 className="h-10 w-full rounded-full border border-base-line bg-base-elevated px-4 pr-12 text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-ink-solid/15 disabled:opacity-50 dark:focus:ring-white/15"
               />
-              {/* Counter cuma nongol pas udah mepet limit, biar gak
-                  ganggu pas baru mulai ngetik. */}
-              {draft.length > CHAT_CHAR_LIMIT - 15 && (
+              {/* Limitnya kecil (15 karakter) jadi counter-nya selalu
+                  kelihatan, bukan cuma pas mepet, biar member sadar dari
+                  awal ngetik. */}
+              {hasCheckedIn && (
                 <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[10px] tabular-nums text-ink-dim">
                   {draft.length}/{CHAT_CHAR_LIMIT}
                 </span>
