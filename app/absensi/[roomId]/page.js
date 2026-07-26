@@ -59,6 +59,39 @@ export default async function AbsensiRoomPage({ params }) {
 
   const division = session ? DIVISIONS_ABSENSI[session.division] : null;
 
+  // Ambil pesan/status singkat tiap member -- diurutkan terbaru dulu,
+  // lalu di-dedupe di sini (bukan di query) supaya CUMA pesan TERAKHIR
+  // tiap member yang kepakai jadi bubble chat (member kirim pesan baru =
+  // bubble lama otomatis ketutup pesan baru).
+  let messages = [];
+  let reactions = [];
+  if (session) {
+    const { data: messagesData } = await supabase
+      .from("attendance_messages")
+      .select("id, member_id, message, created_at")
+      .eq("session_id", session.id)
+      .order("created_at", { ascending: false });
+
+    const latestByMember = new Map();
+    for (const m of messagesData || []) {
+      if (!latestByMember.has(m.member_id)) {
+        latestByMember.set(m.member_id, m);
+      }
+    }
+    messages = Array.from(latestByMember.values());
+
+    if (messages.length > 0) {
+      const { data: reactionsData } = await supabase
+        .from("attendance_reactions")
+        .select("id, message_id, member_id, emoji")
+        .in(
+          "message_id",
+          messages.map((m) => m.id)
+        );
+      reactions = reactionsData || [];
+    }
+  }
+
   return (
     <AttendanceRoom
       roomId={roomId}
@@ -66,6 +99,8 @@ export default async function AbsensiRoomPage({ params }) {
       division={division}
       records={records}
       hasCheckedIn={hasCheckedIn}
+      messages={messages}
+      reactions={reactions}
       currentUser={
         member
           ? { id: member.id, fullName: member.full_name, avatarUrl: member.avatar_url }

@@ -3,12 +3,22 @@
 import * as React from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, Users, Clock } from "lucide-react";
+import { Check, X, Users, Clock, Send } from "lucide-react";
 import { Button } from "./ui/button";
 import { SwipeButton } from "./ui/swipe-button";
 import { ToastProvider, useToast } from "./ui/toast";
-import { formatCountdown, timeAgoLabel, toLocalWallClock } from "@/lib/absensi";
-import { checkInToSession } from "@/app/absensi/[roomId]/actions";
+import { cn } from "@/lib/utils";
+import {
+  formatCountdown,
+  timeAgoLabel,
+  toLocalWallClock,
+  QUICK_REACTIONS,
+} from "@/lib/absensi";
+import {
+  checkInToSession,
+  sendMessage,
+  toggleReaction,
+} from "@/app/absensi/[roomId]/actions";
 
 const SMOOTH_EASE = [0.22, 1, 0.36, 1];
 
@@ -44,6 +54,73 @@ function AvatarCircle({ name, avatarUrl, size = 40 }) {
   );
 }
 
+// Bubble chat kecil di atas avatar member yang sudah absen -- bentuknya
+// modif dari bubble shadcn/ui biasa: dikasih "ekor" (kotak kecil diputar
+// 45 derajat) di bawah bubble yang nunjuk ke avatar pemiliknya, sekaligus
+// baris reaction emoji di bawahnya (tap buat toggle reaksi).
+function MessageBubble({ message, reactionList, currentUserId, onToggleReaction }) {
+  const isMine = message.member_id === currentUserId;
+  const counts = {};
+  for (const r of reactionList) {
+    counts[r.emoji] = (counts[r.emoji] || 0) + 1;
+  }
+  const myEmojis = new Set(
+    reactionList.filter((r) => r.member_id === currentUserId).map((r) => r.emoji)
+  );
+
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative">
+        <div
+          className={cn(
+            "max-w-[108px] rounded-2xl px-2.5 py-1.5 text-left text-[10px] leading-snug wrap-break-word",
+            isMine
+              ? "bg-ink-solid text-white dark:bg-white dark:text-ink-solid"
+              : "bg-base-elevated border border-base-line text-ink"
+          )}
+        >
+          {message.message}
+        </div>
+        {/* Ekor bubble -- nunjuk ke avatar pemiliknya di bawah */}
+        <span
+          aria-hidden="true"
+          className={cn(
+            "absolute left-1/2 -bottom-[4px] h-2 w-2 -translate-x-1/2 rotate-45",
+            isMine
+              ? "bg-ink-solid dark:bg-white"
+              : "border-b border-r border-base-line bg-base-elevated"
+          )}
+        />
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-1">
+        {QUICK_REACTIONS.map((emoji) => {
+          const count = counts[emoji] || 0;
+          const active = myEmojis.has(emoji);
+          return (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => onToggleReaction(message.id, emoji)}
+              className={cn(
+                "flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] leading-none transition-colors",
+                active
+                  ? "bg-ink-solid text-white dark:bg-white dark:text-ink-solid"
+                  : count > 0
+                  ? "bg-black/[0.05] text-ink-muted dark:bg-white/10"
+                  : "text-ink-dim/50 hover:text-ink-dim"
+              )}
+            >
+              <span>{emoji}</span>
+              {count > 0 && <span>{count}</span>}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function ClosableMessage({ title, description }) {
   return (
     <div className="fixed inset-0 z-[6000] flex items-center justify-center bg-base px-6">
@@ -66,6 +143,8 @@ function AttendanceRoomInner({
   division,
   records: initialRecords,
   hasCheckedIn: initialHasCheckedIn,
+  messages: initialMessages,
+  reactions: initialReactions,
   currentUser,
 }) {
   const { toast } = useToast();
@@ -73,6 +152,26 @@ function AttendanceRoomInner({
   const [hasCheckedIn, setHasCheckedIn] = React.useState(initialHasCheckedIn);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [now, setNow] = React.useState(() => Date.now());
+  // Pesan/status singkat tiap member, di-key pakai member_id -- cuma
+  // pesan TERAKHIR tiap orang yang disimpan (lihat dedupe di
+  // app/absensi/[roomId]/page.js), jadi kirim pesan baru otomatis
+  // menimpa bubble lama di sini juga.
+  const [messages, setMessages] = React.useState(() => {
+    const map = {};
+    for (const m of initialMessages || []) map[m.member_id] = m;
+    return map;
+  });
+  // Reaksi emoji, di-key pakai message_id -> array {id, member_id, emoji}.
+  const [reactions, setReactions] = React.useState(() => {
+    const map = {};
+    for (const r of initialReactions || []) {
+      if (!map[r.message_id]) map[r.message_id] = [];
+      map[r.message_id].push(r);
+    }
+    return map;
+  });
+  const [draft, setDraft] = React.useState("");
+  const [isSendingMessage, setIsSendingMessage] = React.useState(false);
   // `celebrate` cuma true SESAAT setelah absen baru berhasil (bukan pas
   // reload halaman yang memang udah pernah absen sebelumnya) -- dipakai
   // buat nampilin animasi checkmark bentar, terus otomatis di-fade-out
@@ -159,6 +258,54 @@ function AttendanceRoomInner({
   const canCheckIn = status === "aktif" && !hasCheckedIn && !isSubmitting;
   const firstName = currentUser.fullName.trim().split(/\s+/)[0];
 
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    const text = draft.trim();
+    if (!text || isSendingMessage) return;
+
+    setIsSendingMessage(true);
+    const result = await sendMessage(roomId, text);
+    setIsSendingMessage(false);
+
+    if (result.unauthenticated) {
+      toast({
+        variant: "error",
+        title: "Sesi login habis",
+        description: "Silakan masuk lagi, lalu buka ulang link ini.",
+      });
+      return;
+    }
+    if (result.error) {
+      toast({ variant: "error", title: "Gagal kirim pesan", description: result.error });
+      return;
+    }
+
+    setMessages((prev) => ({ ...prev, [currentUser.id]: result.message }));
+    setDraft("");
+  };
+
+  const handleToggleReaction = async (messageId, emoji) => {
+    // Optimistic: langsung update tampilan reaksi sebelum server jawab,
+    // biar tap-nya kerasa instan. Kalau ternyata gagal, tinggal kasih
+    // toast error -- tidak fatal karena reaksi cuma pemanis, bukan data
+    // krusial kayak absen.
+    setReactions((prev) => {
+      const list = prev[messageId] || [];
+      const mine = list.find(
+        (r) => r.member_id === currentUser.id && r.emoji === emoji
+      );
+      const nextList = mine
+        ? list.filter((r) => r !== mine)
+        : [...list, { id: `tmp-${Date.now()}`, member_id: currentUser.id, emoji }];
+      return { ...prev, [messageId]: nextList };
+    });
+
+    const result = await toggleReaction(roomId, messageId, emoji);
+    if (result?.error) {
+      toast({ variant: "error", title: "Gagal reaksi", description: result.error });
+    }
+  };
+
   return (
     <>
       <div
@@ -173,7 +320,7 @@ function AttendanceRoomInner({
           <X size={18} />
         </Link>
 
-        <div className="relative z-10 w-full max-w-lg mx-auto px-6 py-24 flex flex-col items-center text-center gap-6">
+        <div className="relative z-10 w-full max-w-lg mx-auto px-6 pt-24 pb-32 flex flex-col items-center text-center gap-6">
           <div className="flex flex-col items-center gap-3">
             <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase px-4 py-1.5 rounded-full bg-base-elevated border border-base-line text-ink-muted">
               Divisi {division.name}
@@ -288,6 +435,16 @@ function AttendanceRoomInner({
                     transition={{ duration: 0.4, ease: SMOOTH_EASE }}
                     className="flex flex-col items-center gap-2 text-center w-full"
                   >
+                    {messages[member.member_id] && (
+                      <MessageBubble
+                        message={messages[member.member_id]}
+                        reactionList={
+                          reactions[messages[member.member_id].id] || []
+                        }
+                        currentUserId={currentUser.id}
+                        onToggleReaction={handleToggleReaction}
+                      />
+                    )}
                     <AvatarCircle
                       name={member.full_name}
                       avatarUrl={member.avatar_url}
@@ -308,6 +465,34 @@ function AttendanceRoomInner({
             </ul>
           </motion.div>
         </div>
+
+        {/* ---- Input pesan/status singkat ---- */}
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-base-line bg-base/95 backdrop-blur px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+          <form
+            onSubmit={handleSendMessage}
+            className="mx-auto flex max-w-lg items-center gap-2"
+          >
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder={
+                hasCheckedIn ? "Tulis sesuatu..." : "Absen dulu buat bisa kirim pesan"
+              }
+              disabled={!hasCheckedIn || isSendingMessage}
+              maxLength={140}
+              className="h-10 flex-1 rounded-full border border-base-line bg-base-elevated px-4 text-sm text-ink placeholder:text-ink-dim focus:outline-none focus:ring-2 focus:ring-ink-solid/15 disabled:opacity-50 dark:focus:ring-white/15"
+            />
+            <button
+              type="submit"
+              disabled={!hasCheckedIn || !draft.trim() || isSendingMessage}
+              aria-label="Kirim pesan"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ink-solid text-white transition-opacity disabled:opacity-40 dark:bg-white dark:text-ink-solid"
+            >
+              <Send size={16} />
+            </button>
+          </form>
+        </div>
       </div>
     </>
   );
@@ -319,6 +504,8 @@ export default function AttendanceRoom({
   division,
   records,
   hasCheckedIn,
+  messages,
+  reactions,
   currentUser,
 }) {
   // Room tidak dikenali / link salah / sesi sudah dihapus admin.
@@ -350,6 +537,8 @@ export default function AttendanceRoom({
         division={division}
         records={records}
         hasCheckedIn={hasCheckedIn}
+        messages={messages}
+        reactions={reactions}
         currentUser={currentUser}
       />
     </ToastProvider>

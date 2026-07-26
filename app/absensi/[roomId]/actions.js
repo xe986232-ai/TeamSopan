@@ -119,3 +119,113 @@ export async function checkInToSession(roomId, clientTimeZone) {
 
   return { success: true, record };
 }
+
+// Kirim pesan/status singkat di sesi `roomId`. Cuma pesan TERAKHIR tiap
+// member yang ditampilkan sebagai bubble chat di atas avatar dia (lihat
+// query dedupe di app/absensi/[roomId]/page.js) -- jadi kirim pesan baru
+// otomatis "menimpa" bubble lama, bukan numpuk semua histori.
+export async function sendMessage(roomId, text) {
+  const trimmed = (text || "").trim().slice(0, 140);
+  if (!trimmed) {
+    return { error: "Pesan tidak boleh kosong." };
+  }
+
+  const sessionClient = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
+
+  if (!user) {
+    return { unauthenticated: true };
+  }
+
+  const { data: member, error: memberError } = await sessionClient
+    .from("members")
+    .select("id")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (memberError || !member) {
+    return { error: "Data member kamu tidak ditemukan. Hubungi admin." };
+  }
+
+  const { data: session, error: sessionError } = await sessionClient
+    .from("attendance_sessions")
+    .select("id")
+    .eq("room_id", roomId)
+    .maybeSingle();
+
+  if (sessionError || !session) {
+    return { error: "Sesi absensi tidak ditemukan atau sudah tidak aktif." };
+  }
+
+  const admin = createAdminSupabaseClient();
+  const { data: message, error: insertError } = await admin
+    .from("attendance_messages")
+    .insert({
+      session_id: session.id,
+      member_id: user.id,
+      message: trimmed,
+    })
+    .select("id, member_id, message, created_at")
+    .single();
+
+  if (insertError) {
+    return { error: `Gagal mengirim pesan: ${insertError.message}` };
+  }
+
+  revalidatePath(`/absensi/${roomId}`);
+
+  return { success: true, message };
+}
+
+// Toggle 1 emoji reaksi ke sebuah pesan -- kalau member ini sudah kasih
+// emoji yang sama sebelumnya, tap lagi = hapus (unique constraint di
+// tabel attendance_reactions mencegah dobel emoji yang sama per orang).
+export async function toggleReaction(roomId, messageId, emoji) {
+  const sessionClient = createServerSupabaseClient();
+  const {
+    data: { user },
+  } = await sessionClient.auth.getUser();
+
+  if (!user) {
+    return { unauthenticated: true };
+  }
+
+  const admin = createAdminSupabaseClient();
+
+  const { data: existing } = await admin
+    .from("attendance_reactions")
+    .select("id")
+    .eq("message_id", messageId)
+    .eq("member_id", user.id)
+    .eq("emoji", emoji)
+    .maybeSingle();
+
+  if (existing) {
+    const { error: deleteError } = await admin
+      .from("attendance_reactions")
+      .delete()
+      .eq("id", existing.id);
+
+    if (deleteError) {
+      return { error: `Gagal menghapus reaksi: ${deleteError.message}` };
+    }
+
+    revalidatePath(`/absensi/${roomId}`);
+    return { success: true, removed: true };
+  }
+
+  const { data: reaction, error: insertError } = await admin
+    .from("attendance_reactions")
+    .insert({ message_id: messageId, member_id: user.id, emoji })
+    .select("id, message_id, member_id, emoji")
+    .single();
+
+  if (insertError) {
+    return { error: `Gagal menambah reaksi: ${insertError.message}` };
+  }
+
+  revalidatePath(`/absensi/${roomId}`);
+  return { success: true, reaction };
+}
