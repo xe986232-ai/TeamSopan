@@ -253,7 +253,7 @@ function SequentialTexturedText({
  * giliran baris bawah. Sesudah huruf terakhir baris bawah lewat, tahan
  * sebentar (holdMs) lalu ulang dari huruf pertama baris atas lagi.
  */
-function useSequentialWalk({ inView, topLen, bottomLen, stepMs = 550, holdMs = 1800 }) {
+function useSequentialWalk({ inView, topLen, bottomLen, stepMs = 900, holdMs = 2600 }) {
   const [globalIndex, setGlobalIndex] = useState(-1);
   const totalLen = topLen + bottomLen;
 
@@ -380,8 +380,8 @@ function TexturedOutlineText({
                 position: "absolute",
                 inset: 0,
                 color: "transparent",
-                WebkitTextStroke: `clamp(1.5px, 0.045em, 3px) ${strokeColor}`,
-                textStroke: `clamp(1.5px, 0.045em, 3px) ${strokeColor}`,
+                WebkitTextStroke: `clamp(1px, 0.02em, 1.6px) ${strokeColor}`,
+                textStroke: `clamp(1px, 0.02em, 1.6px) ${strokeColor}`,
                 pointerEvents: "none",
                 zIndex: 0,
               }}
@@ -451,7 +451,13 @@ function GlitchAvatar({ avatarSrc }) {
         inView ? "hero-glitch-in" : "opacity-0"
       }`}
     >
-      <div className="w-full h-full rounded-full overflow-hidden shadow-2xl bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
+      <div
+        className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer"
+        style={{
+          boxShadow:
+            "0 18px 45px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)",
+        }}
+      >
         <Image
           src={avatarSrc}
           alt="Logo Sopan Team"
