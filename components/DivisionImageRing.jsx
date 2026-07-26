@@ -69,9 +69,16 @@ const BASE_SLIDES = [
 // ring cuma 30 derajat -- itu yang bikin lengkungannya halus.
 const SLIDES = [...BASE_SLIDES, ...BASE_SLIDES];
 
-const CARD_WIDTH = "9.5em"; // ~150px, dipakai juga di rumus translateZ di bawah
+// clamp() berbasis vw supaya di layar mobile yang sempit kartu-nya ikut
+// membesar (nggak keliatan kekecilan kayak sebelumnya pas cuma pakai
+// satuan em tetap). Preferred value 40vw bikin kartu makin gede makin
+// sempit layarnya, dibatasi minimum/maksimum biar tetap wajar di semua
+// ukuran device.
+const CARD_WIDTH = "clamp(8.5em, 40vw, 11em)";
 const CARD_ASPECT = "7/10";
-const PERSPECTIVE = "19em"; // ~2x CARD_WIDTH -- rasio ini yang bikin kartu pinggir menekuk tajam ke dalam
+// Tetap dijaga rasio ~2:1 terhadap CARD_WIDTH (pakai clamp yang selaras)
+// biar efek menekuk ke dalam konsisten di semua ukuran layar.
+const PERSPECTIVE = "clamp(17em, 80vw, 22em)";
 const DURATION = 30; // detik untuk satu putaran penuh 360 derajat
 
 export default function DivisionImageRing() {
@@ -92,7 +99,7 @@ export default function DivisionImageRing() {
           className="mx-auto max-w-2xl text-center mb-12"
         >
           <p className="font-body font-semibold text-sm tracking-widest text-pink-500 uppercase">
-            Galeri Karya
+            Member Area
           </p>
           <h2 className="font-display font-extrabold mt-2 text-3xl text-ink sm:text-4xl">
             Sekilas Proses di Balik Layar
@@ -143,7 +150,7 @@ export default function DivisionImageRing() {
                   alt={slide.title}
                   src={slide.image}
                   fill
-                  sizes="150px"
+                  sizes="(max-width: 640px) 40vw, 176px"
                   draggable={false}
                   className="object-cover pointer-events-none"
                 />
