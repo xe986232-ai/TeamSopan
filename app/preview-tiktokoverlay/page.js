@@ -1,6 +1,5 @@
 import { SiteNavbar } from "@/components/ui/site-navbar";
 import { TiktokPreviewScene } from "@/components/ui/tiktok-preview-scene";
-import { RemotionDemo } from "@/components/ui/remotion-demo";
 
 export const metadata = {
   title: "Preview TikTok Overlay",
@@ -14,6 +13,11 @@ const mobileGroups = [{ label: "Menu", items: [{ name: "Beranda", link: "/" }] }
 // components/ui/tiktok-overlay.jsx untuk detail chrome-nya (status bar,
 // tab, kolom aksi kanan, bottom nav) dan tiktok-preview-scene.jsx untuk
 // tempat area konten (video/foto) ditaruh di belakang overlay.
+//
+// CATATAN: section tes Remotion Player (RemotionDemo) sudah dihapus --
+// itu yang bikin build Vercel gagal (prerender error "Element type is
+// invalid... got undefined"). Halaman ini sekarang cuma nampilin
+// komponen preview + fitur upload lagu, tanpa render engine apa pun.
 export default function PreviewTiktokOverlayPage() {
   return (
     <main id="top" className="relative min-h-screen bg-base">
@@ -21,12 +25,6 @@ export default function PreviewTiktokOverlayPage() {
 
       <section className="relative flex items-center justify-center px-6 py-28 sm:py-32">
         <TiktokPreviewScene />
-      </section>
-
-      {/* ---- Tes animasi (Remotion Player) -- lihat components/ui/remotion-demo.jsx.
-                 Murni jalan di browser, bukan render server. ---- */}
-      <section className="relative flex items-center justify-center border-t border-ink/10 bg-base-elevated/40 px-6 py-20">
-        <RemotionDemo />
       </section>
     </main>
   );
