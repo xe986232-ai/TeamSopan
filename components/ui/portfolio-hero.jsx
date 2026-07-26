@@ -150,8 +150,8 @@ function TexturedText({
             }}
           >
             <span
-              key={`${i}-${idx}`}
-              className="hero-texture-text"
+              key={i}
+              className={`hero-texture-text${idx === offset % images.length ? " hero-texture-text-first-reveal" : ""}`}
               style={{
                 backgroundImage: `url(${img})`,
                 backgroundSize: "cover",
@@ -271,16 +271,14 @@ function SequentialTexturedText({
             <span
               style={{
                 color: isPassed ? "#FFFFFF" : "rgba(195, 228, 29, 0.28)",
-                transition: `color ${stepMs}ms ease`,
               }}
             >
               {ch}
             </span>
 
-            {/* Layer texture foto: elemen ini TIDAK di-remount tiap
-                huruf gantian aktif (key tetap sama), cuma opacity-nya
-                yang di-transisi -- jadi hasilnya crossfade halus, bukan
-                kedip/lompat. */}
+            {/* Layer texture foto: switch instan (tanpa fade/transition) --
+                huruf yang aktif langsung tampil bertekstur, yang lain
+                langsung polos, sesuai permintaan "tanpa animasi fade". */}
             <span
               className="hero-texture-text-plain"
               style={{
@@ -290,7 +288,6 @@ function SequentialTexturedText({
                 backgroundSize: "cover",
                 backgroundPosition: "center",
                 opacity: isActive ? 1 : 0,
-                transition: `opacity ${stepMs}ms ease`,
               }}
             >
               {ch}
@@ -375,10 +372,12 @@ function TexturedOutlineText({
               transition: `opacity 0.5s ease-out ${i * 60}ms, transform 0.5s ease-out ${i * 60}ms`,
             }}
           >
-            {/* Layer foto -- persis seperti TexturedText, tetap
-                di-remount tiap foto ganti biar ada crossfade halus. */}
+            {/* Layer foto -- key TIDAK berubah tiap foto ganti (cuma
+                background-image-nya yang di-swap), jadi foto berpindah
+                instan tanpa animasi blur/fade berulang, dan outline di
+                atasnya selalu pas ngikutin bentuk huruf yang sama. */}
             <span
-              key={`${i}-${idx}`}
+              key={i}
               className="hero-texture-text"
               style={{
                 backgroundImage: `url(${img})`,
@@ -390,14 +389,16 @@ function TexturedOutlineText({
             </span>
             {/* Layer outline -- statis, isi huruf transparan (cuma
                 garis pinggirnya kelihatan), duduk di atas layer foto
-                supaya bentuk huruf tetap tegas. */}
+                supaya bentuk huruf tetap tegas. Lebar garis dibikin
+                proporsional ke ukuran font raksasa (clamp), soalnya
+                1.5px fix nyaris nggak kelihatan di font 190px. */}
             <span
               style={{
                 position: "absolute",
                 inset: 0,
                 color: "transparent",
-                WebkitTextStroke: `1.5px ${strokeColor}`,
-                textStroke: `1.5px ${strokeColor}`,
+                WebkitTextStroke: `clamp(1.5px, 0.14em, 3.5px) ${strokeColor}`,
+                textStroke: `clamp(1.5px, 0.14em, 3.5px) ${strokeColor}`,
                 pointerEvents: "none",
               }}
             >
