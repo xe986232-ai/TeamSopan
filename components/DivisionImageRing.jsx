@@ -70,10 +70,14 @@ const BASE_SLIDES = [
 // ring cuma 30 derajat -- itu yang bikin lengkungannya halus.
 const SLIDES = [...BASE_SLIDES, ...BASE_SLIDES];
 
-const CARD_WIDTH = 150; // px
-const CARD_ASPECT = 4 / 5;
-const PERSPECTIVE = 620; // px -- makin kecil, makin dramatis lengkungannya
-const AUTO_SPEED_DEG_PER_SEC = 8;
+const CARD_WIDTH = 160; // px
+const CARD_ASPECT = 7 / 10;
+// PERSPECTIVE sengaja dibikin deket (relatif ke radius ring) supaya efek
+// "menekuk ke dalam" di kartu-kartu pinggir kelihatan jelas kayak silinder
+// -- bukan cuma carousel datar. Semakin kecil angka ini dibanding radius,
+// semakin dramatis lengkungannya.
+const PERSPECTIVE = 280; // px
+const AUTO_SPEED_DEG_PER_SEC = 10;
 const DRAG_SENSITIVITY = 0.35;
 
 export default function DivisionImageRing() {
@@ -153,7 +157,7 @@ export default function DivisionImageRing() {
         <div
           className="relative mx-auto grid place-items-center touch-pan-y select-none"
           style={{
-            height: "min(70vw, 320px)",
+            height: "min(85vw, 380px)",
             perspective: `${PERSPECTIVE}px`,
             // Vignette fade di kiri-kanan biar ring blend mulus ke
             // background, bukan keliatan ke-crop tajam.
@@ -194,7 +198,7 @@ export default function DivisionImageRing() {
                   alt={slide.title}
                   src={slide.image}
                   fill
-                  sizes="150px"
+                  sizes="160px"
                   draggable={false}
                   className="object-cover pointer-events-none"
                 />
