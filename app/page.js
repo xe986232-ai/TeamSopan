@@ -5,7 +5,6 @@ import DivisionsSection from "@/components/DivisionsSection";
 import TrendingSoundSection from "@/components/TrendingSoundSection";
 import CreatorTrendingSection from "@/components/CreatorTrendingSection";
 import AdminSection from "@/components/AdminSection";
-import DivisionShowcaseSlider from "@/components/DivisionShowcaseSlider";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
 import FaqSection from "@/components/FaqSection";
@@ -61,7 +60,6 @@ export default function Home() {
       <TrendingSoundSection />
       <CreatorTrendingSection />
       <AdminSection />
-      <DivisionShowcaseSlider />
       <ShowcaseSection />
       <TestimonialSection />
       <FaqSection />
