@@ -1,22 +1,30 @@
-# Update: Animasi teks Hero jadi 3 pilihan, diatur dari dashboard
+# Update: Animasi teks Hero jadi 4 pilihan, diatur dari dashboard
 
 Sebelumnya teks nama "SOPAN TEAM" di Hero homepage cuma punya 1 gaya
 animasi (foto gonta-ganti bareng di semua huruf, tiap ~3 detik). Sekarang
-ada **3 pilihan effect**, semua diatur dari `/dashboard/pengaturan`,
+ada **4 pilihan effect**, semua diatur dari `/dashboard/pengaturan`,
 bukan hardcode di kode:
 
 1. **Foto Gonta-Ganti** *(default, sama seperti sebelumnya)* — tiap
    huruf terisi foto lewat `background-clip: text`, semua huruf ganti
    foto bareng-bareng tiap beberapa detik dengan crossfade halus.
-2. **Foto Berjalan** *(baru)* — foto "berjalan" satu huruf demi satu
-   huruf secara berurutan: huruf yang lagi "dilewati" tampil bertekstur
-   foto, huruf-huruf sebelumnya yang sudah dilewati berubah jadi putih
-   polos, huruf yang belum kelewatan masih redup/samar. Sampai huruf
-   terakhir, sempat semua putih sebentar, lalu mengulang dari awal.
-3. **Warna Polos** *(baru)* — tanpa animasi foto sama sekali, teks warna
-   kuning kehijauan polos (`#C3E41D`), persis seperti desain paling awal
-   Hero sebelum ada texture foto. Cuma ada reveal blur/fade masuk biasa,
+2. **Foto Berjalan** — foto "berjalan" satu huruf demi satu huruf secara
+   berurutan: huruf yang lagi "dilewati" tampil bertekstur foto,
+   huruf-huruf sebelumnya yang sudah dilewati berubah jadi putih polos,
+   huruf yang belum kelewatan masih redup/samar. Sampai huruf terakhir,
+   sempat semua putih sebentar, lalu mengulang dari awal. Perpindahannya
+   sengaja dibuat pelan & crossfade halus (bukan kedip) — layer foto
+   nggak di-remount tiap huruf gantian, cuma opacity-nya yang
+   ditransisi.
+3. **Warna Polos** — tanpa animasi foto sama sekali, teks warna kuning
+   kehijauan polos (`#C3E41D`), persis seperti desain paling awal Hero
+   sebelum ada texture foto. Cuma ada reveal blur/fade masuk biasa,
    tidak ada animasi lanjutan.
+4. **Texture + Outline** *(baru)* — sama seperti "Foto Gonta-Ganti"
+   (semua huruf ganti foto bareng), tapi tiap huruf dilapis garis
+   outline putih/hitam (kontras sesuai tema terang/gelap) di atas
+   foto-nya, biar bentuk hurufnya tetap tegas kebaca walau isi fotonya
+   ramai atau kontrasnya rendah.
 
 ## Yang perlu kamu lakukan
 
@@ -26,32 +34,39 @@ Buka **Supabase Dashboard > SQL Editor > New query**, jalankan isi file
 `supabase/migration_hero_text_effect.sql` (setelah
 `migration_site_settings.sql`). File ini nambah 1 kolom ke tabel
 `site_settings` yang sudah ada: `hero_text_effect` (default
-`'crossfade'`). Tidak ada tabel baru, tidak ada storage bucket baru,
-tidak ada environment variable baru — situs yang sudah live tidak
+`'crossfade'`, kolom text bebas jadi effect baru "outline" nggak butuh
+migration tambahan). Tidak ada tabel baru, tidak ada storage bucket
+baru, tidak ada environment variable baru — situs yang sudah live tidak
 berubah tampilannya sampai admin sengaja ganti pilihan.
 
 ## Cara pakai
 
 Buka **`/dashboard/pengaturan`**, cari kartu **"Animasi Teks Hero"**:
-klik salah satu dari 3 kartu (ada preview mini yang jalan langsung,
+klik salah satu dari 4 kartu (ada preview mini yang jalan langsung,
 sama persis dengan yang tampil di homepage), lalu klik **Simpan
 pilihan**. Perubahan langsung kepakai di homepage dan `/preview-hero`.
 
 ## File yang berubah/ditambah
 
 - `supabase/migration_hero_text_effect.sql` — migration kolom baru.
-- `lib/hero-text-effects.js` — daftar 3 preset effect (id, label,
+- `lib/hero-text-effects.js` — daftar 4 preset effect (id, label,
   deskripsi) + helper `getHeroTextEffect()`.
-- `components/ui/portfolio-hero.jsx` — komponen baru
-  `SequentialTexturedText` (effect "Foto Berjalan"), fetch
-  `hero_text_effect` dari `site_settings` (pola sama seperti navbar
-  ambil `logo_style`), lalu render `TexturedText` /
-  `SequentialTexturedText` / `BlurText` tergantung pilihan yang aktif.
-  Sub-komponen di-export supaya bisa dipakai preview di dashboard.
-- `app/dashboard/pengaturan/HeroTextEffectPicker.jsx` — komponen picker
-  baru, 3 kartu dengan live preview + tombol simpan.
-- `app/dashboard/pengaturan/actions.js` — tambah server action
-  `updateHeroTextEffect()`.
+- `app/globals.css` — tambah class `.hero-texture-text-plain` (versi
+  `.hero-texture-text` tanpa animasi blur-reveal bawaan), dipakai
+  effect "Foto Berjalan" biar transisinya nggak retrigger animasi
+  kedip tiap huruf gantian aktif.
+- `components/ui/portfolio-hero.jsx` — komponen `SequentialTexturedText`
+  ditulis ulang jadi 2 layer bertumpuk (warna dasar + foto) yang
+  di-crossfade lewat opacity, bukan swap elemen (itu sumber
+  "kedip"-nya sebelumnya) + kecepatan pindah huruf diperlambat.
+  Tambah komponen baru `TexturedOutlineText` (effect "Texture +
+  Outline"). Sub-komponen di-export supaya bisa dipakai preview di
+  dashboard.
+- `app/dashboard/pengaturan/HeroTextEffectPicker.jsx` — grid preview
+  jadi 4 kartu.
+- `app/dashboard/pengaturan/actions.js` — server action
+  `updateHeroTextEffect()` (validasi tetap jalan otomatis ke 4 preset
+  baru lewat `HERO_TEXT_EFFECTS`).
 - `app/dashboard/pengaturan/page.js` — ambil kolom `hero_text_effect`,
   render `HeroTextEffectPicker`.
 

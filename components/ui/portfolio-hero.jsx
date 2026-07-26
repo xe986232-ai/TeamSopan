@@ -184,8 +184,8 @@ function SequentialTexturedText({
   className = "",
   style,
   offset = 0,
-  stepMs = 260,
-  holdMs = 1400,
+  stepMs = 550,
+  holdMs = 1800,
 }) {
   const [inView, setInView] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -259,33 +259,150 @@ function SequentialTexturedText({
             aria-hidden="true"
             style={{
               display: "inline-block",
+              position: "relative",
               opacity: inView ? 1 : 0,
               transform: inView ? "translateY(0)" : "translateY(-20px)",
               transition: `opacity 0.5s ease-out ${i * 40}ms, transform 0.5s ease-out ${i * 40}ms`,
             }}
           >
-            {isActive ? (
-              <span
-                className="hero-texture-text"
-                style={{
-                  backgroundImage: `url(${img})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                  transition: "filter 0.25s ease",
-                }}
-              >
-                {ch}
-              </span>
-            ) : (
-              <span
-                style={{
-                  color: isPassed ? "#FFFFFF" : "rgba(195, 228, 29, 0.28)",
-                  transition: "color 0.35s ease",
-                }}
-              >
-                {ch}
-              </span>
-            )}
+            {/* Layer dasar: warna huruf polos, transisi warnanya halus
+                (bukan lompat) pas status berubah -- ini yang selalu
+                kelihatan buat huruf yang belum/sudah dilewati. */}
+            <span
+              style={{
+                color: isPassed ? "#FFFFFF" : "rgba(195, 228, 29, 0.28)",
+                transition: `color ${stepMs}ms ease`,
+              }}
+            >
+              {ch}
+            </span>
+
+            {/* Layer texture foto: elemen ini TIDAK di-remount tiap
+                huruf gantian aktif (key tetap sama), cuma opacity-nya
+                yang di-transisi -- jadi hasilnya crossfade halus, bukan
+                kedip/lompat. */}
+            <span
+              className="hero-texture-text-plain"
+              style={{
+                position: "absolute",
+                inset: 0,
+                backgroundImage: `url(${img})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity: isActive ? 1 : 0,
+                transition: `opacity ${stepMs}ms ease`,
+              }}
+            >
+              {ch}
+            </span>
+          </span>
+        );
+      })}
+      {/* Teks asli disembunyikan visual tapi tetap kebaca screen reader/SEO */}
+      <span className="sr-only">{text}</span>
+    </span>
+  );
+}
+
+/**
+ * TexturedOutlineText — effect keempat: sama seperti TexturedText (semua
+ * huruf ganti foto bareng-bareng dengan crossfade), tapi tiap huruf
+ * dilapis garis outline di atas foto-nya (pakai -webkit-text-stroke)
+ * biar bentuk hurufnya tetap kebaca jelas walau foto di dalamnya rame/
+ * kontras rendah. Layer outline ini statis (nggak ikut ganti tiap foto
+ * berubah) jadi nggak nambah kedipan baru.
+ */
+function TexturedOutlineText({
+  text,
+  images,
+  className = "",
+  style,
+  cycleMs = 3200,
+  offset = 0,
+  isDark = true,
+}) {
+  const [inView, setInView] = useState(false);
+  const [idx, setIdx] = useState(offset % images.length);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
+  useEffect(() => {
+    if (!inView || images.length <= 1) return;
+    const timer = setInterval(() => {
+      setIdx((prev) => (prev + 1) % images.length);
+    }, cycleMs);
+    return () => clearInterval(timer);
+  }, [inView, images, cycleMs]);
+
+  const letters = useMemo(() => text.split(""), [text]);
+  const strokeColor = isDark ? "#FFFFFF" : "#1A1A1A";
+
+  return (
+    <span ref={ref} className={`inline-flex flex-nowrap ${className}`} style={style}>
+      {letters.map((ch, i) => {
+        if (ch === " ") {
+          return (
+            <span key={i} aria-hidden="true" style={{ display: "inline-block", width: "0.35em" }} />
+          );
+        }
+        const img = images[(idx + i) % images.length];
+        return (
+          <span
+            key={i}
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              position: "relative",
+              opacity: inView ? 1 : 0,
+              transform: inView ? "translateY(0)" : "translateY(-20px)",
+              transition: `opacity 0.5s ease-out ${i * 60}ms, transform 0.5s ease-out ${i * 60}ms`,
+            }}
+          >
+            {/* Layer foto -- persis seperti TexturedText, tetap
+                di-remount tiap foto ganti biar ada crossfade halus. */}
+            <span
+              key={`${i}-${idx}`}
+              className="hero-texture-text"
+              style={{
+                backgroundImage: `url(${img})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }}
+            >
+              {ch}
+            </span>
+            {/* Layer outline -- statis, isi huruf transparan (cuma
+                garis pinggirnya kelihatan), duduk di atas layer foto
+                supaya bentuk huruf tetap tegas. */}
+            <span
+              style={{
+                position: "absolute",
+                inset: 0,
+                color: "transparent",
+                WebkitTextStroke: `1.5px ${strokeColor}`,
+                textStroke: `1.5px ${strokeColor}`,
+                pointerEvents: "none",
+              }}
+            >
+              {ch}
+            </span>
           </span>
         );
       })}
@@ -497,6 +614,14 @@ export default function PortfolioHero({
                 offset={0}
                 className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
               />
+            ) : textEffect === "outline" ? (
+              <TexturedOutlineText
+                text={nameTop}
+                images={HERO_TEXTURE_IMAGES}
+                offset={0}
+                isDark={isDark}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
             ) : textEffect === "static" ? (
               <BlurText
                 text={nameTop}
@@ -521,6 +646,14 @@ export default function PortfolioHero({
                 text={nameBottom}
                 images={HERO_TEXTURE_IMAGES}
                 offset={2}
+                className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
+              />
+            ) : textEffect === "outline" ? (
+              <TexturedOutlineText
+                text={nameBottom}
+                images={HERO_TEXTURE_IMAGES}
+                offset={2}
+                isDark={isDark}
                 className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
               />
             ) : textEffect === "static" ? (
@@ -579,4 +712,4 @@ export default function PortfolioHero({
 // app/dashboard/pengaturan/HeroTextEffectPicker.jsx — biar admin lihat
 // dulu masing-masing effect sebelum simpan pilihan, tanpa harus buka tab
 // baru ke /preview-hero.
-export { TexturedText, SequentialTexturedText, BlurText, HERO_TEXTURE_IMAGES };
+export { TexturedText, SequentialTexturedText, TexturedOutlineText, BlurText, HERO_TEXTURE_IMAGES };

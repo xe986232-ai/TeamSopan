@@ -9,6 +9,7 @@ import {
 import {
   TexturedText,
   SequentialTexturedText,
+  TexturedOutlineText,
   BlurText,
   HERO_TEXTURE_IMAGES,
 } from "@/components/ui/portfolio-hero";
@@ -19,7 +20,7 @@ import { updateHeroTextEffect } from "./actions";
 // jadi apa yang admin lihat di sini = apa yang bakal tampil di situs.
 function EffectPreview({ effectId }) {
   const commonClassName =
-    "font-hero font-black text-[34px] leading-[0.9] tracking-tighter uppercase whitespace-nowrap";
+    "font-hero font-black text-[26px] leading-[0.9] tracking-tighter uppercase whitespace-nowrap";
 
   if (effectId === "sequential") {
     return (
@@ -41,6 +42,18 @@ function EffectPreview({ effectId }) {
         direction="top"
         className={`${commonClassName} justify-center`}
         style={{ color: "#C3E41D" }}
+      />
+    );
+  }
+
+  if (effectId === "outline") {
+    return (
+      <TexturedOutlineText
+        text="SOPAN"
+        images={HERO_TEXTURE_IMAGES}
+        offset={0}
+        isDark
+        className={commonClassName}
       />
     );
   }
@@ -88,7 +101,7 @@ export default function HeroTextEffectPicker({ currentEffect }) {
         </p>
       </div>
 
-      <div className="grid gap-3 mt-4 sm:grid-cols-3">
+      <div className="grid gap-3 mt-4 grid-cols-2 sm:grid-cols-4">
         {HERO_TEXT_EFFECT_LIST.map((effect) => {
           const isSelected = selectedEffect === effect.id;
           return (

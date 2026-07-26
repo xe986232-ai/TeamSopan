@@ -177,6 +177,19 @@ button:focus-visible {
   animation: hero-texture-crossfade 1.1s ease-out;
 }
 
+/* Versi "polos" tanpa animasi blur-reveal -- dipakai effect "Foto
+   Berjalan" (SequentialTexturedText) & layer texture di "Texture +
+   Outline". Elemen ini TIDAK di-remount tiap huruf ganti aktif (cuma
+   opacity-nya yang di-transisi lewat inline style di JS), jadi nggak
+   ada flash/kedip berulang seperti .hero-texture-text di atas. */
+.hero-texture-text-plain {
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+
 @keyframes hero-texture-crossfade {
   from {
     opacity: 0;
