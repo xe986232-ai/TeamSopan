@@ -78,6 +78,10 @@ module.exports = {
           "0%": { backgroundPosition: "0 0" },
           "100%": { backgroundPosition: "var(--swipe-button-text-width) 0" },
         },
+        "star-btn": {
+          "0%": { "offset-distance": "0%" },
+          "100%": { "offset-distance": "100%" },
+        },
       },
       animation: {
         "aurora": "aurora 60s linear infinite",
@@ -85,6 +89,7 @@ module.exports = {
         "float-slow": "float-slow 6s ease-in-out infinite",
         "rainbow": "rainbow var(--speed, 2s) infinite linear",
         "swipe-button-text": "swipe-button-text 1.5s cubic-bezier(.4,0,.2,1) infinite",
+        "star-btn": "star-btn calc(var(--duration)*1s) linear infinite",
       },
     },
   },

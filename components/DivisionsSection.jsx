@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Construction, X } from "lucide-react";
+import Image from "next/image";
+import { X } from "lucide-react";
 import { AnimatedTooltip } from "./ui/animated-tooltip";
 import { Button } from "./ui/button";
 import {
@@ -192,13 +193,18 @@ export default function DivisionsSection() {
               </button>
 
               <div
-                className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white p-3 shadow-md"
                 style={{
-                  background: `linear-gradient(135deg, ${alertDivision.accentSolidFrom}, ${alertDivision.accentSolidTo})`,
                   boxShadow: `0 10px 30px -8px ${alertDivision.accentSolidTo}80`,
                 }}
               >
-                <Construction size={26} className="text-white" strokeWidth={2.2} />
+                <Image
+                  src="/sopan-logo-black.png"
+                  alt="SOPAN TEAM"
+                  width={40}
+                  height={40}
+                  className="h-full w-full object-contain"
+                />
               </div>
 
               <h3 className="font-display font-extrabold text-lg text-ink leading-tight">
