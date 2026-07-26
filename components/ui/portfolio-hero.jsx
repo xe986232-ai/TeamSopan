@@ -172,11 +172,14 @@ function TexturedText({
 /**
  * SequentialTexturedText — effect kedua untuk teks nama hero: foto
  * "berjalan" satu huruf demi satu huruf secara berurutan (bukan semua
- * huruf gonta-ganti bareng seperti TexturedText). Huruf yang lagi
- * "dilewati" tampil bertekstur foto, huruf-huruf sebelumnya yang sudah
- * dilewati berubah jadi putih polos, dan huruf yang belum kelewatan
- * masih redup/samar. Sampai huruf terakhir, semua sempat putih penuh
- * sebentar, lalu mengulang dari awal lagi.
+ * huruf gonta-ganti bareng seperti TexturedText). Semua huruf defaultnya
+ * PUTIH POLOS; cuma huruf yang lagi "dilewati" (activeIndex) yang tampil
+ * bertekstur foto. Tanpa transisi/fade sama sekali -- ganti instan.
+ *
+ * Komponen ini murni presentational: timer/urutan globalnya dikontrol
+ * dari PortfolioHero (lihat `useSequentialWalk` di bawah) supaya baris
+ * atas (nameTop) selesai dulu huruf terakhirnya baru baris bawah
+ * (nameBottom) mulai jalan -- bukan jalan bareng.
  */
 function SequentialTexturedText({
   text,
@@ -184,64 +187,13 @@ function SequentialTexturedText({
   className = "",
   style,
   offset = 0,
-  stepMs = 550,
-  holdMs = 1800,
+  activeIndex = -1,
+  inView = false,
 }) {
-  const [inView, setInView] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(0);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const node = ref.current;
-    if (!node) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true);
-          observer.unobserve(node);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(node);
-    return () => observer.unobserve(node);
-  }, []);
-
   const letters = useMemo(() => text.split(""), [text]);
 
-  useEffect(() => {
-    if (!inView) return;
-    let cancelled = false;
-    let timeoutId;
-    let idx = 0;
-
-    function tick() {
-      if (cancelled) return;
-      setActiveIndex(idx);
-      if (idx < letters.length) {
-        idx += 1;
-        timeoutId = setTimeout(tick, stepMs);
-      } else {
-        // Sudah kelewatan semua huruf (semuanya putih sebentar), tahan
-        // dulu baru ulang dari huruf pertama.
-        timeoutId = setTimeout(() => {
-          idx = 0;
-          tick();
-        }, holdMs);
-      }
-    }
-
-    tick();
-    return () => {
-      cancelled = true;
-      clearTimeout(timeoutId);
-    };
-  }, [inView, letters.length, stepMs, holdMs]);
-
   return (
-    <span ref={ref} className={`inline-flex flex-nowrap ${className}`} style={style}>
+    <span className={`inline-flex flex-nowrap ${className}`} style={style}>
       {letters.map((ch, i) => {
         if (ch === " ") {
           return (
@@ -249,7 +201,6 @@ function SequentialTexturedText({
           );
         }
 
-        const isPassed = i < activeIndex;
         const isActive = i === activeIndex;
         const img = images[(offset + i) % images.length];
 
@@ -265,20 +216,13 @@ function SequentialTexturedText({
               transition: `opacity 0.5s ease-out ${i * 40}ms, transform 0.5s ease-out ${i * 40}ms`,
             }}
           >
-            {/* Layer dasar: warna huruf polos, transisi warnanya halus
-                (bukan lompat) pas status berubah -- ini yang selalu
-                kelihatan buat huruf yang belum/sudah dilewati. */}
-            <span
-              style={{
-                color: isPassed ? "#FFFFFF" : "rgba(195, 228, 29, 0.28)",
-              }}
-            >
-              {ch}
-            </span>
+            {/* Layer dasar: putih polos, selalu -- ini yang kelihatan
+                buat semua huruf yang lagi nggak aktif (belum maupun
+                sudah dilewati giliran). */}
+            <span style={{ color: "#FFFFFF" }}>{ch}</span>
 
             {/* Layer texture foto: switch instan (tanpa fade/transition) --
-                huruf yang aktif langsung tampil bertekstur, yang lain
-                langsung polos, sesuai permintaan "tanpa animasi fade". */}
+                cuma huruf yang lagi aktif yang tampil bertekstur. */}
             <span
               className="hero-texture-text-plain"
               style={{
@@ -299,6 +243,57 @@ function SequentialTexturedText({
       <span className="sr-only">{text}</span>
     </span>
   );
+}
+
+/**
+ * useSequentialWalk — jalanin SATU timer global yang gilirannya dibagi ke
+ * dua baris teks (nameTop lalu nameBottom), supaya baris atas kelar dulu
+ * semua hurufnya sebelum baris bawah mulai -- bukan jalan berbarengan.
+ * Index 0..topLen-1 = giliran baris atas, topLen..topLen+bottomLen-1 =
+ * giliran baris bawah. Sesudah huruf terakhir baris bawah lewat, tahan
+ * sebentar (holdMs) lalu ulang dari huruf pertama baris atas lagi.
+ */
+function useSequentialWalk({ inView, topLen, bottomLen, stepMs = 550, holdMs = 1800 }) {
+  const [globalIndex, setGlobalIndex] = useState(-1);
+  const totalLen = topLen + bottomLen;
+
+  useEffect(() => {
+    if (!inView || totalLen <= 0) return;
+    let cancelled = false;
+    let timeoutId;
+    let idx = 0;
+
+    function tick() {
+      if (cancelled) return;
+      setGlobalIndex(idx);
+      if (idx < totalLen - 1) {
+        idx += 1;
+        timeoutId = setTimeout(tick, stepMs);
+      } else {
+        // Huruf terakhir baris bawah baru saja aktif -- tahan sebentar
+        // (semua kelihatan putih penuh, nggak ada yang aktif) baru
+        // ulang dari huruf pertama baris atas.
+        timeoutId = setTimeout(() => {
+          setGlobalIndex(-1);
+          timeoutId = setTimeout(() => {
+            idx = 0;
+            tick();
+          }, holdMs);
+        }, stepMs);
+      }
+    }
+
+    tick();
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [inView, totalLen, stepMs, holdMs]);
+
+  return {
+    topActiveIndex: globalIndex >= 0 && globalIndex < topLen ? globalIndex : -1,
+    bottomActiveIndex: globalIndex >= topLen ? globalIndex - topLen : -1,
+  };
 }
 
 /**
@@ -372,34 +367,40 @@ function TexturedOutlineText({
               transition: `opacity 0.5s ease-out ${i * 60}ms, transform 0.5s ease-out ${i * 60}ms`,
             }}
           >
-            {/* Layer foto -- key TIDAK berubah tiap foto ganti (cuma
-                background-image-nya yang di-swap), jadi foto berpindah
-                instan tanpa animasi blur/fade berulang, dan outline di
-                atasnya selalu pas ngikutin bentuk huruf yang sama. */}
+            {/* Layer outline -- DI BELAKANG, garis tipis. Lebar stroke
+                sengaja 2x dari tebal yang mau kelihatan, soalnya
+                -webkit-text-stroke ngegambar separuh ke dalam & separuh
+                ke luar bentuk huruf; separuh yang ke dalam nanti
+                ketutup rapat sama layer foto di depannya, jadi yang
+                keliatan cuma separuh luarnya aja -- tipis & rapi,
+                nggak nusuk masuk ke tekstur huruf. */}
             <span
-              key={i}
-              className="hero-texture-text"
-              style={{
-                backgroundImage: `url(${img})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            >
-              {ch}
-            </span>
-            {/* Layer outline -- statis, isi huruf transparan (cuma
-                garis pinggirnya kelihatan), duduk di atas layer foto
-                supaya bentuk huruf tetap tegas. Lebar garis dibikin
-                proporsional ke ukuran font raksasa (clamp), soalnya
-                1.5px fix nyaris nggak kelihatan di font 190px. */}
-            <span
+              aria-hidden="true"
               style={{
                 position: "absolute",
                 inset: 0,
                 color: "transparent",
-                WebkitTextStroke: `clamp(1.5px, 0.14em, 3.5px) ${strokeColor}`,
-                textStroke: `clamp(1.5px, 0.14em, 3.5px) ${strokeColor}`,
+                WebkitTextStroke: `clamp(1.5px, 0.045em, 3px) ${strokeColor}`,
+                textStroke: `clamp(1.5px, 0.045em, 3px) ${strokeColor}`,
                 pointerEvents: "none",
+                zIndex: 0,
+              }}
+            >
+              {ch}
+            </span>
+            {/* Layer foto -- DI DEPAN outline, nutupin separuh dalam
+                garis outline. Key TIDAK berubah tiap foto ganti (cuma
+                background-image-nya yang di-swap), jadi foto berpindah
+                instan tanpa animasi blur/fade berulang. */}
+            <span
+              key={i}
+              className="hero-texture-text"
+              style={{
+                position: "relative",
+                zIndex: 1,
+                backgroundImage: `url(${img})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
               }}
             >
               {ch}
@@ -593,6 +594,35 @@ export default function PortfolioHero({
     };
   }, []);
 
+  // Trigger bareng buat effect "sequential" -- satu observer buat
+  // area nama (atas + bawah), dan satu timer global (useSequentialWalk)
+  // yang ngatur giliran: baris atas kelar dulu semua hurufnya, baru
+  // baris bawah mulai jalan (bukan bareng-bareng).
+  const nameAreaRef = useRef(null);
+  const [nameInView, setNameInView] = useState(false);
+
+  useEffect(() => {
+    const node = nameAreaRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setNameInView(true);
+          observer.unobserve(node);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(node);
+    return () => observer.unobserve(node);
+  }, []);
+
+  const { topActiveIndex, bottomActiveIndex } = useSequentialWalk({
+    inView: nameInView && textEffect === "sequential",
+    topLen: nameTop.length,
+    bottomLen: nameBottom.length,
+  });
+
   return (
     <section
       className="relative min-h-[80vh] sm:min-h-[85vh] md:min-h-[90vh] flex flex-col overflow-hidden transition-colors"
@@ -606,13 +636,15 @@ export default function PortfolioHero({
           di bawahnya; jadi cuma nutupin area nama+logo, pas sampe situ. */}
       <div className="relative flex-1 flex items-center justify-center px-4 py-16 overflow-hidden">
         <HeroCollageBackground isDark={isDark} />
-        <div className="relative text-center">
+        <div className="relative text-center" ref={nameAreaRef}>
           <div>
             {textEffect === "sequential" ? (
               <SequentialTexturedText
                 text={nameTop}
                 images={HERO_TEXTURE_IMAGES}
                 offset={0}
+                activeIndex={topActiveIndex}
+                inView={nameInView}
                 className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
               />
             ) : textEffect === "outline" ? (
@@ -647,6 +679,8 @@ export default function PortfolioHero({
                 text={nameBottom}
                 images={HERO_TEXTURE_IMAGES}
                 offset={2}
+                activeIndex={bottomActiveIndex}
+                inView={nameInView}
                 className="font-hero font-black text-[72px] sm:text-[120px] md:text-[160px] lg:text-[190px] leading-[0.8] tracking-tighter uppercase whitespace-nowrap"
               />
             ) : textEffect === "outline" ? (
