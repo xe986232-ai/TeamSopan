@@ -454,8 +454,7 @@ function GlitchAvatar({ avatarSrc }) {
       <div
         className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer"
         style={{
-          boxShadow:
-            "0 18px 45px rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.12)",
+          boxShadow: "-4px 6px 10px rgba(0,0,0,0.35)",
         }}
       >
         <Image
