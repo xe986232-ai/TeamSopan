@@ -74,35 +74,12 @@ module.exports = {
           "0%": { "background-position": "0%" },
           "100%": { "background-position": "200%" },
         },
-        // Dipakai efek spark/shimmer berputar di logo Hero (GlitchAvatar,
-        // components/ui/portfolio-hero.jsx) -- diadaptasi dari ShimmerButton.
-        "spin-around": {
-          "0%": {
-            transform: "translateZ(0) rotate(0)",
-          },
-          "15%, 35%": {
-            transform: "translateZ(0) rotate(90deg)",
-          },
-          "65%, 85%": {
-            transform: "translateZ(0) rotate(270deg)",
-          },
-          "100%": {
-            transform: "translateZ(0) rotate(360deg)",
-          },
-        },
-        "shimmer-slide": {
-          to: {
-            transform: "translate(calc(100cqw - 100%), 0)",
-          },
-        },
       },
       animation: {
         "aurora": "aurora 60s linear infinite",
         "scroll": "scroll var(--animation-duration, 40s) var(--animation-direction, forwards) linear infinite",
         "float-slow": "float-slow 6s ease-in-out infinite",
         "rainbow": "rainbow var(--speed, 2s) infinite linear",
-        "spin-around": "spin-around calc(var(--speed) * 2) infinite linear",
-        "shimmer-slide": "shimmer-slide var(--speed) ease-in-out infinite alternate",
       },
     },
   },

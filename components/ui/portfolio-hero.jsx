@@ -451,32 +451,13 @@ function GlitchAvatar({ avatarSrc }) {
         inView ? "hero-glitch-in" : "opacity-0"
       }`}
     >
-      <div
-        className="group relative w-full h-full rounded-full overflow-hidden flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer"
-        style={{
-          "--spread": "90deg",
-          "--shimmer-color": "#ffffff",
-          "--speed": "3s",
-          "--cut": "3px",
-        }}
-      >
-        {/* Spark container -- cincin cahaya yang muter ngelilingin logo,
-            diadaptasi dari ShimmerButton. Diblur dikit biar keliatan
-            "glow", bukan garis tajam. */}
-        <div className="absolute -z-20 inset-0 overflow-hidden rounded-full blur-[2px] [container-type:size]">
-          <div className="absolute inset-0 h-[100cqh] animate-shimmer-slide [aspect-ratio:1] [border-radius:0]">
-            <div className="absolute -inset-full w-auto rotate-0 animate-spin-around [background:conic-gradient(from_calc(270deg-(var(--spread)*0.5)),transparent_0,var(--shimmer-color)_var(--spread),transparent_var(--spread))]" />
-          </div>
-        </div>
-        {/* Backdrop putih -- nutupin bagian tengah, nyisain cincin tipis
-            dari spark di pinggirnya doang (lebar cincinnya = --cut). */}
-        <div className="absolute -z-10 rounded-full bg-white [inset:var(--cut)]" />
+      <div className="w-full h-full rounded-full overflow-hidden bg-white flex items-center justify-center transition-transform duration-300 hover:scale-110 cursor-pointer">
         <Image
           src={avatarSrc}
           alt="Logo Sopan Team"
           width={120}
           height={195}
-          className="relative z-10 w-[70%] h-[70%] object-contain"
+          className="w-[70%] h-[70%] object-contain"
         />
       </div>
       {/* Ghost layer color-split — kesan "glitch" khas RGB shift */}
