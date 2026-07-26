@@ -1,7 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import Link from "next/link";
+import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Construction, X } from "lucide-react";
 import { AnimatedTooltip } from "./ui/animated-tooltip";
 import { Button } from "./ui/button";
 import {
@@ -73,6 +74,8 @@ const fadeUp = {
 };
 
 export default function DivisionsSection() {
+  const [alertDivision, setAlertDivision] = useState(null);
+
   return (
     <section id="divisi" className="relative px-6 sm:px-10 py-20 sm:py-28">
       <div className="max-w-6xl mx-auto">
@@ -139,24 +142,83 @@ export default function DivisionsSection() {
                   </div>
                 </CardContent>
                 <CardFooter className="px-4 pt-3 pb-2 flex-col items-stretch gap-2">
-                  {division.href ? (
-                    <Link href={division.href} className="w-full">
-                      <Button className="w-full h-11 rounded-full">Lihat Divisi</Button>
-                    </Link>
-                  ) : (
-                    <Button className="w-full h-11 rounded-full">Lihat Divisi</Button>
-                  )}
-                  <Link href="/anggota" className="w-full">
-                    <Button variant="secondary" className="w-full h-11 rounded-full">
-                      Lihat Anggota
-                    </Button>
-                  </Link>
+                  <Button
+                    className="w-full h-11 rounded-full"
+                    onClick={() => setAlertDivision(division)}
+                  >
+                    Lihat Divisi
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="w-full h-11 rounded-full"
+                    onClick={() => setAlertDivision(division)}
+                  >
+                    Lihat Anggota
+                  </Button>
                 </CardFooter>
               </Card>
             </motion.div>
           ))}
         </div>
       </div>
+
+      {/* ---- Alert: fitur masih dalam pengembangan ---- */}
+      <AnimatePresence>
+        {alertDivision && (
+          <motion.div
+            key="dev-alert-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-6"
+            onClick={() => setAlertDivision(null)}
+          >
+            <motion.div
+              key="dev-alert-card"
+              initial={{ opacity: 0, y: 16, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.96 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm rounded-[24px] border border-black/5 dark:border-white/10 bg-base-elevated shadow-2xl shadow-black/20 p-6 text-center"
+            >
+              <button
+                onClick={() => setAlertDivision(null)}
+                aria-label="Tutup"
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 transition-colors text-ink-muted"
+              >
+                <X size={15} />
+              </button>
+
+              <div
+                className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full"
+                style={{
+                  background: `linear-gradient(135deg, ${alertDivision.accentSolidFrom}, ${alertDivision.accentSolidTo})`,
+                  boxShadow: `0 10px 30px -8px ${alertDivision.accentSolidTo}80`,
+                }}
+              >
+                <Construction size={26} className="text-white" strokeWidth={2.2} />
+              </div>
+
+              <h3 className="font-display font-extrabold text-lg text-ink leading-tight">
+                Website Dalam Pengembangan
+              </h3>
+              <p className="text-sm text-ink-muted mt-2 leading-relaxed">
+                Halaman divisi {alertDivision.name} masih kami siapkan. Balik
+                lagi ya, bakal segera rilis!
+              </p>
+
+              <Button
+                className="w-full h-11 rounded-full mt-5"
+                onClick={() => setAlertDivision(null)}
+              >
+                Oke, Mengerti
+              </Button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
