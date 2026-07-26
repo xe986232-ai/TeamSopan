@@ -21,14 +21,13 @@ function initials(name) {
     .join("");
 }
 
-function AvatarCircle({ name, avatarUrl, accentFrom, accentTo, size = 40 }) {
+function AvatarCircle({ name, avatarUrl, size = 40 }) {
   return (
     <span
-      className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold text-white"
+      className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-full font-display font-bold bg-ink-solid text-white dark:bg-white dark:text-ink-solid"
       style={{
         width: size,
         height: size,
-        background: `linear-gradient(135deg, ${accentFrom}, ${accentTo})`,
         fontSize: size * 0.36,
       }}
     >
@@ -73,7 +72,6 @@ function AttendanceRoomInner({
   const [records, setRecords] = React.useState(initialRecords);
   const [hasCheckedIn, setHasCheckedIn] = React.useState(initialHasCheckedIn);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [showIntro, setShowIntro] = React.useState(true);
   const [now, setNow] = React.useState(() => Date.now());
   // `celebrate` cuma true SESAAT setelah absen baru berhasil (bukan pas
   // reload halaman yang memang udah pernah absen sebelumnya) -- dipakai
@@ -85,11 +83,6 @@ function AttendanceRoomInner({
   React.useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(timer);
-  }, []);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => setShowIntro(false), 2200);
-    return () => clearTimeout(timer);
   }, []);
 
   // Sesudah animasi sukses (checkmark + burst) sempat kelihatan ~1.9
@@ -168,61 +161,10 @@ function AttendanceRoomInner({
 
   return (
     <>
-      <AnimatePresence>
-        {showIntro && (
-          <motion.div
-            key="absensi-intro"
-            className="fixed inset-0 z-[7000] flex flex-col items-center justify-center bg-base px-6 text-center"
-            exit={{ opacity: 0, scale: 1.04 }}
-            transition={{ duration: 0.55, ease: SMOOTH_EASE }}
-          >
-            <div
-              className="pointer-events-none absolute inset-0 opacity-25 blur-3xl"
-              style={{
-                background: `radial-gradient(circle at 50% 42%, ${division.accentFrom}, transparent 60%)`,
-              }}
-            />
-            <motion.span
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: SMOOTH_EASE }}
-              className="relative font-body font-semibold text-xs tracking-[0.4em] uppercase text-ink-muted"
-            >
-              Team Sopan
-            </motion.span>
-            <motion.h1
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.3, ease: SMOOTH_EASE }}
-              className="relative font-display font-extrabold text-4xl sm:text-5xl text-ink mt-3"
-            >
-              Absensi Divisi{" "}
-              <span
-                style={{
-                  backgroundImage: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-                  WebkitBackgroundClip: "text",
-                  backgroundClip: "text",
-                  color: "transparent",
-                }}
-              >
-                {division.name}
-              </span>
-            </motion.h1>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <div
         data-lenis-prevent
         className="fixed inset-0 z-[6000] flex flex-col items-center overflow-y-auto bg-base"
       >
-        <div
-          className="pointer-events-none absolute -top-1/3 left-1/2 -translate-x-1/2 w-[85vw] h-[60vw] rounded-full opacity-[0.12] blur-3xl"
-          style={{
-            background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-          }}
-        />
-
         <Link
           href="/"
           aria-label="Tutup"
@@ -232,25 +174,13 @@ function AttendanceRoomInner({
         </Link>
 
         <div className="relative z-10 w-full max-w-lg mx-auto px-6 py-24 flex flex-col items-center text-center gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: SMOOTH_EASE }}
-            className="flex flex-col items-center gap-3"
-          >
-            <span
-              className="font-body font-semibold text-xs tracking-[0.3em] uppercase px-4 py-1.5 rounded-full text-white"
-              style={{
-                background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-              }}
-            >
+          <div className="flex flex-col items-center gap-3">
+            <span className="font-body font-semibold text-xs tracking-[0.3em] uppercase px-4 py-1.5 rounded-full bg-base-elevated border border-base-line text-ink-muted">
               Divisi {division.name}
             </span>
             <AvatarCircle
               name={currentUser.fullName}
               avatarUrl={currentUser.avatarUrl}
-              accentFrom={division.accentFrom}
-              accentTo={division.accentTo}
               size={72}
             />
             <h1 className="font-display font-extrabold text-3xl sm:text-4xl text-ink leading-tight">
@@ -265,7 +195,7 @@ function AttendanceRoomInner({
               <Clock size={13} />
               {countdownLabel}
             </div>
-          </motion.div>
+          </div>
 
           {/* ---- Area absen ---- */}
           {/* `layout` di wrapper ini + mode="popLayout" di AnimatePresence
@@ -277,9 +207,6 @@ function AttendanceRoomInner({
               geser naik ngisi tempat kosong. */}
           <motion.div
             layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: SMOOTH_EASE }}
             className="w-full flex flex-col items-center gap-5"
           >
             <AnimatePresence mode="popLayout">
@@ -319,18 +246,12 @@ function AttendanceRoomInner({
                   transition={{ duration: 0.4, ease: SMOOTH_EASE }}
                   className="flex flex-col items-center gap-3"
                 >
-                  <div
-                    className="relative flex h-10 w-[250px] items-center justify-center gap-2 rounded-lg text-sm font-semibold text-white"
-                    style={{
-                      background: `linear-gradient(135deg, ${division.accentFrom}, ${division.accentTo})`,
-                      boxShadow: `0 8px 24px -8px ${division.accentTo}88`,
-                    }}
-                  >
+                  <div className="relative flex h-10 w-[250px] items-center justify-center gap-2 rounded-lg text-sm font-semibold bg-ink-solid text-white dark:bg-white dark:text-ink-solid">
                     <motion.span
                       initial={{ scale: 0.4, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ duration: 0.3, ease: SMOOTH_EASE, delay: 0.05 }}
-                      className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20"
+                      className="flex h-5 w-5 items-center justify-center rounded-full bg-white/20 dark:bg-ink-solid/10"
                     >
                       <Check size={13} strokeWidth={3} />
                     </motion.span>
@@ -345,13 +266,7 @@ function AttendanceRoomInner({
           </motion.div>
 
           {/* ---- List yang sudah absen ---- */}
-          <motion.div
-            layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3, ease: SMOOTH_EASE }}
-            className="w-full mt-4"
-          >
+          <motion.div layout className="w-full mt-4">
             <div className="flex items-center justify-center gap-2 mb-5 text-ink">
               <Users size={16} className="text-ink-muted" />
               <span className="font-body font-semibold text-sm">
@@ -376,8 +291,6 @@ function AttendanceRoomInner({
                     <AvatarCircle
                       name={member.full_name}
                       avatarUrl={member.avatar_url}
-                      accentFrom={division.accentFrom}
-                      accentTo={division.accentTo}
                       size={56}
                     />
                     <div className="min-w-0 w-full">
