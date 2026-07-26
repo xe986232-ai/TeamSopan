@@ -5,7 +5,7 @@ import DivisionsSection from "@/components/DivisionsSection";
 import TrendingSoundSection from "@/components/TrendingSoundSection";
 import CreatorTrendingSection from "@/components/CreatorTrendingSection";
 import AdminSection from "@/components/AdminSection";
-import DivisionCoverflowMarquee from "@/components/DivisionCoverflowMarquee";
+import DivisionImageRing from "@/components/DivisionImageRing";
 import ShowcaseSection from "@/components/ShowcaseSection";
 import TestimonialSection from "@/components/TestimonialSection";
 import FaqSection from "@/components/FaqSection";
@@ -61,7 +61,7 @@ export default function Home() {
       <TrendingSoundSection />
       <CreatorTrendingSection />
       <AdminSection />
-      <DivisionCoverflowMarquee />
+      <DivisionImageRing />
       <ShowcaseSection />
       <TestimonialSection />
       <FaqSection />
