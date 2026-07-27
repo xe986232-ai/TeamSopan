@@ -14,26 +14,41 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { DIVISIONS_ABSENSI } from "@/lib/absensi";
 import { createAttendanceSession } from "@/app/dashboard/absensi/actions";
+import { nowInZoneParts, SESSION_TIME_ZONE } from "@/lib/timezone";
 
+const pad = (n) => String(n).padStart(2, "0");
+
+// PENTING: default tanggal/jam di form ini HARUS dihitung dari jam WIB
+// (nowInZoneParts), BUKAN dari jam device (`new Date().getHours()` dkk).
+// Backend selalu mengunci input jam di form sebagai WIB (lihat
+// wallClockDateTime di app/dashboard/absensi/actions.js) -- kalau
+// defaultnya diam-diam diambil dari jam device yang gak persis WIB
+// (device clock drift/timezone salah), admin bakal ngirim jam yang
+// sebenarnya beberapa menit di BELAKANG WIB asli tanpa sadar, dan sesi
+// yang harusnya "mulai sekarang" jadi baru kebuka belasan menit
+// kemudian. Pakai WIB langsung di sini biar default selalu akurat
+// berapa pun jam/zona device admin.
 function todayDateValue() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const { year, month, day } = nowInZoneParts(SESSION_TIME_ZONE);
+  return `${year}-${pad(month)}-${pad(day)}`;
 }
 
 function nowTimeValue() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const { hour, minute } = nowInZoneParts(SESSION_TIME_ZONE);
+  return `${pad(hour)}:${pad(minute)}`;
 }
 
-// Default jam selesai = 1 jam setelah sekarang, biar admin nggak wajib
-// isi manual kalau memang mau durasi standar -- tapi tetap bisa diubah
-// bebas ke jam berapa pun.
+// Default jam selesai = 1 jam setelah sekarang (WIB), biar admin nggak
+// wajib isi manual kalau memang mau durasi standar -- tapi tetap bisa
+// diubah bebas ke jam berapa pun. Ditambah 60 menit lewat komponen
+// menit (bukan bikin Date device + 1 jam) biar tetap konsisten di WIB,
+// termasuk pas kelewat tengah malam.
 function defaultEndTimeValue() {
-  const d = new Date(Date.now() + 60 * 60000);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const { hour, minute } = nowInZoneParts(SESSION_TIME_ZONE);
+  const totalMinutes = (hour * 60 + minute + 60) % (24 * 60);
+  const endHour = Math.floor(totalMinutes / 60);
+  const endMinute = totalMinutes % 60;
+  return `${pad(endHour)}:${pad(endMinute)}`;
 }
 
 export default function CreateAttendanceSessionForm() {
