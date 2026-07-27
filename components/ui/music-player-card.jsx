@@ -1,8 +1,63 @@
 "use client";
 
 import * as React from "react";
-import { Play, Pause, SkipBack, SkipForward, Cast, Volume1, Volume2 } from "lucide-react";
+import { Cast } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+// ============================================================================
+// Icon custom (bukan lucide-react) -- bentuknya disamain persis sama SVG di
+// referensi HTML music player yang dikasih user: play/pause standar, tapi
+// prev/next berupa DOUBLE TRIANGLE tanpa garis batang (beda dari
+// SkipBack/SkipForward bawaan lucide), dan speaker kiri/kanan tanpa vs
+// dengan gelombang suara.
+// ============================================================================
+function PlayIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M8 5v14l11-7z" />
+    </svg>
+  );
+}
+
+function PauseIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M6 5h4v14H6zm8 0h4v14h-4z" />
+    </svg>
+  );
+}
+
+function PrevIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M12.5 12 22 5v14zM3 12l9.5-7v14z" />
+    </svg>
+  );
+}
+
+function NextIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M11.5 12 2 19V5zM21 12l-9.5 7V5z" />
+    </svg>
+  );
+}
+
+function VolumeLowIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M3 9v6h4l5 5V4L7 9z" />
+    </svg>
+  );
+}
+
+function VolumeHighIcon({ size = 24, className }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <path d="M3 9v6h4l5 5V4L7 9zM16.5 12A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z" />
+    </svg>
+  );
+}
 
 // ============================================================================
 // MusicPlayerCard -- CUMA tampilan player-nya (cover, judul, progress,
@@ -142,7 +197,7 @@ export function MusicPlayerCard({
             tabIndex={interactive ? 0 : -1}
             className="text-white transition-opacity hover:opacity-70"
           >
-            <SkipBack size={19} fill="currentColor" />
+            <PrevIcon size={19} />
           </button>
           <button
             type="button"
@@ -151,7 +206,7 @@ export function MusicPlayerCard({
             tabIndex={interactive ? 0 : -1}
             className="text-white transition-opacity hover:opacity-70"
           >
-            {isPlaying ? <Pause size={25} fill="currentColor" /> : <Play size={25} fill="currentColor" />}
+            {isPlaying ? <PauseIcon size={25} /> : <PlayIcon size={25} />}
           </button>
           <button
             type="button"
@@ -160,13 +215,13 @@ export function MusicPlayerCard({
             tabIndex={interactive ? 0 : -1}
             className="text-white transition-opacity hover:opacity-70"
           >
-            <SkipForward size={19} fill="currentColor" />
+            <NextIcon size={19} />
           </button>
         </div>
 
         {/* ---- volume ---- */}
         <div className="mt-3 flex items-center gap-2">
-          <Volume1 size={13} className="shrink-0 text-white/60" />
+          <VolumeLowIcon size={13} className="shrink-0 text-white/60" />
           {interactive ? (
             <input
               type="range"
@@ -183,7 +238,7 @@ export function MusicPlayerCard({
               <div className="mpc-range-static-thumb" />
             </div>
           )}
-          <Volume2 size={15} className="shrink-0 text-white/60" />
+          <VolumeHighIcon size={15} className="shrink-0 text-white/60" />
         </div>
       </div>
 
