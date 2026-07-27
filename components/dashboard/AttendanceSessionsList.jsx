@@ -6,7 +6,8 @@ import DivisionBadge from "./DivisionBadge";
 import ConfirmDeleteModal from "./ConfirmDeleteModal";
 import AttendanceRecapModal from "./AttendanceRecapModal";
 import { useToast } from "@/components/ui/toast";
-import { DIVISIONS_ABSENSI, getSessionStatus, toLocalWallClock } from "@/lib/absensi";
+import { DIVISIONS_ABSENSI, getSessionStatus } from "@/lib/absensi";
+import { SESSION_TIME_ZONE } from "@/lib/timezone";
 import {
   deleteAttendanceSession,
   getAttendanceRecap,
@@ -18,17 +19,18 @@ const STATUS_LABEL = {
   berakhir: { label: "Berakhir", className: "bg-black/[0.04] text-black/40" },
 };
 
-// toLocalWallClock() balikin Date yang dibikin dari komponen jam dinding
-// tersimpan (bukan momen absolut) -- jadi toLocaleString() di sini bakal
-// nampilin PERSIS jam yang diketik admin, bukan digeser sesuai timezone
-// browser admin sekarang.
+// starts_at/ends_at sekarang instant UTC absolut -- ditampilkan pakai
+// timeZone eksplisit WIB (SESSION_TIME_ZONE) supaya admin selalu lihat
+// PERSIS jam yang mereka ketik di form, gak peduli browser admin lagi
+// di zona mana pas buka dashboard ini.
 function formatDateTime(iso) {
-  return toLocalWallClock(iso).toLocaleString("id-ID", {
+  return new Date(iso).toLocaleString("id-ID", {
     day: "2-digit",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: SESSION_TIME_ZONE,
   });
 }
 
@@ -166,7 +168,7 @@ export default function AttendanceSessionsList({ initialSessions }) {
                         {formatDateTime(session.startsAt)}
                         <span className="text-black/40 font-normal">
                           {" "}
-                          → {formatDateTime(session.endsAt)}
+                          → {formatDateTime(session.endsAt)} WIB
                         </span>
                       </p>
                     </div>

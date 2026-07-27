@@ -181,8 +181,10 @@ export default function CreateAttendanceSessionForm() {
           />
         </div>
         <p className="text-xs text-black/40 -mt-2">
-          Absensi otomatis terbuka begitu jam mulai tiba, dan tertutup
-          begitu jam selesai lewat.
+          Jam mulai/selesai pakai patokan <strong>WIB</strong>. Sesi
+          otomatis terbuka begitu jam mulai tiba, dan tertutup begitu jam
+          selesai lewat — <strong>kebuka di waktu yang sama buat semua
+          anggota</strong>, apa pun zona waktu HP mereka (WIB/WITA/WIT).
         </p>
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">

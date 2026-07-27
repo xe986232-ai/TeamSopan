@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import {
   formatCountdown,
   timeAgoLabel,
-  toLocalWallClock,
   QUICK_REACTIONS,
 } from "@/lib/absensi";
 import {
@@ -270,16 +269,18 @@ function AttendanceRoomInner({
     return () => clearTimeout(timer);
   }, [celebrate]);
 
-  // Pakai toLocalWallClock, BUKAN new Date(session.starts_at) langsung --
-  // supaya "07:00" yang diset admin kebaca 07:00 di jam HP member ini,
-  // apa pun zona waktunya (WIB/WITA/WIT/dll), bukan digeser ke 1 momen
-  // absolut yang sama buat semua orang.
+  // session.starts_at/ends_at adalah instant UTC yang beneran absolut --
+  // dibandingkan langsung ke `now` (Date.now()) supaya sesi kebuka di
+  // momen yang PERSIS sama buat semua member, apa pun zona waktu HP-nya
+  // masing-masing (WIB/WITA/WIT/dll). Countdown yang ditampilkan tetap
+  // otomatis dalam "jam lokal" device masing-masing karena ini cuma
+  // selisih ms, bukan jam yang ditampilkan mentah-mentah.
   const startsAt = React.useMemo(
-    () => toLocalWallClock(session.starts_at).getTime(),
+    () => new Date(session.starts_at).getTime(),
     [session]
   );
   const endsAt = React.useMemo(
-    () => toLocalWallClock(session.ends_at).getTime(),
+    () => new Date(session.ends_at).getTime(),
     [session]
   );
 
@@ -294,12 +295,11 @@ function AttendanceRoomInner({
 
   const handleAbsen = async () => {
     setIsSubmitting(true);
-    // Server gak otomatis tau device ini ada di zona waktu mana --
-    // dikirim eksplisit biar validasi jam sesi di server konsisten
-    // sama status yang udah ditampilkan di layar (lihat lib/timezone.js).
-    const timeZone =
-      Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
-    const result = await checkInToSession(roomId, timeZone);
+    // Validasi jendela waktu sekarang dicek di server pakai instant
+    // absolut (lihat app/absensi/[roomId]/actions.js) -- gak perlu lagi
+    // kirim timezone device, karena sesi kebuka di momen yang sama buat
+    // semua orang, bukan disesuaikan ke jam lokal masing-masing.
+    const result = await checkInToSession(roomId);
     setIsSubmitting(false);
 
     if (result.unauthenticated) {

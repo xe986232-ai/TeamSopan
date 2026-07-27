@@ -3,27 +3,33 @@
 import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
+import { zonedWallClockToUtcMs, SESSION_TIME_ZONE } from "@/lib/timezone";
 
-// Jam yang diketik admin di form (mis. "07:00") disimpan APA ADANYA
-// sebagai jam dinding (wall clock) -- BUKAN dipatok ke 1 zona waktu
-// tertentu (dulu selalu dianggap WIB, jadi anggota di WITA/WIT baru
-// bisa absen 1-2 jam "telat" dari jam yang diketik admin).
+// Jam yang diketik admin di form (mis. "07:00") SELALU dianggap WIB
+// (SESSION_TIME_ZONE) dan dikonversi jadi instant UTC yang tepat --
+// hasilnya 1 momen absolut yang sama buat SEMUA orang, di zona waktu
+// manapun mereka buka linknya (WIB/WITA/WIT/luar negeri).
 //
-// Triknya: string tanggal+jam ditulis dengan akhiran "Z" (seolah-olah
-// UTC) pas dibikin jadi Date, supaya Node TIDAK menerapkan offset
-// timezone apa pun -- angka yang diketik admin (07, 00, dst) tersimpan
-// utuh di kolom `timestamptz`, gak peduli server jalan di timezone apa
-// (Vercel default-nya UTC, tapi ini sengaja dibuat gak bergantung ke
-// itu).
-//
-// Pas dibaca balik, sisi tampilan (lib/absensi.js -> toLocalWallClock,
-// dan lib/timezone.js buat validasi server) baca ulang angka2 itu lewat
-// getUTC*() lalu direkonstruksi pakai timezone device masing2 orang.
-// Hasilnya: "07:00" yang diketik admin kebaca "07:00" juga di jam siapa
-// pun yang buka linknya -- WIB, WITA, WIT, atau zona manapun -- gak ada
-// yang telat nunggu digeser offset.
+// PENTING: sebelumnya jam ini sempat disimpan "apa adanya" (trik
+// akhiran "Z") lalu ditafsir ULANG sesuai timezone device tiap
+// pengunjung pas dibuka -- niatnya biar adil, tapi efeknya malah bikin
+// sesi kebuka di MOMEN NYATA yang beda-beda buat orang di zona
+// berbeda (ada yang masih nunggu, ada yang udah jalan duluan). Itu
+// bug yang lagi diperbaiki di sini: sesi harus mulai BARENG buat
+// semua orang, bukan disesuaikan ke jam lokal masing-masing.
 function wallClockDateTime(date, time) {
-  return new Date(`${date}T${time}:00Z`);
+  const [year, month, day] = date.split("-").map(Number);
+  const [hour, minute] = time.split(":").map(Number);
+  const ms = zonedWallClockToUtcMs(
+    year,
+    month - 1,
+    day,
+    hour,
+    minute,
+    0,
+    SESSION_TIME_ZONE
+  );
+  return new Date(ms);
 }
 
 // Dipanggil dari form "Buat Sesi Absensi Baru" di /dashboard/absensi.
