@@ -32,13 +32,23 @@ import { transcodeWebmToMp4 } from "@/lib/ffmpeg-webm-to-mp4";
 //      (lib/ffmpeg-webm-to-mp4.js), lalu otomatis diunduh.
 // ============================================================================
 
-const EXPORT_W = 720;
-const EXPORT_H = 1280; // rasio 9:16, sama seperti panggung TiktokStage
+// Pilihan resolusi export -- semua tetap rasio 9:16, sama seperti panggung
+// TiktokStage, cuma beda kerapatan piksel (720p vs 1080p). `drawStageFrame`
+// (lib/tiktok-stage-canvas.js) sudah menghitung semua ukuran relatif dari
+// stageW, jadi tinggal ganti dimensi canvas -- tidak ada perubahan lain
+// yang diperlukan supaya hasilnya tetap proporsional.
+export const EXPORT_RESOLUTIONS = {
+  "720p": { label: "720p (720 x 1280)", width: 720, height: 1280 },
+  "1080p": { label: "1080p (1080 x 1920)", width: 1080, height: 1920 },
+};
+export const DEFAULT_EXPORT_RESOLUTION = "720p";
 
-export function useTiktokStageExport({ audioRef, getExportState, trackName }) {
+export function useTiktokStageExport({ audioRef, getExportState, trackName, resolutionKey }) {
   const [status, setStatus] = React.useState("idle"); // idle | recording | converting | done | error
   const [progress, setProgress] = React.useState(0);
   const [statusMessage, setStatusMessage] = React.useState("");
+
+  const resolution = EXPORT_RESOLUTIONS[resolutionKey] || EXPORT_RESOLUTIONS[DEFAULT_EXPORT_RESOLUTION];
 
   const canvasRef = React.useRef(null);
   const audioCtxRef = React.useRef(null);
@@ -56,8 +66,8 @@ export function useTiktokStageExport({ audioRef, getExportState, trackName }) {
     if (!canvasRef.current) {
       canvasRef.current = document.createElement("canvas");
     }
-    canvasRef.current.width = EXPORT_W;
-    canvasRef.current.height = EXPORT_H;
+    canvasRef.current.width = resolution.width;
+    canvasRef.current.height = resolution.height;
     return canvasRef.current;
   }
 

@@ -9,7 +9,17 @@ import { cn } from "@/lib/utils";
 // Logic-nya semua ada di hooks/use-tiktok-stage-export.js; komponen ini
 // murni tampilan supaya gampang dipasang di TiktokPreviewScene.
 // ============================================================================
-export function TiktokExportPanel({ status, progress, statusMessage, onExport, onStop, className }) {
+export function TiktokExportPanel({
+  status,
+  progress,
+  statusMessage,
+  onExport,
+  onStop,
+  className,
+  resolutionKey,
+  onResolutionChange,
+  resolutionOptions,
+}) {
   const isRecording = status === "recording";
   const isConverting = status === "converting";
   const isBusy = isRecording || isConverting;
@@ -25,6 +35,30 @@ export function TiktokExportPanel({ status, progress, statusMessage, onExport, o
   return (
     <div className={cn("w-full max-w-[280px] rounded-2xl border border-base-line bg-base-elevated p-4", className)}>
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/60">Export Video</h3>
+
+      {resolutionOptions && resolutionOptions.length > 0 && (
+        <div className="mb-3">
+          <p className="mb-1.5 text-[11px] font-medium text-ink/60">Resolusi (rasio 9:16)</p>
+          <div className="grid grid-cols-2 gap-2">
+            {resolutionOptions.map(([key, opt]) => (
+              <button
+                key={key}
+                type="button"
+                disabled={isBusy}
+                onClick={() => onResolutionChange?.(key)}
+                className={cn(
+                  "rounded-lg border px-2 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+                  resolutionKey === key
+                    ? "border-ink bg-ink text-base"
+                    : "border-base-line bg-base text-ink/70 hover:border-ink/40"
+                )}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <button
         type="button"

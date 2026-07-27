@@ -9,7 +9,7 @@ import { CardStylePanel } from "@/components/ui/card-style-panel";
 import { TrackMetaPanel } from "@/components/ui/track-meta-panel";
 import { TiktokExportPanel } from "@/components/ui/tiktok-export-panel";
 import { useLocalPlaylist } from "@/hooks/use-local-playlist";
-import { useTiktokStageExport } from "@/hooks/use-tiktok-stage-export";
+import { useTiktokStageExport, EXPORT_RESOLUTIONS, DEFAULT_EXPORT_RESOLUTION } from "@/hooks/use-tiktok-stage-export";
 
 // ============================================================================
 // TiktokPreviewScene -- mockup HP + overlay chrome TikTok, dengan
@@ -94,10 +94,13 @@ export function TiktokPreviewScene() {
   };
   const getExportState = React.useCallback(() => exportStateRef.current, []);
 
+  const [resolutionKey, setResolutionKey] = React.useState(DEFAULT_EXPORT_RESOLUTION);
+
   const { status, progress, statusMessage, isExporting, startExport, stopExport } = useTiktokStageExport({
     audioRef,
     getExportState,
     trackName: current?.name,
+    resolutionKey,
   });
 
   return (
@@ -154,7 +157,16 @@ export function TiktokPreviewScene() {
         />
       </div>
 
-      <TiktokExportPanel status={status} progress={progress} statusMessage={statusMessage} onExport={startExport} onStop={stopExport} />
+      <TiktokExportPanel
+        status={status}
+        progress={progress}
+        statusMessage={statusMessage}
+        onExport={startExport}
+        onStop={stopExport}
+        resolutionKey={resolutionKey}
+        onResolutionChange={setResolutionKey}
+        resolutionOptions={Object.entries(EXPORT_RESOLUTIONS)}
+      />
 
       <audio ref={audioRef} preload="metadata" className="hidden" />
     </div>
