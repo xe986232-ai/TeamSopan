@@ -37,7 +37,7 @@ export const AnimatedTooltip = ({ items }) => {
       {items.map((item, idx) => (
         <div
           className="group relative -mr-4"
-          key={item.name}
+          key={item.id ?? item.name ?? idx}
           onMouseEnter={() => setHoveredIndex(item.id)}
           onMouseLeave={() => setHoveredIndex(null)}
         >
@@ -72,14 +72,30 @@ export const AnimatedTooltip = ({ items }) => {
               </motion.div>
             )}
           </AnimatePresence>
-          <img
-            onMouseMove={handleMouseMove}
-            height={100}
-            width={100}
-            src={item.image}
-            alt={item.name}
-            className="relative !m-0 h-10 w-10 rounded-full border-2 border-white object-cover object-top !p-0 transition duration-500 group-hover:z-30 group-hover:scale-105"
-          />
+          {/* Slot tanpa member asli (isDefault) -> tampilkan logo di atas
+              background solid (bukan foto), biar bagian transparan logo
+              gak nembus ke warna card di belakangnya. */}
+          {item.isDefault ? (
+            <div
+              className="relative !m-0 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white !p-0 transition duration-500 group-hover:z-30 group-hover:scale-105"
+              style={{ backgroundColor: item.bg || "#FFFFFF" }}
+            >
+              <img
+                src={item.image}
+                alt={item.name}
+                className="h-5 w-5 object-contain"
+              />
+            </div>
+          ) : (
+            <img
+              onMouseMove={handleMouseMove}
+              height={100}
+              width={100}
+              src={item.image}
+              alt={item.name}
+              className="relative !m-0 h-10 w-10 rounded-full border-2 border-white object-cover object-top !p-0 transition duration-500 group-hover:z-30 group-hover:scale-105"
+            />
+          )}
         </div>
       ))}
     </>
