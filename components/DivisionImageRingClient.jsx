@@ -18,7 +18,7 @@ const DURATION = 30; // detik untuk satu putaran penuh 360 derajat
 
 // Kartu untuk slot yang belum kepakai member asli. SENGAJA tidak menampilkan
 // nama/foto member palsu -- cuma logo Sopan Team di atas background solid
-// (gradient warna divisi), jadi jelas ini "slot tersedia", bukan member
+// warna divisi (bukan gradient), jadi jelas ini "slot tersedia", bukan member
 // beneran. Begitu member baru daftar, slot ini otomatis kegantiin kartu
 // member asli (lihat DivisionImageRing.jsx).
 function DefaultSlotCard({ slide }) {
@@ -26,9 +26,7 @@ function DefaultSlotCard({ slide }) {
     <>
       <div
         className="absolute inset-0"
-        style={{
-          background: `linear-gradient(155deg, ${slide.from}, ${slide.to})`,
-        }}
+        style={{ background: slide.from }}
       />
       <div className="absolute inset-0 bg-black/45" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-4">
@@ -42,9 +40,7 @@ function DefaultSlotCard({ slide }) {
         </span>
         <span
           className="inline-block font-accent text-[9px] font-semibold uppercase tracking-widest text-white px-1.5 py-0.5 rounded-full"
-          style={{
-            background: `linear-gradient(90deg, ${slide.from}, ${slide.to})`,
-          }}
+          style={{ background: slide.from }}
         >
           {slide.division}
         </span>
@@ -78,9 +74,7 @@ function MemberSlotCard({ slide }) {
       <div className="absolute inset-x-0 bottom-0 p-2.5 pointer-events-none">
         <span
           className="inline-block font-accent text-[9px] font-semibold uppercase tracking-widest text-white px-1.5 py-0.5 rounded-full mb-1"
-          style={{
-            background: `linear-gradient(90deg, ${slide.from}, ${slide.to})`,
-          }}
+          style={{ background: slide.from }}
         >
           {slide.division}
         </span>

@@ -1,5 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
-import { divisionShortLabel } from "@/lib/division";
+import { divisionLabel } from "@/lib/division";
 import DivisionImageRingClient from "./DivisionImageRingClient";
 
 // Warna badge per divisi, dipertahankan sama seperti sebelumnya supaya
@@ -28,7 +28,7 @@ function buildPlaceholderSlides(count) {
     return {
       id: `slot-default-${i}`,
       isPlaceholder: true,
-      division: divisionShortLabel(divisionSlug),
+      division: divisionLabel(divisionSlug),
       from: colors.from,
       to: colors.to,
     };
@@ -65,7 +65,7 @@ async function getMemberSlides() {
         id: m.id,
         isPlaceholder: false,
         name: m.full_name,
-        division: divisionShortLabel(m.division),
+        division: divisionLabel(m.division),
         // Kalau member belum upload foto profil, tetap tampilkan sesuatu
         // yang masuk akal (inisial nama) daripada gambar rusak/kosong.
         avatarUrl:
