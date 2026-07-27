@@ -64,7 +64,17 @@ export function useTiktokStageExport({ audioRef, getExportState, trackName, reso
 
   function ensureCanvas() {
     if (!canvasRef.current) {
-      canvasRef.current = document.createElement("canvas");
+      const canvas = document.createElement("canvas");
+      // PENTING: canvas HARUS ditempel ke DOM (walau disembunyikan lewat
+      // display:none), sama seperti <canvas id="export-canvas"
+      // style="display:none;"> di referensi music-player.html. Canvas yang
+      // "lepas" dari DOM (cuma dibuat lewat createElement tanpa appendChild)
+      // nggak reliable buat captureStream() di banyak browser mobile --
+      // video track-nya bisa jadi kosong atau dimensinya ngaco, itu yang
+      // bikin hasil export nggak sesuai rasio 9:16 dan kelihatan rusak.
+      canvas.style.display = "none";
+      document.body.appendChild(canvas);
+      canvasRef.current = canvas;
     }
     canvasRef.current.width = resolution.width;
     canvasRef.current.height = resolution.height;
@@ -275,6 +285,9 @@ export function useTiktokStageExport({ audioRef, getExportState, trackName, reso
       }
       if (audioCtxRef.current) {
         audioCtxRef.current.close().catch(() => {});
+      }
+      if (canvasRef.current && canvasRef.current.parentNode) {
+        canvasRef.current.parentNode.removeChild(canvasRef.current);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
