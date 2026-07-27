@@ -14,23 +14,71 @@ function initials(name) {
     .join("");
 }
 
+// Ukuran target avatar di PDF cuma radius 9.5pt (~19pt diameter). Resize
+// ke 96x96px sudah lebih dari cukup tajam buat print, termasuk buffer
+// buat retina/high-DPI, tanpa perlu numpuk byte foto resolusi asli.
+const AVATAR_TARGET_PX = 96;
+
+// Cek apakah blob gambar itu PNG dengan alpha channel transparan -- kalau
+// iya, JPEG (yang gak support transparansi) bakal nge-flatten background
+// jadi hitam, jadi mendingan tetap fallback ke PNG kecil buat kasus ini.
+function blobLooksLikePng(blob) {
+  return blob?.type === "image/png";
+}
+
+// Resize + kompres ulang foto profil lewat <canvas> sebelum ditempel ke
+// PDF. Gambar sumber bisa beresolusi tinggi (foto HP jaman sekarang, bisa
+// ratusan KB - beberapa MB), padahal di PDF cuma tampil sebagai lingkaran
+// kecil -- jadi di sini kita gambar ke canvas kecil (96x96), lalu encode
+// ulang jadi JPEG kualitas sedang (quality 0.7) supaya ukuran file PDF
+// akhir gak membengkak walau ada banyak member dengan avatar HD.
+async function resizeImageForPdf(blob) {
+  const bitmap = await createImageBitmap(blob);
+  try {
+    const size = AVATAR_TARGET_PX;
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+
+    // Crop tengah jadi persegi dulu (biar avatar gak gepeng) baru di-draw
+    // mengisi penuh kanvas 96x96.
+    const srcSize = Math.min(bitmap.width, bitmap.height);
+    const srcX = (bitmap.width - srcSize) / 2;
+    const srcY = (bitmap.height - srcSize) / 2;
+    ctx.drawImage(bitmap, srcX, srcY, srcSize, srcSize, 0, 0, size, size);
+
+    const jpegDataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+    // PNG transparan yang di-flatten ke JPEG bakal keliatan background
+    // hitam -- kalau sumbernya PNG, fallback ke PNG kecil biar transparansi
+    // tetap aman (ukurannya tetap jauh lebih kecil krn udah di-resize).
+    if (blobLooksLikePng(blob)) {
+      return canvas.toDataURL("image/png");
+    }
+
+    return jpegDataUrl;
+  } finally {
+    bitmap.close?.();
+  }
+}
+
 // Foto profil member disimpan sebagai URL (Supabase Storage) -- jsPDF
 // cuma bisa nempelin gambar dari data URL (base64), jadi tiap foto perlu
-// di-fetch & dikonversi dulu sebelum tabel digambar. Kalau gagal (foto
-// dihapus, offline, dll), balikin null -- nanti fallback ke lingkaran
-// inisial di dalam sel tabel, bukan bikin export gagal total.
+// di-fetch & dikonversi dulu sebelum tabel digambar. Fotonya di-resize +
+// dikompres ulang jadi kecil di sini (bukan dipakai apa adanya dari
+// fetch) karena di PDF cuma ditampilkan sebagai lingkaran ~19pt -- kalau
+// dipakai resolusi asli, 20-30 avatar HD bakal numpuk bikin ukuran file
+// PDF membengkak. Kalau gagal (foto dihapus, offline, resize error, dll),
+// balikin null -- nanti fallback ke lingkaran inisial di dalam sel tabel,
+// bukan bikin export gagal total.
 async function loadImageAsDataUrl(url) {
   if (!url) return null;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const blob = await res.blob();
-    return await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result || null);
-      reader.onerror = () => resolve(null);
-      reader.readAsDataURL(blob);
-    });
+    return await resizeImageForPdf(blob);
   } catch {
     return null;
   }
