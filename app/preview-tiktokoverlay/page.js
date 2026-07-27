@@ -16,8 +16,11 @@ const mobileGroups = [{ label: "Menu", items: [{ name: "Beranda", link: "/" }] }
 //
 // CATATAN: section tes Remotion Player (RemotionDemo) sudah dihapus --
 // itu yang bikin build Vercel gagal (prerender error "Element type is
-// invalid... got undefined"). Halaman ini sekarang cuma nampilin
-// komponen preview + fitur upload lagu, tanpa render engine apa pun.
+// invalid... got undefined"). Fitur export video sekarang balik lagi tapi
+// dengan pendekatan baru yang murni client-side (canvas 2D + Web Audio +
+// MediaRecorder + ffmpeg.wasm dari CDN, lihat
+// hooks/use-tiktok-stage-export.js) -- tidak ada render engine di server
+// sama sekali, jadi tidak akan bikin build gagal lagi.
 export default function PreviewTiktokOverlayPage() {
   return (
     <main id="top" className="relative min-h-screen bg-base">
