@@ -61,6 +61,28 @@ export default function CreateAttendanceSessionForm() {
   const [created, setCreated] = React.useState(null);
   const [copied, setCopied] = React.useState(false);
 
+  // Jam "sekarang" WIB yang ditampilkan live di bawah field -- cuma buat
+  // referensi visual admin (biar gak bingung kalau default field di atas
+  // keliatan "beku"/beda dari jam HP-nya sendiri, misal karena tab udah
+  // lama kebuka sebelum admin ngisi form). Field startTime/date TETAP
+  // cuma keisi sekali pas mount (lihat komentar todayDateValue/nowTimeValue
+  // di atas) -- itu emang cuma nilai AWAL yang boleh admin ubah bebas,
+  // bukan live clock. Yang live cuma teks kecil di bawah ini.
+  const [liveWib, setLiveWib] = React.useState(nowTimeValue());
+  React.useEffect(() => {
+    const id = setInterval(() => setLiveWib(nowTimeValue()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // "Pakai jam sekarang" -- isi ulang tanggal/jam mulai/jam selesai pakai
+  // WIB saat ini, buat kasus tab udah lama kebuka jadi default awal udah
+  // gak relevan lagi tanpa admin harus reload halaman.
+  const handleUseNow = () => {
+    setDate(todayDateValue());
+    setStartTime(nowTimeValue());
+    setEndTime(defaultEndTimeValue());
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsPending(true);
@@ -195,12 +217,29 @@ export default function CreateAttendanceSessionForm() {
             required
           />
         </div>
-        <p className="text-xs text-black/40 -mt-2">
-          Jam mulai/selesai pakai patokan <strong>WIB</strong>. Sesi
-          otomatis terbuka begitu jam mulai tiba, dan tertutup begitu jam
-          selesai lewat — <strong>kebuka di waktu yang sama buat semua
-          anggota</strong>, apa pun zona waktu HP mereka (WIB/WITA/WIT).
-        </p>
+        <div className="flex items-center justify-between gap-3 -mt-2">
+          <p className="text-xs text-black/40">
+            Jam mulai/selesai pakai patokan <strong>WIB</strong>. Sesi
+            otomatis terbuka begitu jam mulai tiba, dan tertutup begitu jam
+            selesai lewat — <strong>kebuka di waktu yang sama buat semua
+            anggota</strong>, apa pun zona waktu HP mereka (WIB/WITA/WIT).
+          </p>
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-black/[0.03] px-3 py-2 -mt-1">
+          <p className="text-xs text-black/50">
+            Sekarang di WIB:{" "}
+            <span className="font-semibold text-[#111827] tabular-nums">
+              {liveWib}
+            </span>
+          </p>
+          <button
+            type="button"
+            onClick={handleUseNow}
+            className="text-xs font-medium text-[#1677F5] hover:underline shrink-0"
+          >
+            Pakai jam sekarang
+          </button>
+        </div>
 
         <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
           {isPending ? (
