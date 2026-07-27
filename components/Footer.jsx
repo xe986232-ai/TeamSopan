@@ -1,4 +1,41 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { createPublicSupabaseClient } from "@/lib/supabase/client";
+
 export default function Footer() {
+  // Status buka/tutup pendaftaran member (opmem), diatur admin dari
+  // /dashboard/pengaturan -> OpenMemberToggle (tabel site_settings, kolom
+  // open_member). Default true biar tombol tetap aktif sambil nunggu data
+  // ke-fetch / kalau gagal ambil. Lihat juga components/ui/site-navbar.jsx
+  // yang pakai pola fetch client-side yang sama untuk tombol "Gabung".
+  const [openMember, setOpenMember] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const supabase = createPublicSupabaseClient();
+
+    supabase
+      .from("site_settings")
+      .select("open_member")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[Footer] Gagal ambil site_settings:", error);
+          return;
+        }
+        if (data && data.open_member !== null && data.open_member !== undefined) {
+          setOpenMember(!!data.open_member);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <footer
       id="gabung"
@@ -11,12 +48,22 @@ export default function Footer() {
             Kami selalu buka ruang buat orang yang serius mau berkarya di
             Remix, Creator, atau Leadis. Daftar sekarang dan ceritain karya kamu.
           </p>
-          <a
-            href="/gabung"
-            className="inline-block mt-6 px-6 py-3 rounded-full bg-ink-solid text-white dark:bg-white dark:text-ink-solid text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Daftar Sekarang
-          </a>
+          {openMember ? (
+            <a
+              href="/gabung"
+              className="inline-block mt-6 px-6 py-3 rounded-full bg-ink-solid text-white dark:bg-white dark:text-ink-solid text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Daftar Sekarang
+            </a>
+          ) : (
+            <span
+              aria-disabled="true"
+              title="Pendaftaran member sedang ditutup"
+              className="inline-block mt-6 px-6 py-3 rounded-full bg-black/10 dark:bg-white/10 text-ink-muted text-sm font-medium cursor-not-allowed select-none"
+            >
+              Pendaftaran Ditutup
+            </span>
+          )}
         </div>
 
         <div className="flex gap-12">

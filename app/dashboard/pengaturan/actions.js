@@ -78,6 +78,33 @@ export async function updateAnnouncementBanner({ enabled, text, link }) {
   return { success: true };
 }
 
+export async function updateOpenMember(enabled) {
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase
+    .from("site_settings")
+    .upsert(
+      {
+        id: 1,
+        open_member: !!enabled,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" }
+    );
+
+  if (error) {
+    return { error: `Gagal simpan: ${error.message}` };
+  }
+
+  // Tombol "Gabung" di navbar & footer (semua halaman publik) ambil
+  // open_member client-side tiap mount, tapi tetap revalidate biar
+  // halaman dashboard & homepage nggak nyimpan cache lama.
+  revalidatePath("/dashboard/pengaturan");
+  revalidatePath("/");
+
+  return { success: true };
+}
+
 export async function updateHeroTextEffect(effectId) {
   // Validasi ketat: cuma boleh salah satu key yang memang ada di preset
   // (lihat lib/hero-text-effects.js), biar nggak ada sembarang string

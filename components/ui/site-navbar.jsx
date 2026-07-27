@@ -56,6 +56,10 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
   const [logoStyleId, setLogoStyleId] = useState(DEFAULT_LOGO_STYLE);
   const [logoShapeId, setLogoShapeId] = useState(DEFAULT_LOGO_SHAPE);
   const [banner, setBanner] = useState({ enabled: false, text: "", link: "" });
+  // Status buka/tutup pendaftaran member (opmem), diatur admin dari
+  // /dashboard/pengaturan (lihat OpenMemberToggle.jsx). Default true biar
+  // tombol tetap aktif sambil nunggu data ke-fetch.
+  const [openMember, setOpenMember] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -63,7 +67,9 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
 
     supabase
       .from("site_settings")
-      .select("logo_style, logo_shape, banner_enabled, banner_text, banner_link")
+      .select(
+        "logo_style, logo_shape, banner_enabled, banner_text, banner_link, open_member"
+      )
       .eq("id", 1)
       .maybeSingle()
       .then(({ data, error }) => {
@@ -80,6 +86,9 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
           text: data.banner_text || "",
           link: data.banner_link || "",
         });
+        if (data.open_member !== null && data.open_member !== undefined) {
+          setOpenMember(!!data.open_member);
+        }
       });
 
     return () => {
@@ -279,7 +288,8 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
             </div>
           ) : (
             mounted &&
-            authChecked && (
+            authChecked &&
+            (openMember ? (
               <a
                 href="/gabung"
                 className="flex items-center gap-1 text-xs font-medium border border-black/10 dark:border-white/10 text-white bg-ink-solid dark:bg-white dark:text-ink-solid px-3.5 py-1.5 rounded-full hover:opacity-90 transition-opacity"
@@ -287,7 +297,16 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
                 <Sparkles size={12} />
                 Gabung
               </a>
-            )
+            ) : (
+              <span
+                aria-disabled="true"
+                title="Pendaftaran member sedang ditutup"
+                className="flex items-center gap-1 text-xs font-medium border border-black/10 dark:border-white/10 text-ink-muted bg-black/5 dark:bg-white/5 px-3.5 py-1.5 rounded-full cursor-not-allowed select-none"
+              >
+                <Sparkles size={12} />
+                Pendaftaran Ditutup
+              </span>
+            ))
           )}
         </div>
       </div>
@@ -332,8 +351,12 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
                   180+
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-ink-muted border border-black/10 dark:border-white/10 rounded-full px-3 py-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                  Rekrutmen buka
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      openMember ? "bg-emerald-500" : "bg-black/30 dark:bg-white/30"
+                    }`}
+                  />
+                  {openMember ? "Rekrutmen buka" : "Rekrutmen tutup"}
                 </span>
                 {mounted && (
                   <AnimatedThemeToggler
@@ -368,7 +391,7 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
                     Keluar
                   </button>
                 </div>
-              ) : (
+              ) : openMember ? (
                 <a
                   href="/gabung"
                   onClick={() => setOpen(false)}
@@ -377,6 +400,14 @@ export const SiteNavbar = ({ navItems, mobileGroups, className }) => {
                   <Sparkles size={14} />
                   Gabung
                 </a>
+              ) : (
+                <span
+                  aria-disabled="true"
+                  className="flex items-center justify-center gap-1.5 text-sm font-medium text-ink-muted bg-black/5 dark:bg-white/5 px-4 py-3 rounded-full cursor-not-allowed select-none mt-6"
+                >
+                  <Sparkles size={14} />
+                  Pendaftaran Ditutup
+                </span>
               )}
             </div>
           </motion.div>

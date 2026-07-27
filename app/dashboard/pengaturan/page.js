@@ -3,6 +3,7 @@ import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import LogoStylePicker from "./LogoStylePicker";
 import AnnouncementBannerEditor from "./AnnouncementBannerEditor";
+import OpenMemberToggle from "./OpenMemberToggle";
 import HeroTextEffectPicker from "./HeroTextEffectPicker";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DEFAULT_LOGO_STYLE, DEFAULT_LOGO_SHAPE } from "@/lib/logo-styles";
@@ -20,7 +21,6 @@ const SETTINGS_FIELDS = [
 ];
 
 const SETTINGS_TOGGLES = [
-  { label: "Buka pendaftaran anggota baru", desc: "Kalau dimatikan, halaman /gabung akan ditutup sementara.", checked: true },
   { label: "Notifikasi pendaftar baru", desc: "Kirim notifikasi tiap ada formulir pendaftaran masuk.", checked: true },
   { label: "Mode pemeliharaan", desc: "Tampilkan halaman maintenance ke pengunjung situs.", checked: false },
 ];
@@ -32,6 +32,7 @@ const DEFAULT_SITE_SETTINGS = {
   bannerText: "",
   bannerLink: "",
   heroTextEffect: DEFAULT_HERO_TEXT_EFFECT,
+  openMember: true,
 };
 
 async function getSiteSettings() {
@@ -40,7 +41,7 @@ async function getSiteSettings() {
     const { data, error } = await supabase
       .from("site_settings")
       .select(
-        "logo_style, logo_shape, banner_enabled, banner_text, banner_link, hero_text_effect"
+        "logo_style, logo_shape, banner_enabled, banner_text, banner_link, hero_text_effect, open_member"
       )
       .eq("id", 1)
       .maybeSingle();
@@ -56,6 +57,9 @@ async function getSiteSettings() {
       bannerText: data.banner_text || "",
       bannerLink: data.banner_link || "",
       heroTextEffect: data.hero_text_effect || DEFAULT_HERO_TEXT_EFFECT,
+      openMember: data.open_member === null || data.open_member === undefined
+        ? true
+        : !!data.open_member,
     };
   } catch (err) {
     console.error("[dashboard/pengaturan] Gagal ambil site_settings:", err);
@@ -86,6 +90,8 @@ export default async function PengaturanPage() {
         currentText={settings.bannerText}
         currentLink={settings.bannerLink}
       />
+
+      <OpenMemberToggle currentEnabled={settings.openMember} />
 
       <div className="rounded-2xl border border-black/[0.06] p-5 mb-4 flex flex-col gap-4">
         {SETTINGS_FIELDS.map((field) => (
