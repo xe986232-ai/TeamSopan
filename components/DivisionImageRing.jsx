@@ -1,199 +1,100 @@
-"use client";
+import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { divisionShortLabel } from "@/lib/division";
+import DivisionImageRingClient from "./DivisionImageRingClient";
 
-import { motion, useReducedMotion } from "framer-motion";
-import Image from "next/image";
-import Link from "next/link";
-import { StarButton } from "./ui/star-button";
+// Warna badge per divisi, dipertahankan sama seperti sebelumnya supaya
+// identitas visual tiap divisi (Remix/Creator/Leadis) tetap konsisten.
+const DIVISION_COLORS = {
+  remix: { from: "#B026FF", to: "#FF2E92" },
+  creator: { from: "#00E5FF", to: "#3D5AFE" },
+  leadis: { from: "#FFD166", to: "#FF6FB5" },
+};
+const DIVISION_ORDER = ["remix", "creator", "leadis"];
+const DEFAULT_COLORS = DIVISION_COLORS.remix;
 
-// Karya tiap divisi ditampilkan berputar di ring 3D ini. Foto masih
-// placeholder Unsplash (pola sama seperti AdminSection) -- gampang diganti
-// ke foto karya asli tim kapan saja. Sengaja dibuat 12 slide (bukan cuma
-// 6) supaya lengkungan ring-nya halus dan beberapa kartu kelihatan
-// sekaligus dari depan, bukan cuma 2 kartu doang.
-const BASE_SLIDES = [
-  {
-    id: "remix-1",
-    division: "Remix",
-    title: "Sesi produksi & mixing",
-    image:
-      "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&q=80&w=500",
-    from: "#B026FF",
-    to: "#FF2E92",
-  },
-  {
-    id: "creator-1",
-    division: "Creator",
-    title: "Proses edit jedag-jedug",
-    image:
-      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=500",
-    from: "#00E5FF",
-    to: "#3D5AFE",
-  },
-  {
-    id: "leadis-1",
-    division: "Leadis",
-    title: "Konten para kreator cewek",
-    image:
-      "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&q=80&w=500",
-    from: "#FFD166",
-    to: "#FF6FB5",
-  },
-  {
-    id: "remix-2",
-    division: "Remix",
-    title: "Studio & sound design",
-    image:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&q=80&w=500",
-    from: "#B026FF",
-    to: "#FF2E92",
-  },
-  {
-    id: "creator-2",
-    division: "Creator",
-    title: "Behind the scene shooting",
-    image:
-      "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&q=80&w=500",
-    from: "#00E5FF",
-    to: "#3D5AFE",
-  },
-  {
-    id: "leadis-2",
-    division: "Leadis",
-    title: "Kolaborasi showcase",
-    image:
-      "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=500",
-    from: "#FFD166",
-    to: "#FF6FB5",
-  },
-];
+// Ring ini sengaja diisi MINIMAL 20 kartu supaya nggak keliatan kosong/sepi
+// pas member aktif masih dikit (mis. baru 3-4 orang). Slot yang belum
+// kepakai member asli ditampilkan sebagai kartu "logo default" (bukan
+// wajah member palsu). Begitu ada member baru daftar, satu slot default
+// otomatis kegantiin member itu -- kalau member aktif sudah lebih dari 20,
+// slot default habis semua dan ring isinya murni member asli (bisa lebih
+// dari 20 kartu, ring makin padat/halus).
+const MIN_SLOT_COUNT = 20;
 
-// Digandakan jadi 12 kartu (2x putaran list) biar spasi antar kartu di
-// ring cuma 30 derajat -- itu yang bikin lengkungannya halus.
-const SLIDES = [...BASE_SLIDES, ...BASE_SLIDES];
+function buildPlaceholderSlides(count) {
+  return Array.from({ length: count }, (_, i) => {
+    const divisionSlug = DIVISION_ORDER[i % DIVISION_ORDER.length];
+    const colors = DIVISION_COLORS[divisionSlug];
+    return {
+      id: `slot-default-${i}`,
+      isPlaceholder: true,
+      division: divisionShortLabel(divisionSlug),
+      from: colors.from,
+      to: colors.to,
+    };
+  });
+}
 
-// clamp() berbasis vw supaya di layar mobile yang sempit kartu-nya ikut
-// membesar (nggak keliatan kekecilan). Preferred value 55vw dibikin lebih
-// agresif dari sebelumnya biar kartu keliatan lebih gede & lebih maju ke
-// depan, dibatasi minimum/maksimum biar tetap wajar di semua ukuran device.
-const CARD_WIDTH = "clamp(11.5em, 55vw, 15em)";
-const CARD_ASPECT = "7/10";
-// Tetap dijaga rasio ~2:1 terhadap CARD_WIDTH (pakai clamp yang selaras)
-// biar efek menekuk ke dalam konsisten di semua ukuran layar.
-const PERSPECTIVE = "clamp(23em, 110vw, 30em)";
-const DURATION = 30; // detik untuk satu putaran penuh 360 derajat
+// Dipakai HANYA kalau Supabase belum di-setup / lagi error total -- biar
+// section ini tidak tampil kosong/rusak. Tetap pakai kartu logo default,
+// bukan foto placeholder Unsplash lagi.
+const FALLBACK_SLIDES = buildPlaceholderSlides(MIN_SLOT_COUNT);
 
-export default function DivisionImageRing() {
-  const n = SLIDES.length;
-  const prefersReducedMotion = useReducedMotion();
-  // Kalau user minta reduced motion, tetap muter tapi jauh lebih pelan --
-  // bukan berhenti total, biar kontennya (karya tim) tetap kelihatan semua.
-  const animationDuration = prefersReducedMotion ? DURATION * 4 : DURATION;
+// Ambil SEMUA member berstatus "aktif" dari database (bukan cuma sampel
+// beberapa) -- jumlah kartu ASLI di ring mengikuti persis jumlah baris
+// yang balik dari query ini. Sisanya (kalau kurang dari MIN_SLOT_COUNT)
+// diisi kartu logo default lewat buildPlaceholderSlides di atas.
+async function getMemberSlides() {
+  try {
+    // Sama seperti AdminSection & halaman /anggota: dibaca dari Server
+    // Component pakai admin client, bukan dari browser, jadi tetap aman
+    // meskipun tabel `members` tidak punya policy publik.
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("members")
+      .select("id, full_name, division, avatar_url")
+      .eq("status", "aktif")
+      .order("joined_at", { ascending: true });
 
-  return (
-    <section className="relative bg-base py-10 sm:py-14 overflow-hidden">
-      <div className="mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.7 }}
-          className="mx-auto max-w-2xl text-center mb-6"
-        >
-          <p className="font-body font-semibold text-sm tracking-widest text-pink-500 uppercase">
-            Member Area
-          </p>
-          <h2 className="font-display font-extrabold mt-2 text-3xl text-ink sm:text-4xl">
-            Wajah-Wajah di Balik Sopan Team
-          </h2>
-          <p className="font-body text-sm text-ink-muted mt-3">
-            Karya para member, muter otomatis 360 derajat nonstop.
-          </p>
-        </motion.div>
+    if (error) throw error;
+    if (!data || data.length === 0) return { slides: FALLBACK_SLIDES, activeCount: 0 };
 
-        <div
-          className="grid w-full place-items-center overflow-hidden select-none"
-          style={{
-            height: "clamp(220px, 90vw, 380px)",
-            perspective: PERSPECTIVE,
-            // Vignette fade di kiri-kanan biar ring blend mulus ke
-            // background, bukan keliatan ke-crop tajam.
-            WebkitMaskImage:
-              "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)",
-            maskImage:
-              "linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent)",
-          }}
-          role="group"
-          aria-label="Karya member Sopan Team, berputar otomatis"
-        >
-          <motion.div
-            className="grid place-self-center"
-            style={{ transformStyle: "preserve-3d" }}
-            animate={{ rotateY: [0, 360] }}
-            transition={{
-              duration: animationDuration,
-              ease: "linear",
-              repeat: Infinity,
-            }}
-          >
-            {SLIDES.map((slide, i) => (
-              <div
-                key={`${slide.id}-${i}`}
-                className="col-start-1 row-start-1 relative overflow-hidden rounded-2xl border border-black/10 shadow-xl"
-                style={{
-                  width: CARD_WIDTH,
-                  aspectRatio: CARD_ASPECT,
-                  backfaceVisibility: "hidden",
-                  WebkitBackfaceVisibility: "hidden",
-                  transform: `rotateY(calc(${i} * (1turn / ${n}))) translateZ(calc(-1 * (0.5 * ${CARD_WIDTH} + 0.5em) / tan(0.5 * (1turn / ${n}))))`,
-                }}
-              >
-                <Image
-                  alt={slide.title}
-                  src={slide.image}
-                  fill
-                  sizes="(max-width: 640px) 55vw, 240px"
-                  draggable={false}
-                  className="object-cover pointer-events-none"
-                />
-                <div
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    background:
-                      "linear-gradient(to top, rgba(0,0,0,0.85), rgba(0,0,0,0.05) 55%, transparent)",
-                  }}
-                />
-                <div className="absolute inset-x-0 bottom-0 p-2.5 pointer-events-none">
-                  <span
-                    className="inline-block font-accent text-[9px] font-semibold uppercase tracking-widest text-white px-1.5 py-0.5 rounded-full mb-1"
-                    style={{
-                      background: `linear-gradient(90deg, ${slide.from}, ${slide.to})`,
-                    }}
-                  >
-                    {slide.division}
-                  </span>
-                  <p className="font-body font-semibold text-[11px] text-white leading-snug">
-                    {slide.title}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        </div>
+    const memberSlides = data.map((m) => {
+      const colors = DIVISION_COLORS[m.division] || DEFAULT_COLORS;
+      return {
+        id: m.id,
+        isPlaceholder: false,
+        name: m.full_name,
+        division: divisionShortLabel(m.division),
+        // Kalau member belum upload foto profil, tetap tampilkan sesuatu
+        // yang masuk akal (inisial nama) daripada gambar rusak/kosong.
+        avatarUrl:
+          m.avatar_url ||
+          `https://placehold.co/500x700/${colors.from.replace("#", "")}/white?text=${encodeURIComponent(
+            m.full_name?.charAt(0) || "?"
+          )}`,
+        from: colors.from,
+        to: colors.to,
+      };
+    });
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.6, delay: 0.15 }}
-          className="flex justify-center mt-8"
-        >
-          <Link href="/anggota">
-            <StarButton backgroundColor="#EC4899" lightColor="#FAFAFA">
-              Lihat Semua Member
-            </StarButton>
-          </Link>
-        </motion.div>
-      </div>
-    </section>
-  );
+    const shortfall = MIN_SLOT_COUNT - memberSlides.length;
+    const slides =
+      shortfall > 0
+        ? [...memberSlides, ...buildPlaceholderSlides(shortfall)]
+        : memberSlides;
+
+    return { slides, activeCount: memberSlides.length };
+  } catch (err) {
+    console.error(
+      "[DivisionImageRing] Gagal ambil data members aktif dari Supabase:",
+      err
+    );
+    return { slides: FALLBACK_SLIDES, activeCount: 0 };
+  }
+}
+
+export default async function DivisionImageRing() {
+  const { slides, activeCount } = await getMemberSlides();
+  return <DivisionImageRingClient slides={slides} activeCount={activeCount} />;
 }
