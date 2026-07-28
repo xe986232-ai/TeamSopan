@@ -12,7 +12,23 @@ import { cn } from "@/lib/utils";
 // nyimpen state-nya dan bisa langsung diteruskan ke MusicPlayerCard & layer
 // background ambient.
 // ============================================================================
-export function CardStylePanel({ bgOpacity, onBgOpacityChange, bgBlur, onBgBlurChange, className }) {
+export function CardStylePanel({
+  bgOpacity,
+  onBgOpacityChange,
+  bgBlur,
+  onBgBlurChange,
+  cardSpacing,
+  onCardSpacingChange,
+  className,
+}) {
+  // slider "Jarak card ke tepi" dipetakan ke range 12-60px (referensi,
+  // ikut diskalakan sama seperti metrik lain di lib/tiktok-stage-canvas.js)
+  // -- 12 = kelakuan lama/default, makin gede makin banyak jarak ke tepi
+  // panggung (card jadi lebih kecil).
+  const SPACING_MIN = 12;
+  const SPACING_MAX = 60;
+  const spacingPct = ((cardSpacing - SPACING_MIN) / (SPACING_MAX - SPACING_MIN)) * 100;
+
   return (
     <div className={cn("w-full max-w-[280px] rounded-2xl border border-base-line bg-base-elevated p-4", className)}>
       <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink/60">Tampilan Card</h3>
@@ -34,7 +50,7 @@ export function CardStylePanel({ bgOpacity, onBgOpacityChange, bgBlur, onBgBlurC
         />
       </div>
 
-      <div>
+      <div className="mb-4">
         <div className="mb-1.5 flex items-center justify-between text-xs text-ink/70">
           <span>Blur background belakang</span>
           <span className="tabular-nums text-ink">{bgBlur}px</span>
@@ -48,6 +64,23 @@ export function CardStylePanel({ bgOpacity, onBgOpacityChange, bgBlur, onBgBlurC
           aria-label="Blur background belakang"
           className="csp-range w-full"
           style={{ "--pct": `${bgBlur}%` }}
+        />
+      </div>
+
+      <div>
+        <div className="mb-1.5 flex items-center justify-between text-xs text-ink/70">
+          <span>Jarak card ke tepi</span>
+          <span className="tabular-nums text-ink">{cardSpacing}px</span>
+        </div>
+        <input
+          type="range"
+          min={SPACING_MIN}
+          max={SPACING_MAX}
+          value={cardSpacing}
+          onChange={(e) => onCardSpacingChange(Number(e.target.value))}
+          aria-label="Jarak card ke tepi"
+          className="csp-range w-full"
+          style={{ "--pct": `${spacingPct}%` }}
         />
       </div>
 

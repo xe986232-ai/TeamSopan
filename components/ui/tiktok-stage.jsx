@@ -26,6 +26,14 @@ export function TiktokStage({
   coverUrl = null,
   bgBlur = 64,
   bgOpacityCard = 55,
+  // jarak (padding) kiri/kanan card ke tepi panggung, dalam px CSS --
+  // dulu fixed lewat kelas Tailwind `px-3` (12px), sekarang bisa diatur
+  // user lewat CardStylePanel (slider "Jarak card ke tepi"), sama seperti
+  // bgOpacityCard/bgBlur. Dipakai IDENTIK oleh preview (di sini) & hasil
+  // export (lib/tiktok-stage-canvas.js computeCardLayout) lewat
+  // state.sidePadding, jadi makin gede nilainya = makin kecil card & makin
+  // kelihatan banyak background di sekelilingnya.
+  sidePadding = 12,
   title = "Belum ada lagu",
   subtitle = "Tambahkan lagu di panel bawah",
   isPlaying = false,
@@ -62,7 +70,10 @@ export function TiktokStage({
       </div>
 
       {/* konten utama: MusicPlayerCard, di tengah panggung */}
-      <div className="absolute inset-0 flex items-center justify-center px-3">
+      <div
+        className="absolute inset-0 flex items-center justify-center"
+        style={{ paddingLeft: sidePadding, paddingRight: sidePadding }}
+      >
         <MusicPlayerCard
           coverUrl={coverUrl}
           title={title}
