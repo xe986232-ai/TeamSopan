@@ -26,14 +26,14 @@ export function TiktokStage({
   coverUrl = null,
   bgBlur = 64,
   bgOpacityCard = 55,
-  // jarak (padding) kiri/kanan card ke tepi panggung, dalam px CSS --
-  // dulu fixed lewat kelas Tailwind `px-3` (12px), sekarang bisa diatur
-  // user lewat CardStylePanel (slider "Jarak card ke tepi"), sama seperti
-  // bgOpacityCard/bgBlur. Dipakai IDENTIK oleh preview (di sini) & hasil
-  // export (lib/tiktok-stage-canvas.js computeCardLayout) lewat
-  // state.sidePadding, jadi makin gede nilainya = makin kecil card & makin
-  // kelihatan banyak background di sekelilingnya.
-  sidePadding = 12,
+  // posisi "maju/mundur" card, dalam persen (100 = normal, di bawah 100 =
+  // mundur/kecil, di atas 100 = maju/besar) -- diterapkan sebagai
+  // `transform: scale()` ke card, bukan ubah max-width-nya, jadi kelihatan
+  // kayak card beneran digeser menjauh/mendekat di sumbu Z (bukan cuma
+  // dikasih jarak/padding ke tepi). Preview (di sini, lewat CSS transform)
+  // & hasil export (lib/tiktok-stage-canvas.js, lewat state.cardZoom) baca
+  // nilai yang sama, jadi selalu sinkron.
+  cardZoom = 100,
   title = "Belum ada lagu",
   subtitle = "Tambahkan lagu di panel bawah",
   isPlaying = false,
@@ -69,29 +69,30 @@ export function TiktokStage({
         <div className="absolute inset-0 bg-black/35" />
       </div>
 
-      {/* konten utama: MusicPlayerCard, di tengah panggung */}
-      <div
-        className="absolute inset-0 flex items-center justify-center"
-        style={{ paddingLeft: sidePadding, paddingRight: sidePadding }}
-      >
-        <MusicPlayerCard
-          coverUrl={coverUrl}
-          title={title}
-          subtitle={subtitle}
-          bgOpacity={bgOpacityCard}
-          isPlaying={isPlaying}
-          currentTime={currentTime}
-          duration={duration}
-          seekPct={seekPct}
-          volume={volume}
-          interactive={interactive}
-          onTogglePlay={onTogglePlay}
-          onSkip={onSkip}
-          onSeekChange={onSeekChange}
-          onSetSeeking={onSetSeeking}
-          onVolumeChange={onVolumeChange}
-          ImgTag={ImgTag}
-        />
+      {/* konten utama: MusicPlayerCard, di tengah panggung -- transform
+          scale di sini yang bikin efek maju/mundur (bukan padding),
+          transformOrigin center biar zoom-nya dari titik tengah card */}
+      <div className="absolute inset-0 flex items-center justify-center px-3">
+        <div style={{ transform: `scale(${cardZoom / 100})`, transformOrigin: "center" }}>
+          <MusicPlayerCard
+            coverUrl={coverUrl}
+            title={title}
+            subtitle={subtitle}
+            bgOpacity={bgOpacityCard}
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            seekPct={seekPct}
+            volume={volume}
+            interactive={interactive}
+            onTogglePlay={onTogglePlay}
+            onSkip={onSkip}
+            onSeekChange={onSeekChange}
+            onSetSeeking={onSetSeeking}
+            onVolumeChange={onVolumeChange}
+            ImgTag={ImgTag}
+          />
+        </div>
       </div>
     </div>
   );

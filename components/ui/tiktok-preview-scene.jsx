@@ -57,10 +57,10 @@ export function TiktokPreviewScene() {
 
   const [bgOpacity, setBgOpacity] = React.useState(55);
   const [bgBlur, setBgBlur] = React.useState(64);
-  // jarak (padding) card ke tepi panggung -- makin gede makin kecil card &
-  // makin kelihatan banyak background di sekelilingnya. Default 12 =
-  // persis kelakuan lama (px-3 Tailwind yang di-hardcode).
-  const [cardSpacing, setCardSpacing] = React.useState(12);
+  // posisi maju/mundur card (persen, 100 = normal) -- makin kecil = card
+  // mengecil/mundur (background makin kelihatan), makin gede = card
+  // membesar/maju. Diterapkan lewat CSS transform:scale() di TiktokStage.
+  const [cardZoom, setCardZoom] = React.useState(100);
 
   // ---- ref ke root <TiktokStage> beneran di layar mockup HP, dipakai
   // buat UKUR lebar CSS px NYATA-nya (getBoundingClientRect) tiap frame
@@ -105,7 +105,7 @@ export function TiktokPreviewScene() {
     bgOpacity,
     bgBlur,
     volume,
-    sidePadding: cardSpacing,
+    cardZoom,
     // lebar stage BENERAN di layar (CSS px), diukur langsung dari DOM --
     // lihat catatan di stageElRef di atas & drawStageFrame() di
     // lib/tiktok-stage-canvas.js
@@ -133,7 +133,7 @@ export function TiktokPreviewScene() {
               coverUrl={current?.coverUrl || null}
               bgBlur={bgBlur}
               bgOpacityCard={bgOpacity}
-              sidePadding={cardSpacing}
+              cardZoom={cardZoom}
               title={displayTitle}
               subtitle={displaySubtitle}
               isPlaying={isPlaying}
@@ -174,8 +174,8 @@ export function TiktokPreviewScene() {
           onBgOpacityChange={setBgOpacity}
           bgBlur={bgBlur}
           onBgBlurChange={setBgBlur}
-          cardSpacing={cardSpacing}
-          onCardSpacingChange={setCardSpacing}
+          cardZoom={cardZoom}
+          onCardZoomChange={setCardZoom}
         />
         <TrackMetaPanel
           title={trackTitle}

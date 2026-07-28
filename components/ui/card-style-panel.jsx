@@ -6,28 +6,28 @@ import { cn } from "@/lib/utils";
 // ============================================================================
 // CardStylePanel -- panel kustomisasi tampilan MusicPlayerCard di dalam
 // mockup HP: opacity background card (biar bisa "nyatu" sama background
-// ambient di belakangnya) dan blur background belakang card. Dipasang di
-// luar mockup HP, sama seperti PlaylistPanel -- controlled dari luar lewat
-// props `bgOpacity`/`bgBlur` + setter, supaya TiktokPreviewScene yang
-// nyimpen state-nya dan bisa langsung diteruskan ke MusicPlayerCard & layer
-// background ambient.
+// ambient di belakangnya), blur background belakang card, dan posisi
+// maju/mundur card (zoom). Dipasang di luar mockup HP, sama seperti
+// PlaylistPanel -- controlled dari luar lewat props `bgOpacity`/`bgBlur`/
+// `cardZoom` + setter, supaya TiktokPreviewScene yang nyimpen state-nya dan
+// bisa langsung diteruskan ke MusicPlayerCard & layer background ambient.
 // ============================================================================
 export function CardStylePanel({
   bgOpacity,
   onBgOpacityChange,
   bgBlur,
   onBgBlurChange,
-  cardSpacing,
-  onCardSpacingChange,
+  cardZoom,
+  onCardZoomChange,
   className,
 }) {
-  // slider "Jarak card ke tepi" dipetakan ke range 12-60px (referensi,
-  // ikut diskalakan sama seperti metrik lain di lib/tiktok-stage-canvas.js)
-  // -- 12 = kelakuan lama/default, makin gede makin banyak jarak ke tepi
-  // panggung (card jadi lebih kecil).
-  const SPACING_MIN = 12;
-  const SPACING_MAX = 60;
-  const spacingPct = ((cardSpacing - SPACING_MIN) / (SPACING_MAX - SPACING_MIN)) * 100;
+  // slider "Posisi card (Mundur/Maju)" -- 100 = normal, di bawah 100 =
+  // mundur (card mengecil, background makin kelihatan), di atas 100 =
+  // maju (card membesar). Diterapkan lewat CSS transform:scale() di
+  // TiktokStage, jadi kelihatan kayak card beneran bergerak di sumbu Z.
+  const ZOOM_MIN = 60;
+  const ZOOM_MAX = 140;
+  const zoomPct = ((cardZoom - ZOOM_MIN) / (ZOOM_MAX - ZOOM_MIN)) * 100;
 
   return (
     <div className={cn("w-full max-w-[280px] rounded-2xl border border-base-line bg-base-elevated p-4", className)}>
@@ -69,19 +69,23 @@ export function CardStylePanel({
 
       <div>
         <div className="mb-1.5 flex items-center justify-between text-xs text-ink/70">
-          <span>Jarak card ke tepi</span>
-          <span className="tabular-nums text-ink">{cardSpacing}px</span>
+          <span>Posisi card</span>
+          <span className="tabular-nums text-ink">{cardZoom}%</span>
         </div>
         <input
           type="range"
-          min={SPACING_MIN}
-          max={SPACING_MAX}
-          value={cardSpacing}
-          onChange={(e) => onCardSpacingChange(Number(e.target.value))}
-          aria-label="Jarak card ke tepi"
+          min={ZOOM_MIN}
+          max={ZOOM_MAX}
+          value={cardZoom}
+          onChange={(e) => onCardZoomChange(Number(e.target.value))}
+          aria-label="Posisi card, mundur atau maju"
           className="csp-range w-full"
-          style={{ "--pct": `${spacingPct}%` }}
+          style={{ "--pct": `${zoomPct}%` }}
         />
+        <div className="mt-1 flex items-center justify-between text-[10px] text-ink/40">
+          <span>Mundur (kecil)</span>
+          <span>Maju (besar)</span>
+        </div>
       </div>
 
       <style jsx>{`
