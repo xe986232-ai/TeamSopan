@@ -28,7 +28,7 @@ export async function checkInToSession(roomId) {
 
   const { data: member, error: memberError } = await sessionClient
     .from("members")
-    .select("id, full_name")
+    .select("id, full_name, division")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -44,6 +44,12 @@ export async function checkInToSession(roomId) {
 
   if (sessionError || !session) {
     return { error: "Sesi absensi tidak ditemukan atau sudah tidak aktif." };
+  }
+
+  // Sesi absensi khusus buat divisi tertentu -- anggota divisi LAIN
+  // gak boleh ikut absen di room ini, walau linknya kebuka.
+  if (member.division !== session.division) {
+    return { error: "Sesi absensi ini bukan untuk divisimu." };
   }
 
   // starts_at/ends_at tersimpan sebagai instant UTC yang beneran
@@ -115,7 +121,7 @@ export async function sendMessage(roomId, text) {
 
   const { data: member, error: memberError } = await sessionClient
     .from("members")
-    .select("id")
+    .select("id, division")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -125,12 +131,16 @@ export async function sendMessage(roomId, text) {
 
   const { data: session, error: sessionError } = await sessionClient
     .from("attendance_sessions")
-    .select("id")
+    .select("id, division")
     .eq("room_id", roomId)
     .maybeSingle();
 
   if (sessionError || !session) {
     return { error: "Sesi absensi tidak ditemukan atau sudah tidak aktif." };
+  }
+
+  if (member.division !== session.division) {
+    return { error: "Sesi absensi ini bukan untuk divisimu." };
   }
 
   const admin = createAdminSupabaseClient();

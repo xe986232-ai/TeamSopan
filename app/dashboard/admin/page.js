@@ -4,6 +4,7 @@ import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import AdminPhotoCard from "./AdminPhotoCard";
 import { DIVISION_ADMINS } from "@/lib/dashboard-data";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 export const metadata = {
   title: "Admin Divisi | Dashboard SOPAN TEAM",
@@ -44,7 +45,20 @@ async function getDivisionAdmins() {
 }
 
 export default async function AdminDivisiPage() {
-  const admins = await getDivisionAdmins();
+  const role = await getCurrentDashboardRole();
+  const allAdmins = await getDivisionAdmins();
+
+  // Admin divisi cuma boleh lihat & atur kartu divisinya sendiri (mis.
+  // Divisi Remix cuma lihat kartu "remix", divisi lain di-hide total).
+  // Master admin tetap lihat semuanya.
+  const admins =
+    role?.type === "division"
+      ? allAdmins.filter((a) => a.slug === role.division)
+      : allAdmins;
+
+  // Admin divisi cuma boleh atur avatar & deskripsi -- nama admin & nama
+  // divisi tetap dikunci (biar gak diubah sembarangan dari sisi divisi).
+  const restrictedFields = role?.type === "division";
 
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
@@ -56,7 +70,11 @@ export default async function AdminDivisiPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {admins.map((admin) => (
-          <AdminPhotoCard key={admin.slug} admin={admin} />
+          <AdminPhotoCard
+            key={admin.slug}
+            admin={admin}
+            restrictedFields={restrictedFields}
+          />
         ))}
       </div>
     </DashboardShell>

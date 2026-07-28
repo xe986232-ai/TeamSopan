@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { DIVISIONS_ABSENSI, generateRoomId } from "@/lib/absensi";
 import { zonedWallClockToUtcMs, SESSION_TIME_ZONE } from "@/lib/timezone";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 // Jam yang diketik admin di form (mis. "07:00") SELALU dianggap WIB
 // (SESSION_TIME_ZONE) dan dikonversi jadi instant UTC yang tepat --
@@ -45,6 +46,18 @@ export async function createAttendanceSession({
   if (!division || !DIVISIONS_ABSENSI[division]) {
     return { error: "Divisi tidak dikenali." };
   }
+
+  // Admin divisi cuma boleh bikin sesi buat divisinya sendiri -- jangan
+  // cuma percaya value `division` dari form (form-nya emang dikunci di
+  // UI, tapi request bisa dipalsu langsung tanpa lewat UI).
+  const role = await getCurrentDashboardRole();
+  if (!role) {
+    return { error: "Sesi login tidak valid." };
+  }
+  if (role.type === "division" && role.division !== division) {
+    return { error: "Kamu cuma bisa membuat sesi absensi untuk divisimu sendiri." };
+  }
+
   if (!date || !startTime || !endTime) {
     return { error: "Tanggal, jam mulai, dan jam selesai wajib diisi." };
   }
@@ -87,6 +100,11 @@ export async function createAttendanceSession({
 // (anggota aktif divisi itu yang gak punya baris di attendance_records
 // buat sesi ini).
 export async function getAttendanceRecap(sessionId) {
+  const role = await getCurrentDashboardRole();
+  if (!role) {
+    return { error: "Sesi login tidak valid." };
+  }
+
   const supabase = createAdminSupabaseClient();
 
   const { data: session, error: sessionError } = await supabase
@@ -97,6 +115,10 @@ export async function getAttendanceRecap(sessionId) {
 
   if (sessionError || !session) {
     return { error: "Sesi absensi tidak ditemukan." };
+  }
+
+  if (role.type === "division" && role.division !== session.division) {
+    return { error: "Kamu tidak punya akses ke sesi absensi divisi lain." };
   }
 
   // Anggota aktif divisi ini -- yang "nonaktif" gak dihitung, sama kayak
@@ -175,7 +197,24 @@ export async function getAttendanceRecap(sessionId) {
 // Hapus sesi (misal sesi salah input / mau dibatalkan). Ikut menghapus
 // semua attendance_records terkait (on delete cascade).
 export async function deleteAttendanceSession(id) {
+  const role = await getCurrentDashboardRole();
+  if (!role) {
+    return { error: "Sesi login tidak valid." };
+  }
+
   const supabase = createAdminSupabaseClient();
+
+  if (role.type === "division") {
+    const { data: session } = await supabase
+      .from("attendance_sessions")
+      .select("division")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (!session || session.division !== role.division) {
+      return { error: "Kamu tidak punya akses ke sesi absensi divisi lain." };
+    }
+  }
 
   const { error } = await supabase
     .from("attendance_sessions")

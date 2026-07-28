@@ -9,8 +9,6 @@ import {
   Users,
   UserPlus,
   CalendarCheck,
-  Disc3,
-  Clapperboard,
   Sparkles,
   Film,
   Music2,
@@ -23,13 +21,17 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useDashboardSidebar } from "./DashboardSidebarContext";
+import { useDashboardRole } from "./DashboardRoleContext";
 import { createPublicSupabaseClient } from "@/lib/supabase/client";
 
 // Struktur menu dashboard — dikelompokkan sama seperti referensi desain
-// (grup berlabel kecil, item dengan ikon). Halaman selain "/dashboard"
-// belum dibuat isinya — ini murni tampilan dulu, backend & sub-halaman
-// menyusul kemudian.
-const NAV_GROUPS = [
+// (grup berlabel kecil, item dengan ikon).
+//
+// Ini menu buat MASTER ADMIN (akses penuh). Halaman "Remix" & "Creator"
+// di grup Divisi sudah dihapus dari produk (murni dummy, gak pernah
+// nyambung ke data asli) -- yang tersisa di sini cuma Leadis (belum
+// dihapus) + Trending Edit + Trending Sound.
+const MASTER_NAV_GROUPS = [
   {
     label: "Menu",
     items: [
@@ -42,8 +44,6 @@ const NAV_GROUPS = [
   {
     label: "Divisi",
     items: [
-      { name: "Remix", href: "/dashboard/divisi/remix", icon: Disc3 },
-      { name: "Creator", href: "/dashboard/divisi/creator", icon: Clapperboard },
       { name: "Leadis", href: "/dashboard/divisi/leadis", icon: Sparkles },
       { name: "Trending Edit", href: "/dashboard/trending", icon: Film },
       { name: "Trending Sound", href: "/dashboard/trending-sound", icon: Music2 },
@@ -55,6 +55,41 @@ const NAV_GROUPS = [
       { name: "Admin Divisi", href: "/dashboard/admin", icon: ShieldCheck },
       { name: "Aktivitas Login", href: "/dashboard/aktivitas", icon: Activity },
     ],
+  },
+  {
+    label: "Lainnya",
+    items: [
+      { name: "Pengaturan", href: "/dashboard/pengaturan", icon: Settings },
+      { name: "Bantuan", href: "/dashboard/bantuan", icon: HelpCircle },
+    ],
+  },
+];
+
+// Menu buat admin DIVISI -- jauh lebih terbatas, cuma sub-halaman yang
+// relevan buat kerjaan admin divisi tersebut. "Divisi" & "Komunitas"
+// sengaja cuma nyisain 1 item masing-masing (Trending Sound & Admin
+// Divisi), sisanya (Remix/Creator/Leadis/Trending Edit/Aktivitas Login)
+// disembunyikan -- lihat middleware.js buat proteksi route-nya juga
+// (menu ini cuma soal tampilan, bukan satu-satunya lapisan proteksi).
+const DIVISION_NAV_GROUPS = [
+  {
+    label: "Menu",
+    items: [
+      { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { name: "Anggota", href: "/dashboard/anggota", icon: Users },
+      { name: "Pendaftar Baru", href: "/dashboard/pendaftar", icon: UserPlus },
+      { name: "Absensi", href: "/dashboard/absensi", icon: CalendarCheck },
+    ],
+  },
+  {
+    label: "Divisi",
+    items: [
+      { name: "Trending Sound", href: "/dashboard/trending-sound", icon: Music2 },
+    ],
+  },
+  {
+    label: "Komunitas",
+    items: [{ name: "Admin Divisi", href: "/dashboard/admin", icon: ShieldCheck }],
   },
   {
     label: "Lainnya",
@@ -108,7 +143,11 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { open } = useDashboardSidebar();
+  const role = useDashboardRole();
   const [email, setEmail] = React.useState(null);
+
+  const NAV_GROUPS =
+    role?.type === "division" ? DIVISION_NAV_GROUPS : MASTER_NAV_GROUPS;
 
   React.useEffect(() => {
     const supabase = createPublicSupabaseClient();

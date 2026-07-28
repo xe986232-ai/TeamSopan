@@ -3,6 +3,7 @@ import DashboardShell from "@/components/dashboard/DashboardShell";
 import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardModuleCard from "@/components/dashboard/DashboardModuleCard";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 export const metadata = {
   title: "Dashboard | SOPAN TEAM",
@@ -60,10 +61,16 @@ const MODULE_CARDS = [
     footerLabel: "Data komunitas",
     actionLabel: "Kelola Konten",
     href: "/dashboard/divisi",
+    masterOnly: true,
   },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const role = await getCurrentDashboardRole();
+  const cards = MODULE_CARDS.filter(
+    (card) => !card.masterOnly || role?.type === "master"
+  );
+
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
       <DashboardTopbar
@@ -73,7 +80,7 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {MODULE_CARDS.map((card) => (
+        {cards.map((card) => (
           <DashboardModuleCard key={card.title} {...card} />
         ))}
       </div>

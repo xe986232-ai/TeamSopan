@@ -5,6 +5,7 @@ import DashboardTopbar from "@/components/dashboard/DashboardTopbar";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import AnggotaList from "@/components/dashboard/AnggotaList";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 export const metadata = {
   title: "Anggota | Dashboard SOPAN TEAM",
@@ -13,6 +14,12 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AnggotaPage() {
+  const role = await getCurrentDashboardRole();
+  // Fitur "Tambah Massal" cuma buat master admin. Admin divisi tetap
+  // bisa lihat & kelola anggota satu-satu, tapi gak bisa import banyak
+  // anggota sekaligus.
+  const canBulkAdd = role?.type === "master";
+
   const supabase = createAdminSupabaseClient();
   const { data, error } = await supabase
     .from("members")
@@ -45,12 +52,14 @@ export default async function AnggotaPage() {
         <span className="text-sm text-black/50">
           {members.length} anggota terdaftar
         </span>
-        <Link
-          href="/dashboard/anggota/tambah-massal"
-          className="flex items-center gap-1.5 rounded-xl bg-[#111827] px-3.5 py-2 text-xs font-semibold text-white hover:bg-black transition-colors"
-        >
-          <UserPlus size={14} /> Tambah Massal
-        </Link>
+        {canBulkAdd && (
+          <Link
+            href="/dashboard/anggota/tambah-massal"
+            className="flex items-center gap-1.5 rounded-xl bg-[#111827] px-3.5 py-2 text-xs font-semibold text-white hover:bg-black transition-colors"
+          >
+            <UserPlus size={14} /> Tambah Massal
+          </Link>
+        )}
       </div>
 
       {error && (

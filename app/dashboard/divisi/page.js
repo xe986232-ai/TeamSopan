@@ -20,7 +20,9 @@ export default function DivisiIndexPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {Object.values(DIVISIONS_ABSENSI).map((division) => {
+        {Object.values(DIVISIONS_ABSENSI)
+          .filter((division) => division.id !== "remix" && division.id !== "creator")
+          .map((division) => {
           const itemCount = DIVISION_CONTENT[division.id]?.items.length || 0;
           return (
             <Link

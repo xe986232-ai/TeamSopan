@@ -1,14 +1,26 @@
+import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import BulkAddMembers from "@/components/dashboard/BulkAddMembers";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 export const metadata = {
   title: "Tambah Anggota Massal | Dashboard SOPAN TEAM",
 };
 
-export default function TambahMassalPage() {
+export const dynamic = "force-dynamic";
+
+export default async function TambahMassalPage() {
+  // Middleware sudah blokir admin divisi dari path ini, tapi dijaga lagi
+  // di sini (defense in depth) kalau-kalau ada cara akses lain di masa
+  // depan.
+  const role = await getCurrentDashboardRole();
+  if (role?.type !== "master") {
+    redirect("/dashboard/anggota");
+  }
+
   return (
     <DashboardShell rightPanel={<DashboardRightPanel />}>
       <div className="flex flex-col items-center gap-6 mb-8">

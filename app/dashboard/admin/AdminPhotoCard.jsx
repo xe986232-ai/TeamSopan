@@ -5,7 +5,7 @@ import { Pencil, Loader2, Check, X } from "lucide-react";
 import AvatarInitials from "@/components/dashboard/AvatarInitials";
 import { uploadAdminPhoto, updateAdminInfo } from "./actions";
 
-export default function AdminPhotoCard({ admin }) {
+export default function AdminPhotoCard({ admin, restrictedFields = false }) {
   const fileInputRef = useRef(null);
   const [isPending, startTransition] = useTransition();
   const [preview, setPreview] = useState(admin.image_url || null);
@@ -53,6 +53,7 @@ export default function AdminPhotoCard({ admin }) {
     formData.set("name", name);
     formData.set("role", role);
     formData.set("description", description);
+    if (restrictedFields) formData.set("restrictedFields", "1");
 
     startTransition(async () => {
       const result = await updateAdminInfo(formData);
@@ -125,24 +126,36 @@ export default function AdminPhotoCard({ admin }) {
 
       {isEditing ? (
         <div className="flex flex-col gap-2">
-          <div>
-            <label className="text-[11px] font-semibold text-black/50">Nama Admin</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-black/10 px-2.5 py-1.5 text-sm font-display font-bold text-[#111827] outline-none focus:border-black/30"
-              placeholder="Nama admin"
-            />
-          </div>
-          <div>
-            <label className="text-[11px] font-semibold text-black/50">Nama Divisi</label>
-            <input
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-black/10 px-2.5 py-1.5 text-sm text-[#111827] outline-none focus:border-black/30"
-              placeholder="misal: Divisi Remix"
-            />
-          </div>
+          {restrictedFields ? (
+            <div className="rounded-lg bg-black/[0.03] px-2.5 py-2">
+              <p className="font-display font-bold text-sm text-[#111827]">{name}</p>
+              <p className="text-xs font-semibold text-pink-500 mt-0.5">{role}</p>
+              <p className="text-[11px] text-black/40 mt-1">
+                Nama & nama divisi cuma bisa diubah oleh Master Admin.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="text-[11px] font-semibold text-black/50">Nama Admin</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-black/10 px-2.5 py-1.5 text-sm font-display font-bold text-[#111827] outline-none focus:border-black/30"
+                  placeholder="Nama admin"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-black/50">Nama Divisi</label>
+                <input
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-black/10 px-2.5 py-1.5 text-sm text-[#111827] outline-none focus:border-black/30"
+                  placeholder="misal: Divisi Remix"
+                />
+              </div>
+            </>
+          )}
           <div>
             <label className="text-[11px] font-semibold text-black/50">Deskripsi</label>
             <textarea

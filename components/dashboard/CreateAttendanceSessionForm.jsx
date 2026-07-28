@@ -51,9 +51,9 @@ function defaultEndTimeValue() {
   return `${pad(endHour)}:${pad(endMinute)}`;
 }
 
-export default function CreateAttendanceSessionForm() {
+export default function CreateAttendanceSessionForm({ lockedDivision } = {}) {
   const { toast } = useToast();
-  const [division, setDivision] = React.useState("remix");
+  const [division, setDivision] = React.useState(lockedDivision || "remix");
   const [date, setDate] = React.useState(todayDateValue());
   const [startTime, setStartTime] = React.useState(nowTimeValue());
   const [endTime, setEndTime] = React.useState(defaultEndTimeValue());
@@ -145,6 +145,22 @@ export default function CreateAttendanceSessionForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
           <p className="text-xs font-medium text-black/60 mb-2">Divisi</p>
+          {lockedDivision ? (
+            <div className="relative overflow-hidden rounded-xl border border-black/[0.08] bg-black/[0.02] p-3 pl-4">
+              <span
+                className="absolute inset-y-2.5 left-1.5 w-[3px] rounded-full"
+                style={{
+                  background: `linear-gradient(180deg, ${DIVISIONS_ABSENSI[lockedDivision]?.accentFrom}, ${DIVISIONS_ABSENSI[lockedDivision]?.accentTo})`,
+                }}
+              />
+              <p className="text-xs font-semibold text-[#111827]">
+                {DIVISIONS_ABSENSI[lockedDivision]?.name}
+              </p>
+              <p className="text-[11px] text-black/40 mt-0.5">
+                Sesi absensi cuma bisa dibuat untuk divisimu sendiri.
+              </p>
+            </div>
+          ) : (
           <div className="grid grid-cols-3 gap-2">
             {Object.values(DIVISIONS_ABSENSI).map((d) => {
               const isActive = division === d.id;
@@ -189,6 +205,7 @@ export default function CreateAttendanceSessionForm() {
               );
             })}
           </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

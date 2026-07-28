@@ -4,8 +4,24 @@ import { revalidatePath } from "next/cache";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
 import { LOGO_STYLES, LOGO_SHAPES } from "@/lib/logo-styles";
 import { HERO_TEXT_EFFECTS } from "@/lib/hero-text-effects";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
+
+// Pengaturan situs cuma boleh diubah Master Admin -- admin divisi cuma
+// boleh LIHAT (halaman /dashboard/pengaturan dikunci pakai ReadOnlyOverlay
+// di UI), tapi tetap dijaga lagi di sini di server biar gak bisa dipanggil
+// langsung dari luar UI.
+async function assertMasterAdmin() {
+  const role = await getCurrentDashboardRole();
+  if (role?.type !== "master") {
+    return { error: "Cuma Master Admin yang bisa mengubah pengaturan situs." };
+  }
+  return null;
+}
 
 export async function updateLogoStyle(styleId, shapeId) {
+  const guardError = await assertMasterAdmin();
+  if (guardError) return guardError;
+
   // Validasi ketat: cuma boleh salah satu key yang memang ada di preset,
   // biar nggak ada sembarang string kesimpen sebagai "logo_style" /
   // "logo_shape" di DB.
@@ -44,6 +60,9 @@ export async function updateLogoStyle(styleId, shapeId) {
 }
 
 export async function updateAnnouncementBanner({ enabled, text, link }) {
+  const guardError = await assertMasterAdmin();
+  if (guardError) return guardError;
+
   // Kalau banner mau diaktifkan, teksnya wajib diisi -- daripada nyala
   // tapi kosong tanpa disadari admin.
   const trimmedText = (text || "").trim();
@@ -79,6 +98,9 @@ export async function updateAnnouncementBanner({ enabled, text, link }) {
 }
 
 export async function updateOpenMember(enabled) {
+  const guardError = await assertMasterAdmin();
+  if (guardError) return guardError;
+
   const supabase = createAdminSupabaseClient();
 
   const { error } = await supabase
@@ -106,6 +128,9 @@ export async function updateOpenMember(enabled) {
 }
 
 export async function updateHeroTextEffect(effectId) {
+  const guardError = await assertMasterAdmin();
+  if (guardError) return guardError;
+
   // Validasi ketat: cuma boleh salah satu key yang memang ada di preset
   // (lihat lib/hero-text-effects.js), biar nggak ada sembarang string
   // kesimpen sebagai "hero_text_effect" di DB.

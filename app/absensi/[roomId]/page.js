@@ -37,6 +37,25 @@ export default async function AbsensiRoomPage({ params }) {
     .eq("room_id", roomId)
     .maybeSingle();
 
+  // Room absensi ini khusus buat 1 divisi (session.division). Anggota
+  // divisi LAIN yang kebetulan buka linknya (mis. link ke-share ke grup
+  // yang salah) gak boleh ikut lihat/absen di sini.
+  if (session && member && member.division !== session.division) {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-6 text-center">
+        <div>
+          <p className="font-display font-bold text-lg text-[#111827]">
+            Sesi absensi ini bukan untuk divisimu
+          </p>
+          <p className="mt-2 text-sm text-black/50 max-w-sm">
+            Link ini khusus untuk anggota divisi lain. Hubungi admin
+            divisimu kalau kamu merasa ini salah.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   let records = [];
   let hasCheckedIn = false;
 

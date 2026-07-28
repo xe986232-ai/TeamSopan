@@ -6,12 +6,23 @@ import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import { DIVISIONS_ABSENSI } from "@/lib/absensi";
 import { DIVISION_CONTENT } from "@/lib/dashboard-data";
 
+// Halaman "Konten Divisi" Remix & Creator dihapus -- murni dummy/contoh,
+// gak pernah nyambung ke data/aksi asli (tombol edit & hapus di bawah
+// gak ngapa-ngapain). Leadis dibiarkan jalan seperti sebelumnya, cuma
+// 2 slug ini yang dimatikan.
+const DISABLED_SLUGS = new Set(["remix", "creator"]);
+
 export function generateMetadata({ params }) {
+  if (DISABLED_SLUGS.has(params.slug)) {
+    return { title: "Divisi | Dashboard SOPAN TEAM" };
+  }
   const division = DIVISIONS_ABSENSI[params.slug];
   return { title: `${division ? division.name : "Divisi"} | Dashboard SOPAN TEAM` };
 }
 
 export default function DivisiDetailPage({ params }) {
+  if (DISABLED_SLUGS.has(params.slug)) notFound();
+
   const division = DIVISIONS_ABSENSI[params.slug];
   if (!division) notFound();
 

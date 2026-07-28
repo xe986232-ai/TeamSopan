@@ -4,6 +4,7 @@ import DashboardRightPanel from "@/components/dashboard/DashboardRightPanel";
 import CreateAttendanceSessionForm from "@/components/dashboard/CreateAttendanceSessionForm";
 import AttendanceSessionsList from "@/components/dashboard/AttendanceSessionsList";
 import { createAdminSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 export const metadata = {
   title: "Absensi | Dashboard SOPAN TEAM",
@@ -14,12 +15,23 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AbsensiDashboardPage() {
+  const role = await getCurrentDashboardRole();
+  // Admin divisi cuma boleh lihat & kelola sesi absensi divisinya
+  // sendiri -- sesi divisi lain gak boleh nongol di sini sama sekali.
+  const lockedDivision = role?.type === "division" ? role.division : null;
+
   const supabase = createAdminSupabaseClient();
 
-  const { data: sessionsData, error: sessionsError } = await supabase
+  let sessionsQuery = supabase
     .from("attendance_sessions")
     .select("*")
     .order("starts_at", { ascending: false });
+
+  if (lockedDivision) {
+    sessionsQuery = sessionsQuery.eq("division", lockedDivision);
+  }
+
+  const { data: sessionsData, error: sessionsError } = await sessionsQuery;
 
   const sessions = sessionsData || [];
   const sessionIds = sessions.map((s) => s.id);
@@ -66,7 +78,7 @@ export default async function AbsensiDashboardPage() {
         searchPlaceholder="Cari sesi berdasarkan divisi..."
       />
 
-      <CreateAttendanceSessionForm />
+      <CreateAttendanceSessionForm lockedDivision={lockedDivision} />
 
       <div className="flex items-center justify-between mb-4 mt-8">
         <span className="text-sm text-black/50">Riwayat sesi</span>
