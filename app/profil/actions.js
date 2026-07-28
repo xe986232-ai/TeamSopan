@@ -1,6 +1,7 @@
 "use server";
 
 import { createServerSupabaseClient, createAdminSupabaseClient } from "@/lib/supabase/server";
+import { getCurrentDashboardRole } from "@/lib/dashboard-role-server";
 
 // Ambil data profil member yang lagi login sekarang. Dipanggil dari
 // Server Component (app/profil/page.js) buat isi data awal halaman.
@@ -37,7 +38,13 @@ export async function getOwnProfile() {
     return { error: "Data member tidak ditemukan di database." };
   }
 
-  return { data };
+  // Ikut kirim role dashboard (master/division/null) biar halaman /profil
+  // bisa nampilin tombol "Buka Dashboard" cuma buat akun yang emang punya
+  // akses ke /dashboard (dicek dari email vs ADMIN_EMAIL/DIVISION_ADMIN_EMAIL_*,
+  // sama persis kayak yang dipakai middleware.js).
+  const role = await getCurrentDashboardRole();
+
+  return { data, role };
 }
 
 // Update profil sendiri (nama, bio, sosmed) + opsional ganti foto avatar.

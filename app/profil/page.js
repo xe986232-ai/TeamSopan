@@ -56,7 +56,7 @@ export default async function ProfilPage() {
   return (
     <main className="relative bg-base min-h-screen">
       <SiteNavbar navItems={navItems} mobileGroups={mobileGroups} />
-      <ProfileDashboardSection profile={result.data} />
+      <ProfileDashboardSection profile={result.data} dashboardRole={result.role} />
     </main>
   );
 }

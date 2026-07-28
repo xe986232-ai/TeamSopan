@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { Pencil, Loader2, LogOut, Plus, X, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { Pencil, Loader2, LogOut, LayoutDashboard, Plus, X, ChevronDown } from "lucide-react";
 import { TextField } from "./ui/text-field";
 import { TextareaField } from "./ui/textarea-field";
 import { Button } from "./ui/button";
@@ -19,15 +20,15 @@ const MAX_AVATAR_SIZE = 5 * 1024 * 1024; // 5MB
 // dari /preview-profilecard. Bedanya: datanya asli dari database (bukan
 // contoh statis), avatar bisa diganti lewat ikon pensil, dan ada form
 // buat edit nama, bio & link sosmed sendiri.
-export default function ProfileDashboardSection({ profile }) {
+export default function ProfileDashboardSection({ profile, dashboardRole }) {
   return (
     <ToastProvider>
-      <ProfileDashboardInner profile={profile} />
+      <ProfileDashboardInner profile={profile} dashboardRole={dashboardRole} />
     </ToastProvider>
   );
 }
 
-function ProfileDashboardInner({ profile }) {
+function ProfileDashboardInner({ profile, dashboardRole }) {
   const { toast } = useToast();
   const router = useRouter();
   const fileInputRef = React.useRef(null);
@@ -287,6 +288,20 @@ function ProfileDashboardInner({ profile }) {
               </div>
               <div className="absolute inset-0 rounded-3xl -z-10 opacity-30 blur-2xl bg-gradient-to-r from-remix-from/50 to-leadis-to/50" />
             </div>
+
+            {/* Cuma muncul buat akun yang punya akses /dashboard (master
+                admin ATAU admin divisi) -- role-nya sama persis kayak yang
+                dicek middleware.js, jadi tombol ini gak pernah nawarin
+                dashboard ke member biasa yang emang gak boleh masuk. */}
+            {dashboardRole && (
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-1.5 text-xs font-medium text-pink-500 hover:text-pink-600 transition-colors"
+              >
+                <LayoutDashboard size={13} />
+                Buka Dashboard
+              </Link>
+            )}
 
             <button
               type="button"
