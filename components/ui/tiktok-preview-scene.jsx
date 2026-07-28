@@ -8,6 +8,7 @@ import { PlaylistPanel } from "@/components/ui/playlist-panel";
 import { CardStylePanel } from "@/components/ui/card-style-panel";
 import { TrackMetaPanel } from "@/components/ui/track-meta-panel";
 import { TiktokExportPanel } from "@/components/ui/tiktok-export-panel";
+import { TiktokExportOverlay } from "@/components/ui/tiktok-export-overlay";
 import { useLocalPlaylist } from "@/hooks/use-local-playlist";
 import { useTiktokStageExport, EXPORT_RESOLUTIONS, DEFAULT_EXPORT_RESOLUTION } from "@/hooks/use-tiktok-stage-export";
 
@@ -132,6 +133,11 @@ export function TiktokPreviewScene() {
           {/* ---- 2. overlay chrome TikTok, nempel di atas semuanya, di LUAR
                      TiktokStage supaya nggak ikut ke-ekspor ---- */}
           <TiktokOverlay likeCount={53} commentCount={5} saveCount={13} shareCount={28} />
+
+          {/* ---- 3. overlay loading export, paling atas -- nutupin layar
+                     mockup HP selama proses rekam/konversi video, sama
+                     seperti #2 murni dekor UI & tidak ikut ke-ekspor ---- */}
+          <TiktokExportOverlay status={status} progress={progress} statusMessage={statusMessage} />
         </div>
       </Iphone15Pro>
 
