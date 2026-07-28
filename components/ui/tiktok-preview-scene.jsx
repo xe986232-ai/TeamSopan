@@ -58,6 +58,15 @@ export function TiktokPreviewScene() {
   const [bgOpacity, setBgOpacity] = React.useState(55);
   const [bgBlur, setBgBlur] = React.useState(64);
 
+  // ---- ref ke root <TiktokStage> beneran di layar mockup HP, dipakai
+  // buat UKUR lebar CSS px NYATA-nya (getBoundingClientRect) tiap frame
+  // export -- lihat catatan panjang di lib/tiktok-stage-canvas.js
+  // drawStageFrame() kenapa ini dipakai gantiin STAGE_REF_W yang cuma
+  // tebakan/konstan. Dengan ini, card di hasil export dijamin proporsinya
+  // SAMA PERSIS kayak yang beneran kelihatan di preview user saat itu,
+  // gak peduli breakpoint Tailwind mana yang lagi aktif. ----
+  const stageElRef = React.useRef(null);
+
   // ---- metadata judul/artist yang tampil di card musik ----
   const [trackTitle, setTrackTitle] = React.useState("");
   const [trackArtist, setTrackArtist] = React.useState("@artist");
@@ -92,6 +101,10 @@ export function TiktokPreviewScene() {
     bgOpacity,
     bgBlur,
     volume,
+    // lebar stage BENERAN di layar (CSS px), diukur langsung dari DOM --
+    // lihat catatan di stageElRef di atas & drawStageFrame() di
+    // lib/tiktok-stage-canvas.js
+    refStageWidth: stageElRef.current?.getBoundingClientRect().width || undefined,
   };
   const getExportState = React.useCallback(() => exportStateRef.current, []);
 
@@ -111,6 +124,7 @@ export function TiktokPreviewScene() {
           {/* ---- 1. panggung 9:16 (background + card) ---- */}
           <div className="absolute inset-0 flex items-center justify-center">
             <TiktokStage
+              stageRef={stageElRef}
               coverUrl={current?.coverUrl || null}
               bgBlur={bgBlur}
               bgOpacityCard={bgOpacity}
